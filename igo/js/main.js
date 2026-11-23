@@ -24,6 +24,7 @@ class IgoApp {
             allowUndo: true,
             showAdvantage: true,
             confirmMode: false,
+            allowAiResign: true,
             soundEnabled: true
         };
 
@@ -171,6 +172,13 @@ class IgoApp {
             this.config.showAdvantage = e.target.checked;
             document.getElementById('adv-container').style.display = this.config.showAdvantage ? 'block' : 'none';
         });
+
+        const toggleAiResign = document.getElementById('toggle-ai-resign');
+        if (toggleAiResign) {
+            toggleAiResign.addEventListener('change', (e) => {
+                this.config.allowAiResign = e.target.checked;
+            });
+        }
 
         document.getElementById('toggle-confirm').addEventListener('change', (e) => {
             this.config.confirmMode = e.target.checked;
@@ -463,11 +471,15 @@ class IgoApp {
         this.isAiThinking = true;
         this.updateGameStateUI();
 
-        const move = await this.ai.getBestMove(this.config.aiLevel, this.engine.turn);
+        const move = await this.ai.getBestMove(this.config.aiLevel, this.engine.turn, this.config.allowAiResign);
 
         this.isAiThinking = false;
 
-        if (move && move.isPass) {
+        if (move && move.isResign) {
+            this.showToast('AIが投了しました。「参りました！見事な碁でした。」', 'info');
+            this.handleResign(true);
+            return;
+        } else if (move && move.isPass) {
             this.showToast('AIがパスしました。', 'info');
             this.handlePass(true);
         } else if (move) {
@@ -551,10 +563,15 @@ class IgoApp {
     }
 
     // 投了処理
-    handleResign() {
+    handleResign(isAi = false) {
         if (this.engine.isGameOver || this.isAiThinking) return;
 
-        const result = this.engine.resign(this.engine.turn);
+        const resigningColor = this.engine.turn;
+        const result = this.engine.resign(resigningColor);
+        if (isAi) {
+            const winnerStr = resigningColor === BLACK ? '白(あなた)' : '黒(あなた)';
+            result.text = `AIが投了しました（${winnerStr}の中押し勝ち）`;
+        }
         this.endGame(result);
     }
 

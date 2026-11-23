@@ -23,7 +23,7 @@
 
     <title>九路盤・囲碁道場</title>
     <!-- キャッシュ対策のクエリパラメータ付きCSS -->
-    <link rel="stylesheet" href="css/style.css?v=1.0.3">
+    <link rel="stylesheet" href="css/style.css?v=1.0.4">
 </head>
 <body>
     <div id="app">
@@ -133,6 +133,16 @@
                         </div>
                         <div class="toggle-item">
                             <div class="toggle-info">
+                                <span class="toggle-label">AIの投了（潔く負けを認める）</span>
+                                <span class="toggle-desc">形勢が絶望的になった際、AIが潔く投了します</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="toggle-ai-resign" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-item">
+                            <div class="toggle-info">
                                 <span class="toggle-label">誤タップ防止モード</span>
                                 <span class="toggle-desc">1タップ目で仮置き確認、2タップ目で確定</span>
                             </div>
@@ -201,10 +211,18 @@
                     </div>
                 </div>
 
-                <!-- 中央碁盤 -->
+                <!-- 中央碁盤 ＆ 直下操作パネル -->
                 <div class="board-center-area">
                     <div id="board-container" class="igo-board-wrapper">
                         <!-- board-ui.js によりDOM構築 -->
+                    </div>
+                    <!-- 操作パネル（盤のすぐ下に常時配置・非全画面でも絶対に隠れない） -->
+                    <div class="game-control-panel">
+                        <button id="btn-pass" class="control-btn warning">パス</button>
+                        <button id="btn-undo" class="control-btn">待った</button>
+                        <button id="btn-hint" class="control-btn">💡 ヒント</button>
+                        <button id="btn-resign" class="control-btn danger">投了</button>
+                        <button id="btn-confirm-move" class="control-btn primary" style="display:none;">着手確定</button>
                     </div>
                 </div>
 
@@ -221,15 +239,6 @@
                         <span class="captures-label">取った石:</span>
                         <strong id="captures-black">0</strong>
                     </div>
-                </div>
-
-                <!-- 操作パネル -->
-                <div class="game-control-panel">
-                    <button id="btn-pass" class="control-btn warning">パス</button>
-                    <button id="btn-undo" class="control-btn">待った</button>
-                    <button id="btn-hint" class="control-btn">💡 ヒント</button>
-                    <button id="btn-resign" class="control-btn danger">投了</button>
-                    <button id="btn-confirm-move" class="control-btn primary" style="display:none;">着手確定</button>
                 </div>
             </main>
 
@@ -314,6 +323,6 @@
     </div>
 
     <!-- キャッシュ対策のクエリパラメータ付きスクリプト -->
-    <script type="module" src="js/main.js?v=1.0.3"></script>
+    <script type="module" src="js/main.js?v=1.0.4"></script>
 </body>
 </html>

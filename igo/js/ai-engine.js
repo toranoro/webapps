@@ -11,10 +11,16 @@ export class AiEngine {
     }
 
     // AIの思考手を取得（非同期でUIブロックを防止）
-    async getBestMove(level = 2, color = this.engine.turn) {
+    async getBestMove(level = 2, color = this.engine.turn, allowResign = true) {
         return new Promise((resolve) => {
             // UI更新用のレンダリング時間を確保するため微小遅延
             setTimeout(() => {
+                // 絶望的な局面での潔い投了チェック
+                if (allowResign && this.checkResignation(level, color)) {
+                    resolve({ isResign: true });
+                    return;
+                }
+
                 let move = null;
                 switch (level) {
                     case 1:
@@ -36,6 +42,41 @@ export class AiEngine {
                 resolve(move);
             }, 60);
         });
+    }
+
+    // 潔い投了（負けを認める）判定ロジック
+    checkResignation(level, color) {
+        // 序盤（24手未満）は投了しない（まだ変化・逆転の余地があるため）
+        if (this.engine.history.length < 24) return false;
+
+        // Lv.1 入門は初心者が最後まで整地を体験できるよう投了しない
+        if (level === 1) return false;
+
+        const territory = this.engine.calculateTerritory();
+        const opponent = color === BLACK ? WHITE : BLACK;
+
+        // AIのビハインド目数（相手スコア - 自分スコア）
+        const aiScore = color === BLACK ? territory.blackTotal : territory.whiteTotal;
+        const oppScore = opponent === BLACK ? territory.blackTotal : territory.whiteTotal;
+        const behindPoints = oppScore - aiScore;
+
+        // レベル別の匙加減（閾値）
+        // Lv.2 初級: 20目以上の大差
+        if (level === 2 && behindPoints >= 20) {
+            return true;
+        }
+
+        // Lv.3 中級: 15目以上の大差
+        if (level === 3 && behindPoints >= 15) {
+            return true;
+        }
+
+        // Lv.4 上級: 高段者のように13目以上の大差で潔く投了（九路盤の13目差は19路盤の50目差以上に相当）
+        if (level === 4 && behindPoints >= 13) {
+            return true;
+        }
+
+        return false;
     }
 
     // Lv.1 入門：ランダム＋基本捕獲

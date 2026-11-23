@@ -349,18 +349,14 @@ input:checked + .slider:before {
     letter-spacing: 1px;
 }
 
-/* メイン対局コンテンツ（横画面: 3カラム / 縦画面: 2x2+1 CSS Grid） */
+/* メイン対局コンテンツ（横画面: 3カラム / 縦画面: 2分割+中央縦） */
 .game-main-content {
     flex: 1;
-    display: grid;
-    grid-template-columns: 180px 1fr 180px;
-    grid-template-rows: auto 1fr;
-    grid-template-areas:
-        "white-card board black-card"
-        "white-card board controls";
+    display: flex;
+    flex-direction: row;
     align-items: center;
     justify-content: center;
-    padding: 10px 16px;
+    padding: 8px 16px;
     gap: 16px 20px;
     overflow: hidden;
     position: relative;
@@ -371,15 +367,15 @@ input:checked + .slider:before {
 }
 
 #card-white {
-    grid-area: white-card;
+    width: 170px;
     align-self: center;
-    width: 100%;
+    flex-shrink: 0;
 }
 
 #card-black {
-    grid-area: black-card;
-    align-self: end;
-    width: 100%;
+    width: 170px;
+    align-self: center;
+    flex-shrink: 0;
 }
 
 /* プレイヤー情報カード（白番・黒番） */
@@ -473,27 +469,28 @@ input:checked + .slider:before {
     transition: width 0.3s ease;
 }
 
-/* 碁盤中央エリア */
+/* 碁盤中央エリア（碁盤と操作ボタンを縦セットで配置） */
 .board-center-area {
-    grid-area: board;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     height: 100%;
-    width: 100%;
+    max-height: 100%;
     min-width: 0;
     min-height: 0;
     position: relative;
-    padding: 4px;
+    padding: 2px;
+    gap: 8px;
 }
 
 .igo-board-wrapper {
     position: relative;
-    /* 画面サイズに合わせて最大限大きく正方形で表示（最小300px〜最大680px） */
-    width: min(calc(100vh - 110px), calc(100vw - 440px), 680px);
-    height: min(calc(100vh - 110px), calc(100vw - 440px), 680px);
-    min-width: 300px;
-    min-height: 300px;
+    /* 縦方向は 100dvh から各バー高さを引いて、非全画面時でも100%画面内に収まるように計算 */
+    width: min(calc(100dvh - 145px), calc(100vw - 420px), 650px);
+    height: min(calc(100dvh - 145px), calc(100vw - 420px), 650px);
+    min-width: 280px;
+    min-height: 280px;
     max-width: 100%;
     max-height: 100%;
     aspect-ratio: 1 / 1;
@@ -740,15 +737,15 @@ input:checked + .slider:before {
     background-color: #6b7280;
 }
 
-/* 右側（または下部）操作パネル */
+/* 操作パネル（碁盤のすぐ直下に常時配置！幅は碁盤と同期） */
 .game-control-panel {
-    grid-area: controls;
-    align-self: start;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    width: min(calc(100dvh - 145px), calc(100vw - 420px), 650px);
+    max-width: 100%;
     gap: 8px;
-    width: 100%;
-    min-width: 140px;
+    justify-content: space-between;
+    align-items: center;
     flex-shrink: 0;
 }
 
@@ -953,11 +950,10 @@ input:checked + .slider:before {
     .game-main-content {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        grid-template-rows: auto 1fr auto;
+        grid-template-rows: auto 1fr;
         grid-template-areas:
             "white-card black-card"
-            "board      board"
-            "controls   controls";
+            "board-area board-area";
         align-items: center;
         justify-content: center;
         padding: 4px 8px;
@@ -1008,23 +1004,25 @@ input:checked + .slider:before {
     }
 
     .board-center-area {
-        grid-area: board;
+        grid-area: board-area;
         width: 100%;
         height: 100%;
         min-width: 0;
         min-height: 0;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
+        gap: 6px;
         padding: 0;
     }
 
-    /* 縦向き時に碁盤を画面限界まで最大化（タブレット縦なら最大740px、スマホ縦なら横幅97%） */
+    /* 縦向き時に碁盤を画面限界まで最大化しつつ、非全画面でも絶対にボタンが隠れない高さ計算 */
     .igo-board-wrapper {
-        width: min(97vw, calc(100vh - 160px), 740px);
-        height: min(97vw, calc(100vh - 160px), 740px);
-        min-width: 260px;
-        min-height: 260px;
+        width: min(97vw, calc(100dvh - 175px), 700px);
+        height: min(97vw, calc(100dvh - 175px), 700px);
+        min-width: 250px;
+        min-height: 250px;
     }
 
     .igo-board {
@@ -1037,21 +1035,19 @@ input:checked + .slider:before {
         font-size: clamp(0.7rem, 2vmin, 0.88rem);
     }
 
-    /* 操作ボタンを碁盤の直下に横一列でスッキリ配置（画面下に隠れない） */
+    /* 操作ボタンを碁盤の直下に配置（幅は碁盤と完全同期） */
     .game-control-panel {
-        grid-area: controls;
+        width: min(97vw, calc(100dvh - 175px), 700px);
         display: flex;
         flex-direction: row;
-        width: 100%;
         gap: 6px;
-        justify-content: center;
-        min-width: unset;
+        justify-content: space-between;
         align-self: center;
     }
 
     .control-btn {
         flex: 1;
-        padding: 10px 4px;
+        padding: 9px 4px;
         font-size: 0.82rem;
         border-radius: var(--radius-sm);
     }
