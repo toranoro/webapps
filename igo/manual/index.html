@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>九路盤・囲碁道場 オンラインマニュアル</title>
+    <link rel="stylesheet" href="manual.css?v=1.0.1">
+</head>
+<body>
+    <div class="manual-container">
+        <a href="../index.html" class="nav-back">← アプリに戻る</a>
+
+        <header class="manual-header">
+            <h1 class="manual-title">九路盤・囲碁道場</h1>
+            <p class="manual-lead">公式オンラインマニュアル＆囲碁入門ガイド</p>
+        </header>
+
+        <!-- 目次 -->
+        <nav class="toc-box">
+            <div class="toc-title">📖 目次</div>
+            <ul class="toc-list">
+                <li><a href="#sec-about">1. 本アプリの特長とコンセプト</a></li>
+                <li><a href="#sec-rules">2. 囲碁（九路盤）の基本ルール</a></li>
+                <li><a href="#sec-howtoplay">3. アプリの操作方法・対局の流れ</a></li>
+                <li><a href="#sec-support">4. 初心者サポート機能の使いこなし</a></li>
+                <li><a href="#sec-review">5. 終局・地合い計算と感想戦</a></li>
+                <li><a href="#sec-pwa">6. 全画面表示＆インストール（PC/iPad/Android）</a></li>
+                <li><a href="#sec-cache">7. キャッシュ・動作トラブル対応</a></li>
+            </ul>
+        </nav>
+
+        <!-- 1. 特長 -->
+        <section id="sec-about" class="manual-section">
+            <h2 class="section-title">1. 本アプリの特長とコンセプト</h2>
+            <p>
+                「九路盤・囲碁道場」は、初心者から上級者までが快適に対局を楽しめる、Webブラウザ対応の軽量・高機能な九路盤囲碁アプリケーションです。
+            </p>
+            <div class="rule-grid">
+                <div class="rule-card">
+                    <div class="rule-card-title">🌱 初心者に優しいサポート</div>
+                    <p>石が取られそうな時の「アタリ警告」、自殺手やコウなどの「着手禁止理由の通知」、AIによる「ヒント表示」、いつでも戻せる「待った」を完備。</p>
+                </div>
+                <div class="rule-card">
+                    <div class="rule-card-title">🏆 本格派も納得のAI</div>
+                    <p>入門向けのLv.1から、モンテカルロ木探索（MCTS）を搭載したLv.4上級AIまで4段階の強さを選択可能。60代の上級者知人との九路盤対局にも手応え十分です。</p>
+                </div>
+                <div class="rule-card">
+                    <div class="rule-card-title">📱 マルチデバイス・全画面対応</div>
+                    <p>PC（Chrome）、iPad（Safari）、Android（Chrome）の全てで誤タップ防止やピンチズーム抑止、全画面表示（PWA）に完全対応しています。</p>
+                </div>
+                <div class="rule-card">
+                    <div class="rule-card-title">🪵 美しい木目調＆リアルサウンド</div>
+                    <p>見やすい木目調の碁盤と、Web Audio APIによる硬質で心地よい石の打鍵音（外部ファイル不要で即時発音）を再現しています。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. ルール -->
+        <section id="sec-rules" class="manual-section">
+            <h2 class="section-title">2. 囲碁（九路盤）の基本ルール</h2>
+            <p>
+                囲碁は、黒と白が交互に碁盤の交点に石を打ち、相手の石を囲んで取ったり、自分の「陣地（地＝じ）」を多く囲い広げた方が勝ちとなる伝統ゲームです。九路盤は1局あたり数分〜10分程度で終局し、基本を学ぶのに最適です。
+            </p>
+
+            <div class="rule-grid">
+                <div class="rule-card">
+                    <div class="rule-card-title">1. 交互に交点へ打つ</div>
+                    <p>黒が先手、白が後手です。碁石はマス目の中ではなく、<strong>縦横の線が交わる「交点」</strong>に打ちます。一度置いた石は動かせません。</p>
+                </div>
+                <div class="rule-card">
+                    <div class="rule-card-title">2. 呼吸点と石の捕獲</div>
+                    <p>石の上下左右に隣接する空点を「呼吸点（ダメ）」と呼びます。相手の石の呼吸点を全て自分の石で囲むと、その石を取り上げて自分の「アゲハマ」にできます。</p>
+                </div>
+                <div class="rule-card">
+                    <div class="rule-card-title">3. アタリ（警告）</div>
+                    <p>あと1手で取られてしまう状態（呼吸点が残り1つ）を「アタリ」と呼びます。本アプリでは初心者のためにアタリの石が赤く光って知らせてくれます。</p>
+                </div>
+                <div class="rule-card">
+                    <div class="rule-card-title">4. 着手禁止点（自殺手の禁止）</div>
+                    <p>打った瞬間に自分の呼吸点がゼロになる場所には打てません。ただし、その手によって相手の石を取り上げられる場合は打つことができます。</p>
+                </div>
+                <div class="rule-card">
+                    <div class="rule-card-title">5. コウ（同形反復の禁止）</div>
+                    <p>1石を取り返し合って同じ盤面が無限に繰り返されるのを防ぐルールです。相手に取られた直後の1手では、同じ場所を取り返すことはできません（別の場所に1手打てば取り返せます）。</p>
+                </div>
+                <div class="rule-card">
+                    <div class="rule-card-title">6. パスと終局</div>
+                    <p>打つ場所がなくなった、または打つと損になると判断した時は「パス」ができます。<strong>双方が連続してパス</strong>をすると対局終了（終局）となり、勝敗の計算に入ります。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. 操作方法 -->
+        <section id="sec-howtoplay" class="manual-section">
+            <h2 class="section-title">3. アプリの操作方法・対局の流れ</h2>
+            
+            <h3 class="sub-title">対局の始め方（メニュー画面）</h3>
+            <ol>
+                <li><strong>対戦モード選択:</strong> 「人間 vs AI」または「人間 vs 人間（1台共有）」を選択します。</li>
+                <li><strong>AIの強さ:</strong> Lv.1 入門（ランダム＋即死回避）、Lv.2 初級（基本手筋）、Lv.3 中級（MCTS思考）、Lv.4 上級（本格MCTS）から選択。</li>
+                <li><strong>手番・ハンデ設定:</strong> あなたの手番（黒番/白番/ニギリ）と、置き石（互先コミ6.5目、2子局、3子局、4子局）を設定します。</li>
+                <li><strong>[ 対局開始 ]</strong> をタップすると対局盤面が表示されます。</li>
+            </ol>
+
+            <h3 class="sub-title">盤面での着手操作</h3>
+            <ul>
+                <li><strong>標準モード（1タップ着手）:</strong> 空いている交点をタップ/クリックすると、その場所に石が置かれます。</li>
+                <li><strong>誤タップ防止モード（設定でON時）:</strong> 1回目のタップで半透明の「ゴースト石」が仮表示され、同じ場所をもう一度タップするか「着手確定」ボタンを押すと確定します。スマホやタブレットで手元のずれを防ぎたい時におすすめです。</li>
+            </ul>
+
+            <h3 class="sub-title">対局中のコマンドボタン</h3>
+            <ul>
+                <li><strong>パス:</strong> 手番をスキップします。双方が連続パスすると終局します。</li>
+                <li><strong>待った:</strong> 直前の着手を戻します（対AI戦ではAIの着手と自分の着手を合わせて2手戻します）。</li>
+                <li><strong>💡 ヒント:</strong> AIが局面を読み、おすすめの好手を盤面上に緑のマーカーで示します。</li>
+                <li><strong>投了:</strong> 負けを認めてゲームを終了します。</li>
+            </ul>
+        </section>
+
+        <!-- 4. 初心者サポート -->
+        <section id="sec-support" class="manual-section">
+            <h2 class="section-title">4. 初心者サポート機能の使いこなし</h2>
+            <div class="callout">
+                <p>メニュー画面の設定カード「🔰 初心者サポート＆操作設定」から、いつでもON/OFFを個別に切り替えられます。</p>
+            </div>
+            <ul>
+                <li><strong>アタリ警告表示:</strong> 次に取られそうな石のグループに赤いオーラと「！」マークが点滅表示され、同時に警告音が鳴ります。見落としによる凡ミスを防止できます。</li>
+                <li><strong>着手禁止理由の通知:</strong> 自殺手やコウの地点をタップしてしまった際、「自殺手のため打てません」「コウのため同形反復できません」というトーストメッセージが画面上部に分かりやすく表示されます。</li>
+                <li><strong>地合い（優勢度）予測バー:</strong> 盤面上の黒石・白石・囲んだ領域をAIが瞬時に見積もり、画面上部のプレイヤー情報欄にリアルタイムの優勢度バーを表示します。黒が優勢なら黒色部分が広がり、白が優勢なら白色部分が広がります。</li>
+            </ul>
+        </section>
+
+        <!-- 5. 終局と感想戦 -->
+        <section id="sec-review" class="manual-section">
+            <h2 class="section-title">5. 終局・地合い計算と感想戦</h2>
+            <p>
+                双方が連続して「パス」をすると自動的に終局ダイアログが開きます。
+            </p>
+            <h3 class="sub-title">地合い（陣地）の自動計算</h3>
+            <ul>
+                <li>盤面上で、黒石だけで完全に囲まれた空点は<strong>黒地（黒い四角）</strong>、白石だけで囲まれた空点は<strong>白地（白い四角）</strong>としてハイライトされます。</li>
+                <li>どちらの陣地にも属さない中立点は<strong>ダメ（灰色の丸）</strong>として表示されます。</li>
+                <li>「地（囲んだ目数） ＋ 取った石（アゲハマ） ＋ コミ（後手への加算点6.5目）」を自動合算し、勝敗と目数差を正確に判定・表示します。</li>
+            </ul>
+
+            <h3 class="sub-title">感想戦（棋譜再生モード）</h3>
+            <p>
+                結果ダイアログの「盤面を見る」を押すと、終局時の地合いマップを確認できます。また、ダイアログ内の「初手」「1手前」「1手次」「終局」ボタンを使うことで、初手から終局までの手順を1手ずつ振り返る「感想戦」が可能です。
+            </p>
+        </section>
+
+        <!-- 6. PWA・全画面 -->
+        <section id="sec-pwa" class="manual-section">
+            <h2 class="section-title">6. 全画面表示＆インストール（PC/iPad/Android）</h2>
+            <p>
+                本アプリは、ブラウザのツールバーやアドレスバーに邪魔されず、アプリ同様の全画面で快適にプレイできるよう設計されています。
+            </p>
+
+            <div class="device-card-container">
+                <div class="device-card">
+                    <span class="device-badge badge-ios">iPad / iPhone Safari</span>
+                    <h4 style="color:#ffffff; margin-bottom:8px;">ホーム画面に追加して全画面化</h4>
+                    <ol>
+                        <li>Safariの下部（または上部）にある <strong>共有アイコン（四角から上矢印）</strong> をタップ。</li>
+                        <li>メニュー内の <strong>「ホーム画面に追加」</strong> を選択。</li>
+                        <li>右上の <strong>「追加」</strong> をタップ。</li>
+                    </ol>
+                    <p style="font-size:0.8rem; color:var(--text-muted); margin-top:6px;">
+                        ※ホーム画面に生成されたアイコンから起動すると、アドレスバーが消え完全な全画面アプリとして起動します。
+                    </p>
+                </div>
+
+                <div class="device-card">
+                    <span class="device-badge badge-android">Android Chrome</span>
+                    <h4 style="color:#ffffff; margin-bottom:8px;">PWAアプリインストール</h4>
+                    <ol>
+                        <li>メニュー画面下部の <strong>「📲 アプリをインストール」</strong> をタップ。</li>
+                        <li>または、ブラウザ右上の「︙（メニュー）」から <strong>「アプリをインストール」</strong> または <strong>「ホーム画面に追加」</strong> を選択。</li>
+                    </ol>
+                    <p style="font-size:0.8rem; color:var(--text-muted); margin-top:6px;">
+                        ※アプリ一覧に登録され、独立したウィンドウ・全画面で起動できます。
+                    </p>
+                </div>
+
+                <div class="device-card">
+                    <span class="device-badge badge-pc">PC Google Chrome</span>
+                    <h4 style="color:#ffffff; margin-bottom:8px;">全画面表示 ＆ デスクトップアプリ化</h4>
+                    <ul>
+                        <li><strong>全画面表示:</strong> タイトル画面や対局画面の <strong>「⛶ 全画面表示」</strong> ボタンをクリック（F11キーでも可能）。</li>
+                        <li><strong>アプリ化:</strong> URLバー右端の <strong>「パソコンにインストール」アイコン</strong> をクリックするとデスクトップアプリとして利用可能。</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="callout" style="margin-top:20px;">
+                <p><strong>誤操作防止仕様:</strong> 碁盤エリアでの不要なドラッグスクロールや、ダブルタップ拡大、ピンチイン・ピンチアウト操作はCSSおよびJavaScript制御により完全に抑制されており、ゲーム中に画面レイアウトが崩れる心配はありません。</p>
+            </div>
+        </section>
+
+        <!-- 7. キャッシュ -->
+        <section id="sec-cache" class="manual-section">
+            <h2 class="section-title">7. キャッシュ・動作トラブル対応</h2>
+            <p>
+                本アプリでは、最新の修正や機能改修が即座に反映されるよう、以下のキャッシュ無効化対策を実施しています：
+            </p>
+            <ul>
+                <li><strong>Network-First戦略:</strong> 常にサーバー・配信フォルダから最新ファイルを取得し、最新版がある場合はService Workerキャッシュを自動破棄して再同期します。</li>
+                <li><strong>No-Cacheメタタグ:</strong> ブラウザが古いファイルを過度にキャッシュしないようヘッダーを設定しています。</li>
+            </ul>
+            <div class="callout warning">
+                <p><strong>画面が更新されない場合の対処:</strong><br>
+                PC Chromeの場合：<code>Ctrl + F5</code>（または <code>Shift + F5</code>）でスーパーリロード。<br>
+                iPad Safariの場合：設定 > Safari > 履歴とWebサイトデータを消去、またはアプリタブを一度閉じて再読み込みしてください。</p>
+            </div>
+        </section>
+
+        <footer class="manual-footer">
+            <p>© 2026 九路盤・囲碁道場 プロジェクト. All rights reserved.</p>
+            <p style="margin-top:6px;"><a href="../index.html" class="nav-back">アプリ画面に戻る</a></p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <!-- キャッシュ無効化メタタグ -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
+    <!-- モバイル・タブレット表示最適化（勝手なズーム・画面崩れ防止） -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <!-- iOS Safari 全画面・PWA対応 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="囲碁道場">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+    <!-- Chrome PWA / テーマカラー -->
+    <meta name="theme-color" content="#171b21">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icons/icon-192.png">
+
+    <title>九路盤・囲碁道場</title>
+    <!-- キャッシュ対策のクエリパラメータ付きCSS -->
+    <link rel="stylesheet" href="css/style.css?v=1.0.1">
+</head>
+<body>
+    <div id="app">
+        <!-- 画面①：タイトル＆対局設定メニュー画面 -->
+        <section id="menu-screen" class="screen active">
+            <div class="menu-container">
+                <header class="menu-header">
+                    <h1 class="menu-title">九路盤・囲碁道場</h1>
+                    <p class="menu-subtitle">初心者から上級者までサクッと楽しめるWeb囲碁アプリ</p>
+                </header>
+
+                <!-- 設定カード1: 対戦モード -->
+                <div class="menu-card">
+                    <h2 class="menu-section-title">
+                        <span>⚔️</span> 対戦モード
+                    </h2>
+                    <div class="menu-grid-buttons" id="mode-selector">
+                        <button class="select-btn active" data-mode="ai">人間 vs AI</button>
+                        <button class="select-btn" data-mode="pvp">人間 vs 人間 (1台)</button>
+                    </div>
+                </div>
+
+                <!-- 設定カード2: AIの強さ -->
+                <div class="menu-card" id="ai-level-card">
+                    <h2 class="menu-section-title">
+                        <span>🤖</span> AIの強さ
+                    </h2>
+                    <div class="menu-grid-buttons" id="ai-level-selector">
+                        <button class="select-btn" data-level="1">Lv.1 入門</button>
+                        <button class="select-btn active" data-level="2">Lv.2 初級</button>
+                        <button class="select-btn" data-level="3">Lv.3 中級</button>
+                        <button class="select-btn" data-level="4">Lv.4 上級</button>
+                    </div>
+                </div>
+
+                <!-- 設定カード3: 手番＆ハンデ -->
+                <div class="menu-card">
+                    <h2 class="menu-section-title">
+                        <span>⚪⚫</span> 手番・置き石設定
+                    </h2>
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <div>
+                            <span style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:6px;">あなた（先手）の手番:</span>
+                            <div class="menu-grid-buttons" id="color-selector">
+                                <button class="select-btn active" data-color="black">黒番 (先手)</button>
+                                <button class="select-btn" data-color="white">白番 (後手・コミ付)</button>
+                                <button class="select-btn" data-color="random">ニギリ (ランダム)</button>
+                            </div>
+                        </div>
+                        <div>
+                            <span style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:6px;">ハンディキャップ（置き石）:</span>
+                            <div class="menu-grid-buttons" id="handicap-selector">
+                                <button class="select-btn active" data-handicap="0">互先 (コミ6.5目)</button>
+                                <button class="select-btn" data-handicap="2">2子局</button>
+                                <button class="select-btn" data-handicap="3">3子局</button>
+                                <button class="select-btn" data-handicap="4">4子局</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 設定カード4: 初心者サポート機能 -->
+                <div class="menu-card">
+                    <h2 class="menu-section-title">
+                        <span>🔰</span> 初心者サポート＆操作設定
+                    </h2>
+                    <div class="toggle-list">
+                        <div class="toggle-item">
+                            <div class="toggle-info">
+                                <span class="toggle-label">アタリ警告表示</span>
+                                <span class="toggle-desc">次に取られそうな石グループを赤枠・光で強調</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="toggle-atari" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-item">
+                            <div class="toggle-info">
+                                <span class="toggle-label">着手禁止理由の通知</span>
+                                <span class="toggle-desc">自殺手やコウなどの理由を分かりやすく表示</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="toggle-illegal" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-item">
+                            <div class="toggle-info">
+                                <span class="toggle-label">「待った」の許可</span>
+                                <span class="toggle-desc">対局中に着手を一手（AI戦は二手）戻せます</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="toggle-undo" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-item">
+                            <div class="toggle-info">
+                                <span class="toggle-label">地合い（優勢度）予測バー</span>
+                                <span class="toggle-desc">対局中の黒白の形勢目安をリアルタイム表示</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="toggle-advantage" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-item">
+                            <div class="toggle-info">
+                                <span class="toggle-label">誤タップ防止モード</span>
+                                <span class="toggle-desc">1タップ目で仮置き確認、2タップ目で確定</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="toggle-confirm">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-item">
+                            <div class="toggle-info">
+                                <span class="toggle-label">着手・効果音 (Web Audio)</span>
+                                <span class="toggle-desc">石を打つ爽快なサウンドを再生</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="toggle-sound" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 対局開始ボタン -->
+                <button id="btn-start-game" class="start-btn">対局開始</button>
+
+                <!-- サブ操作ボタン群 -->
+                <div class="menu-sub-actions">
+                    <button id="btn-open-manual" class="sub-btn">📖 オンラインマニュアル</button>
+                    <button id="btn-menu-fullscreen" class="sub-btn">⛶ 全画面表示</button>
+                    <button id="btn-pwa-install" class="sub-btn" style="display:none;">📲 アプリをインストール</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 画面②：対局画面 -->
+        <section id="game-screen" class="screen">
+            <!-- 上部バー -->
+            <header class="game-top-bar">
+                <div class="top-left-actions">
+                    <button id="btn-back-menu" class="icon-btn">← メニュー</button>
+                </div>
+                <div class="game-title-badge" id="game-mode-badge">9×9 対局中</div>
+                <div class="top-right-actions">
+                    <button id="btn-toggle-sound-game" class="icon-btn" title="サウンド切替">🔊</button>
+                    <button id="btn-game-manual" class="icon-btn" title="マニュアル">❓</button>
+                    <button id="btn-game-fullscreen" class="icon-btn" title="全画面表示">⛶</button>
+                </div>
+            </header>
+
+            <!-- メインエリア -->
+            <main class="game-main-content">
+                <!-- 白番プレイヤーカード -->
+                <div class="player-card" id="card-white">
+                    <div class="player-header">
+                        <div class="stone-badge white"></div>
+                        <div class="player-meta">
+                            <span class="player-name" id="name-white">白番 (AI)</span>
+                            <span class="player-turn-indicator" id="turn-indicator-white">待機中</span>
+                        </div>
+                    </div>
+                    <div class="captures-row">
+                        <span>取った石 (アゲハマ):</span>
+                        <strong id="captures-white">0</strong>
+                    </div>
+                    <div class="advantage-bar-container" id="adv-container" title="地合い形勢（黒/白）">
+                        <div class="advantage-bar-black" id="adv-bar-black"></div>
+                    </div>
+                </div>
+
+                <!-- 中央碁盤 -->
+                <div class="board-center-area">
+                    <div id="board-container" class="igo-board-wrapper">
+                        <!-- board-ui.js によりDOM構築 -->
+                    </div>
+                </div>
+
+                <!-- 黒番プレイヤーカード ＆ 操作パネル -->
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    <!-- 黒番カード -->
+                    <div class="player-card" id="card-black">
+                        <div class="player-header">
+                            <div class="stone-badge black"></div>
+                            <div class="player-meta">
+                                <span class="player-name" id="name-black">黒番 (あなた)</span>
+                                <span class="player-turn-indicator" id="turn-indicator-black">着手待ち</span>
+                            </div>
+                        </div>
+                        <div class="captures-row">
+                            <span>取った石 (アゲハマ):</span>
+                            <strong id="captures-black">0</strong>
+                        </div>
+                    </div>
+
+                    <!-- 操作パネル -->
+                    <div class="game-control-panel">
+                        <button id="btn-pass" class="control-btn warning">パス</button>
+                        <button id="btn-undo" class="control-btn">待った</button>
+                        <button id="btn-hint" class="control-btn">💡 ヒント</button>
+                        <button id="btn-resign" class="control-btn danger">投了</button>
+                        <button id="btn-confirm-move" class="control-btn primary" style="display:none;">着手確定</button>
+                    </div>
+                </div>
+            </main>
+
+            <!-- 下部ステータスバー -->
+            <footer class="game-bottom-bar">
+                <span id="status-message">黒番の手番です。</span>
+                <span id="move-counter" style="font-size:0.75rem; color:var(--text-muted);">0手目</span>
+            </footer>
+        </section>
+
+        <!-- 画面③：終局・地合い計算＆感想戦モーダル -->
+        <div id="result-modal" class="modal-overlay">
+            <div class="modal-content">
+                <h2 class="modal-title" id="result-title">終局・対局結果</h2>
+                
+                <div class="result-summary-box">
+                    <div class="result-row">
+                        <span>黒の地: <strong id="res-black-territory">0</strong> 目</span>
+                        <span>取った石: <strong id="res-black-captures">0</strong> 個</span>
+                    </div>
+                    <div class="result-row">
+                        <span>白の地: <strong id="res-white-territory">0</strong> 目</span>
+                        <span>取った石: <strong id="res-white-captures">0</strong> 個</span>
+                    </div>
+                    <div class="result-row">
+                        <span>白のコミ:</span>
+                        <strong id="res-komi">6.5 目</strong>
+                    </div>
+                    <div class="result-row total">
+                        <span id="res-winner-label">勝者:</span>
+                        <span id="res-winner-value">-</span>
+                    </div>
+                </div>
+
+                <p style="font-size:0.8rem; color:var(--text-muted); text-align:center;">
+                    ※盤面上で黒地（黒枠）、白地（白枠）、ダメ（灰点）をハイライト表示中
+                </p>
+
+                <!-- 感想戦・棋譜再生コントローラー -->
+                <div style="border-top:1px solid #374151; padding-top:12px;">
+                    <div style="font-size:0.85rem; font-weight:700; color:var(--accent-gold); margin-bottom:6px; text-align:center;">
+                        📜 感想戦（棋譜再生）
+                    </div>
+                    <div class="review-controls">
+                        <button id="btn-review-first" class="review-btn">|◀ 初手</button>
+                        <button id="btn-review-prev" class="review-btn">◀ 1手前</button>
+                        <span id="review-step-label" style="font-size:0.8rem; display:flex; align-items:center; min-width:60px; justify-content:center;">終局</span>
+                        <button id="btn-review-next" class="review-btn">1手次 ▶</button>
+                        <button id="btn-review-last" class="review-btn">終局 ▶|</button>
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:10px; margin-top:8px;">
+                    <button id="btn-modal-rematch" class="control-btn primary" style="flex:1;">もう一度打つ</button>
+                    <button id="btn-modal-close" class="control-btn" style="flex:1;">盤面を見る</button>
+                    <button id="btn-modal-menu" class="control-btn" style="flex:1;">メニューへ</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- iOS Safari ホーム画面追加ガイドモーダル -->
+        <div id="ios-guide-modal" class="modal-overlay">
+            <div class="modal-content">
+                <h3 class="modal-title">📲 ホーム画面に追加して全画面で楽しむ</h3>
+                <p style="font-size:0.88rem; line-height:1.6; color:var(--text-secondary);">
+                    iPadやiPhoneのSafariで全画面・アプリのように起動するには：
+                </p>
+                <ol style="font-size:0.85rem; line-height:1.8; color:var(--text-primary); padding-left:20px;">
+                    <li>Safari下部（または上部）の <strong>共有ボタン (四角から矢印)</strong> をタップ</li>
+                    <li>メニューから <strong>「ホーム画面に追加」</strong> を選択</li>
+                    <li>右上の <strong>「追加」</strong> をタップ</li>
+                </ol>
+                <p style="font-size:0.8rem; color:var(--text-muted); margin-top:6px;">
+                    ホーム画面から起動すると、アドレスバーのない完全な全画面表示で快適にプレイできます。
+                </p>
+                <button id="btn-close-ios-guide" class="control-btn primary" style="width:100%; margin-top:10px;">とじる</button>
+            </div>
+        </div>
+
+        <!-- トースト通知コンテナ -->
+        <div id="toast-container" class="toast-container"></div>
+    </div>
+
+    <!-- キャッシュ対策のクエリパラメータ付きスクリプト -->
+    <script type="module" src="js/main.js?v=1.0.1"></script>
+</body>
+</html>
