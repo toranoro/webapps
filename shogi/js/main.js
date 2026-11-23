@@ -5,7 +5,7 @@
 (function () {
   'use strict';
   var E = window.ShogiEngine, AI = window.ShogiAI, UI = window.BoardUI;
-  var APP_VERSION = '0.7.2';
+  var APP_VERSION = '0.8.0';
   var STORAGE_KEY = 'shogi-dojo-config-v1';
 
   function $(id) { return document.getElementById(id); }
@@ -1061,6 +1061,78 @@
       });
     });
     syncFullscreenBtn();
+
+    var qrBtn = $('btn-show-qr');
+    if (qrBtn) qrBtn.addEventListener('click', openQrModal);
+    var closeQrBtn = $('btn-close-qr');
+    if (closeQrBtn) closeQrBtn.addEventListener('click', closeQrModal);
+    var copyBtn = $('btn-copy-url');
+    if (copyBtn) copyBtn.addEventListener('click', copyQrUrl);
+    var qrModal = $('qr-modal');
+    if (qrModal) {
+      qrModal.addEventListener('click', function (e) {
+        if (e.target === qrModal) closeQrModal();
+      });
+    }
+  }
+
+  /* =====================================================
+   * 8. QRコード共有モーダル
+   * ===================================================== */
+  function openQrModal() {
+    var modal = $('qr-modal');
+    if (!modal) return;
+    var rawUrl = window.location.href.split('#')[0];
+    var input = $('qr-url-text');
+    if (input) input.value = rawUrl;
+
+    var container = $('qr-code-container');
+    if (container && window.QRCode) {
+      try {
+        var svgHtml = QRCode.generateSVG(rawUrl, { size: 220, margin: 2, colorDark: '#2d1808', colorLight: '#ffffff' });
+        container.innerHTML = svgHtml;
+      } catch (e) {
+        container.innerHTML = '<p style="color:red">QRコード生成エラー</p>';
+      }
+    }
+    modal.hidden = false;
+  }
+
+  function closeQrModal() {
+    var modal = $('qr-modal');
+    if (modal) modal.hidden = true;
+  }
+
+  function copyQrUrl() {
+    var input = $('qr-url-text');
+    var btn = $('btn-copy-url');
+    if (!input) return;
+    var text = input.value;
+
+    function onCopied() {
+      if (!btn) return;
+      var orig = btn.textContent;
+      btn.textContent = '完了！';
+      btn.style.background = '#3ddc6f';
+      btn.style.color = '#fff';
+      setTimeout(function () {
+        btn.textContent = orig;
+        btn.style.background = '';
+        btn.style.color = '';
+      }, 1800);
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(onCopied).catch(function () {
+        input.select();
+        document.execCommand('copy');
+        onCopied();
+      });
+    } else {
+      input.select();
+      document.execCommand('copy');
+      onCopied();
+    }
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

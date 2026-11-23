@@ -33,7 +33,15 @@
   <section id="menu-screen" class="screen active">
     <div class="menu-scroll scrollable">
       <div class="menu-card">
-        <h1 class="title"><span class="title-mark">☗</span> 中村将棋倶楽部</h1>
+        <div class="title-header">
+          <h1 class="title"><span class="title-mark">☗</span> 中村将棋倶楽部</h1>
+          <button type="button" id="btn-show-qr" class="btn-qr-badge" title="アプリの共有・配布用QRコードを表示" aria-label="共有QRコードを表示">
+            <svg class="qr-svg-icon" viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+              <path d="M2 2h8v8H2V2zm2 2v4h4V4H4zm10-2h8v8h-8V2zm2 2v4h4V4h-4zM2 14h8v8H2v-8zm2 2v4h4v-4H4zm14-2h4v3h-4v-3zm0 5h2v3h-2v-3zm-4-5h2v5h-2v-5zm0 6h4v1h-4v-1zm-2-6h1v8h-1v-8zm1-2h4v1h-4v-1zm4-3h1v2h-1V9zm-2 0h1v1h-1V9z"/>
+            </svg>
+            <span>共有QR</span>
+          </button>
+        </div>
         <p class="subtitle">対局の設定を選んで「対局開始」を押してください</p>
 
         <fieldset class="group">
@@ -142,11 +150,27 @@
       <div class="modal-btns" id="modal-btns"></div>
     </div>
   </div>
+
+  <!-- ===================== QRコード配布モーダル ===================== -->
+  <div id="qr-modal" class="modal" hidden>
+    <div class="modal-box qr-modal-box">
+      <div class="modal-title">📱 アプリ配布・共有</div>
+      <div class="qr-preview-wrap" id="qr-code-container"></div>
+      <p class="qr-desc">スマホやタブレットのカメラで読み取ると、すぐに「中村将棋倶楽部」を開けます。</p>
+      <div class="qr-url-box">
+        <input type="text" id="qr-url-text" class="qr-url-input" readonly>
+        <button type="button" id="btn-copy-url" class="btn btn-copy">コピー</button>
+      </div>
+      <div class="modal-btns" style="margin-top:14px">
+        <button type="button" id="btn-close-qr" class="btn-primary" style="width:100%">閉じる</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
 (function () {
-  var list = ['js/sound.js', 'js/game-engine.js', 'js/ai-worker.js', 'js/board-ui.js', 'js/main.js'];
+  var list = ['js/qrcode.js', 'js/sound.js', 'js/game-engine.js', 'js/ai-worker.js', 'js/board-ui.js', 'js/main.js'];
   list.forEach(function (src) {
     document.write('<script src="' + src + '?_=' + window.__BUILD + '"><\/script>');
   });
