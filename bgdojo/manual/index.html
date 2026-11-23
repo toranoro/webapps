@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>バックギャモン道場 - オンラインマニュアル</title>
+  <style>
+    :root {
+      --bg: #1a1e24;
+      --card-bg: #222933;
+      --accent-gold: #f4c430;
+      --accent-green: #2ecc71;
+      --text-main: #f0f0f0;
+      --text-sub: #a0aab5;
+      --border: #354252;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background: var(--bg);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.7;
+      padding: 24px 16px;
+    }
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 32px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid var(--border);
+    }
+    h1 {
+      color: var(--accent-gold);
+      font-size: 2rem;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      color: var(--text-sub);
+      font-size: 1rem;
+    }
+    .nav-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+    .nav-tab-btn {
+      background: #2a3442;
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    .nav-tab-btn:hover {
+      background: #394759;
+      border-color: var(--accent-gold);
+    }
+    .section-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+    h2 {
+      color: var(--accent-gold);
+      font-size: 1.4rem;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    h3 {
+      color: #63b3ed;
+      font-size: 1.15rem;
+      margin: 18px 0 8px 0;
+    }
+    p {
+      margin-bottom: 12px;
+      color: #d1d5db;
+    }
+    ul, ol {
+      padding-left: 24px;
+      margin-bottom: 16px;
+    }
+    li {
+      margin-bottom: 8px;
+    }
+    .highlight-box {
+      background: rgba(244, 196, 48, 0.1);
+      border-left: 4px solid var(--accent-gold);
+      padding: 12px 16px;
+      border-radius: 4px;
+      margin: 16px 0;
+      font-size: 0.95rem;
+    }
+    .rule-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+    }
+    .rule-table th, .rule-table td {
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      text-align: left;
+    }
+    .rule-table th {
+      background: #1b2028;
+      color: var(--accent-gold);
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+    .badge-gold { background: var(--accent-gold); color: #1a1e24; }
+    .badge-green { background: var(--accent-green); color: #fff; }
+    .back-btn {
+      display: inline-block;
+      margin-top: 20px;
+      background: linear-gradient(135deg, #f39c12 0%, #d35400 100%);
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 700;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎲 バックギャモン道場 公式マニュアル</h1>
+      <p class="subtitle">初心者から上級者まで楽しめる本格バックギャモン解説書</p>
+    </header>
+
+    <div class="nav-tabs">
+      <a href="#about" class="nav-tab-btn">基本概要</a>
+      <a href="#rules" class="nav-tab-btn">ゲームルール</a>
+      <a href="#controls" class="nav-tab-btn">操作方法</a>
+      <a href="#cube" class="nav-tab-btn">ダブリングキューブ</a>
+      <a href="#assist" class="nav-tab-btn">アシスト・AI機能</a>
+      <a href="#device" class="nav-tab-btn">端末別・PWA案内</a>
+    </div>
+
+    <!-- 1. 基本概要 -->
+    <section id="about" class="section-card">
+      <h2>1. バックギャモンとは</h2>
+      <p>
+        バックギャモンは、およそ5000年の歴史を持つ世界最古のボードゲームの1つです。
+        サイコロを振って自分の15枚の駒（チェッカー）を進め、相手よりも早くすべての駒を盤面からゴール（ベアオフ）させたプレイヤーが勝利します。
+      </p>
+      <p>
+        運（サイコロの出目）と戦略（駒の配置・リスク管理・確率計算）が絶妙に融合した、極めて奥深い頭脳スポーツです。
+      </p>
+    </section>
+
+    <!-- 2. ルール -->
+    <section id="rules" class="section-card">
+      <h2>2. ゲームルール解説</h2>
+      
+      <h3>盤面の構成と進行方向</h3>
+      <ul>
+        <li>盤面には <strong>1番〜24番</strong> までの24個の三角形（ポイント）があります。</li>
+        <li><strong>白（あなた）:</strong> 24番から1番方向に向かって駒を進めます（1〜6番が白のインナーボード）。</li>
+        <li><strong>黒（相手/AI）:</strong> 1番から24番方向に向かって駒を進めます（19〜24番が黒のインナーボード）。</li>
+      </ul>
+
+      <h3>駒の動かし方と制限</h3>
+      <ul>
+        <li><strong>ダイスロール:</strong> 自分のターンに2個のサイコロを振ります。それぞれの目に応じて駒を前進させます。</li>
+        <li><strong>ゾロ目:</strong> サイコロが同じ目（例: 4-4）の場合、その目を <strong>4回</strong> 動かすことができます！</li>
+        <li><strong>ブロックポイント:</strong> 相手の駒が <strong>2枚以上</strong> あるポイントには進むことができません。</li>
+        <li><strong>ブロットとヒット:</strong> 相手の駒が <strong>1枚だけ</strong> 置かれているポイント（ブロット）に自分の駒を進めると、相手の駒を「ヒット」して中央の「バー」へ弾き飛ばせます。</li>
+        <li><strong>バーからの復帰（最優先）:</strong> バーに自分の駒がある間は、他の駒を一切動かせません。まずバーから相手のインナーボードに出目を使って復帰させる必要があります。</li>
+        <li><strong>最大出目優先原則:</strong> 2つの出目のうち片方しか使えない場合、必ず <strong>大きい方の目</strong> を使わなければなりません。</li>
+      </ul>
+
+      <h3>ベアオフ（ゴール）の条件</h3>
+      <div class="highlight-box">
+        自分の <strong>15枚すべての駒がインナーボード（1〜6番ポイント）</strong> に集まったとき、初めて駒を盤外へゴール（ベアオフ）させることができます。
+      </div>
+      <ul>
+        <li>出目と一致するポイントからベアオフできます（例: 3が出たら3番ポイントの駒をゴール）。</li>
+        <li>出目より手前に自分の駒が1枚もない場合、残っている最も遠いポイントからベアオフ可能です。</li>
+      </ul>
+
+      <h3>勝利判定（3種類）</h3>
+      <table class="rule-table">
+        <thead>
+          <tr>
+            <th>勝利種別</th>
+            <th>条件</th>
+            <th>基本獲得点</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>シングル勝ち</strong></td>
+            <td>相手がすでに1枚以上ベアオフしている状態で先に全駒ゴール</td>
+            <td>1 点</td>
+          </tr>
+          <tr>
+            <td><strong>ギャモン勝ち</strong></td>
+            <td>相手が <strong>1枚もベアオフしていない</strong> 状態で全駒ゴール</td>
+            <td>2 点</td>
+          </tr>
+          <tr>
+            <td><strong>バックギャモン勝ち</strong></td>
+            <td>相手が1枚もベアオフしておらず、かつ <strong>バーまたは勝者のインナー</strong> に相手駒が残っている状態で全駒ゴール</td>
+            <td>3 点</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 3. 操作方法 -->
+    <section id="controls" class="section-card">
+      <h2>3. アプリの操作方法</h2>
+      <ol>
+        <li><strong>ダイスを振る:</strong> 画面右（または下部）の <code>[ 🎲 ダイスを振る ]</code> ボタンを押します。</li>
+        <li><strong>駒の移動:</strong>
+          <ul>
+            <li>動かせる駒が金色にハイライトされます。</li>
+            <li>駒をタップ（クリック）すると、移動可能な行き先ポイントが緑色に光ります。</li>
+            <li>行き先のポイントをタップすると駒が移動します（※行き先が1箇所しかない場合は、駒をタップするだけで自動でスマート移動します）。</li>
+          </ul>
+        </li>
+        <li><strong>1手戻す（Undo）:</strong> 出目を動かした後でも、<code>[ ↩ 1手戻す ]</code> ボタンを押せばターン内の駒移動を何度でもやり直せます。</li>
+        <li><strong>ターン確定:</strong> すべての出目を動かし終えたら <code>[ ✓ ターン確定 ]</code> ボタンを押して相手に手番を渡します。</li>
+      </ol>
+    </section>
+
+    <!-- 4. ダブリングキューブ -->
+    <section id="cube" class="section-card">
+      <h2>4. ダブリングキューブとクロフォードルール</h2>
+      <p>
+        盤面中央にある「ダブリングキューブ」は、そのゲームの勝敗ポイントを倍（2, 4, 8, 16...）に吊り上げる駆け引きの道具です。
+      </p>
+      <ul>
+        <li><strong>ダブル提案:</strong> 自分が有利だと判断したとき、ダイスを振る前に相手にダブルを提案できます。</li>
+        <li><strong>テイク (受託):</strong> 相手の提案を受けてゲームを倍率2倍で続行します。キューブの所有権は受託した側に移ります。</li>
+        <li><strong>ドロップ (辞退):</strong> 勝ち目がないと判断した場合、即座に1点を相手に与えて投了できます。</li>
+        <li><strong>クロフォードルール:</strong> マッチ戦において、どちらかのプレイヤーがあと1点でマッチ勝利となるスコア（例: 5ptマッチで4点）に達した直後の次の1局のみ、ダブリングキューブの使用が禁止されます。</li>
+      </ul>
+    </section>
+
+    <!-- 5. アシスト機能 -->
+    <section id="assist" class="section-card">
+      <h2>5. アシスト＆AIコーチ機能</h2>
+      <ul>
+        <li><strong>ピップカウント表示:</strong> ゴールまでの残り歩数をリアルタイム表示。形勢判断（レースリード）に役立ちます。</li>
+        <li><strong>合法手ガイド:</strong> ルール上動かせる駒と行き先が一目でわかります。</li>
+        <li><strong>ヒント機能:</strong> <code>[ 💡 ヒント ]</code> ボタンを押すと、AIが盤面を瞬時に評価し、おすすめの手（ベスト3）と解説を表示します。</li>
+        <li><strong>悪手警告:</strong> 相手にヒットされやすい危険なブロットを晒してしまうような手を確定しようとすると、確認メッセージで注意を促します。</li>
+      </ul>
+    </section>
+
+    <!-- 6. 端末別案内 & PWA -->
+    <section id="device" class="section-card">
+      <h2>6. 端末別・快適な遊び方 (PC / iPad / Android)</h2>
+      
+      <h3>画面の向き（縦向き・横向き両対応）</h3>
+      <p>
+        iPadやPCでは <strong>横向き（Landscape）</strong> にすると、本物のボードのように左右ワイドな大迫力画面で楽しめます。<br>
+        スマートフォンや片手持ちのタブレットでは <strong>縦向き（Portrait）</strong> にすると、盤面と操作ボタンが上下に最適配置され、スクロール不要で快適にプレイできます。
+      </p>
+
+      <h3>全画面表示 & アプリのインストール (PWA)</h3>
+      <ul>
+        <li><strong>PC (Google Chrome):</strong> ナビゲーションバーの <code>[ 📲 アプリ追加 ]</code> またはアドレスバー右側のインストールアイコンから、デスクトップアプリとしてインストールできます。全画面ボタンでブラウザ枠なしの全画面プレイも可能です。</li>
+        <li><strong>Android (Google Chrome):</strong> <code>[ 📲 アプリ追加 ]</code> ボタン、またはブラウザメニューの「ホーム画面に追加」を選択すると、ネイティブアプリ同様に全画面で起動できます。</li>
+        <li><strong>iPad (Safari):</strong> 共有ボタン（四角から矢印が出ているアイコン）を押し、<strong>「ホーム画面に追加」</strong> を選択してください。ホーム画面のアイコンから起動すると、Safariのアドレスバーが消えて完全全画面のスタンドアロンモードで動作します！</li>
+      </ul>
+
+      <h3>画面の崩れ防止対策</h3>
+      <p>
+        本アプリは誤操作によるピンチズーム、不要なスクロール、テキスト選択を完全に防止するプロテクションを搭載しています。白熱した対局中でも盤面レイアウトが崩れる心配はありません。
+      </p>
+    </section>
+
+    <div style="text-align: center; margin-top: 30px;">
+      <a href="../index.html" class="back-btn">🎲 バックギャモン道場をプレイする</a>
+    </div>
+  </div>
+</body>
+</html>

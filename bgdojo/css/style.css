@@ -1,0 +1,972 @@
+/* ==========================================================================
+   バックギャモン道場 (bgdojo) - メインスタイルシート
+   - 高視認性デザイン (60代の知人にも見やすいコントラストと立体感)
+   - 縦向き・横向き (Portrait / Landscape) レスポンシブ対応
+   - 意図しないスクロール・ピンチズーム・選択の完全防止
+   ========================================================================== */
+
+:root {
+  --bg-color: #1a1e24;
+  --board-wood: #2c1a0e;
+  --board-felt: #1a3c2b; /* 深いエメラルドグリーンのフェルト地 */
+  --board-felt-border: #4a2f1b;
+  --point-light: #e6c89c; /* アイボリーウッド */
+  --point-dark: #8b3a2b;  /* テラコッタレッド */
+  --bar-color: #3d2414;
+  
+  --checker-white: #f5f0e6;
+  --checker-white-border: #d4c5a9;
+  --checker-white-glow: rgba(255, 255, 255, 0.8);
+
+  --checker-black: #222225;
+  --checker-black-border: #44444a;
+  --checker-black-glow: rgba(80, 80, 100, 0.7);
+
+  --accent-gold: #f4c430;
+  --accent-green: #2ecc71;
+  --accent-blue: #3498db;
+  --danger-red: #e74c3c;
+
+  --text-main: #f0f0f0;
+  --text-sub: #a0aab5;
+
+  --font-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* 画面全体のスクロール・ズーム完全抑止 */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  position: fixed;
+  top: 0;
+  left: 0;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  font-family: var(--font-base);
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
+/* アプリケーション外枠 */
+#app {
+  width: 100vw;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ==========================================================================
+   共通UI・ヘッダーバー
+   ========================================================================== */
+.top-nav {
+  height: 48px;
+  background: #111418;
+  border-bottom: 1px solid #2d3540;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  flex-shrink: 0;
+  z-index: 100;
+}
+
+.brand-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-btn {
+  background: #232a34;
+  border: 1px solid #3d4857;
+  color: var(--text-main);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.icon-btn:hover, .icon-btn:active {
+  background: #323d4b;
+  border-color: var(--accent-gold);
+}
+
+/* ==========================================================================
+   画面切り替え (SPA)
+   ========================================================================== */
+.screen {
+  position: absolute;
+  top: 48px;
+  left: 0;
+  width: 100%;
+  height: calc(100dvh - 48px);
+  display: none;
+  overflow: hidden;
+}
+
+.screen.active {
+  display: flex;
+}
+
+/* ==========================================================================
+   画面①：対局設定メニュー画面 (#menu-screen)
+   ========================================================================== */
+#menu-screen {
+  justify-content: center;
+  align-items: center;
+  background: radial-gradient(circle at center, #242c38 0%, #12161c 100%);
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.menu-card {
+  background: rgba(22, 28, 36, 0.95);
+  border: 1px solid #3a4759;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 580px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.menu-title-group {
+  text-align: center;
+  border-bottom: 1px solid #2d3748;
+  padding-bottom: 12px;
+}
+
+.menu-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--accent-gold);
+  letter-spacing: 1px;
+}
+
+.menu-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-sub);
+  margin-top: 4px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--accent-gold);
+}
+
+.btn-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-option {
+  flex: 1 1 auto;
+  min-width: 80px;
+  padding: 10px 14px;
+  background: #1e2631;
+  border: 1px solid #3a4759;
+  border-radius: 8px;
+  color: var(--text-main);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.btn-option.selected {
+  background: #2a5298;
+  border-color: #4a90e2;
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 0 12px rgba(74, 144, 226, 0.4);
+}
+
+.switch-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.switch-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.switch-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent-gold);
+  cursor: pointer;
+}
+
+.start-btn {
+  background: linear-gradient(135deg, #f39c12 0%, #d35400 100%);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(211, 84, 0, 0.4);
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+
+.start-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(211, 84, 0, 0.6);
+}
+
+/* ==========================================================================
+   画面②：対局画面 (#game-screen)
+   横画面 (Landscape) と 縦画面 (Portrait) の自動レイアウト
+   ========================================================================== */
+#game-screen {
+  flex-direction: row;
+  background: #14181f;
+  overflow: hidden;
+}
+
+/* メイン対局エリア (盤面＋上部ステータス) */
+.game-main-content {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 8px;
+  min-width: 0;
+}
+
+/* 上部情報バー */
+.game-status-bar {
+  height: 44px;
+  background: #1c222c;
+  border: 1px solid #2d3848;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  margin-bottom: 6px;
+  flex-shrink: 0;
+}
+
+.match-score-badge {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+}
+
+.pip-counts-display {
+  display: flex;
+  gap: 16px;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.pip-player-white {
+  color: #f5f0e6;
+}
+
+.pip-player-black {
+  color: #a0aab5;
+}
+
+.game-message-banner {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--accent-green);
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  max-width: 40%;
+}
+
+/* 盤面外枠 (Board Frame) */
+.board-container-wrapper {
+  flex: 1 1 auto;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.board-frame {
+  width: 100%;
+  height: 100%;
+  max-width: 1100px;
+  background: var(--board-wood);
+  border: 8px solid var(--board-felt-border);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), inset 0 0 15px rgba(0, 0, 0, 0.8);
+  display: grid;
+  grid-template-columns: 1fr 54px; /* メイン盤面 + 右端ベアオフトレイ */
+  grid-template-rows: 1fr 64px 1fr; /* 上段ポイント + 中央バー/ダイス + 下段ポイント */
+  position: relative;
+  touch-action: none;
+}
+
+/* ポイントの行 (Top & Bottom) */
+.points-row {
+  display: grid;
+  grid-template-columns: 6fr 36px 6fr; /* アウター6ポイント + バー幅 + インナー6ポイント */
+  background: var(--board-felt);
+  position: relative;
+  overflow: hidden;
+}
+
+.quadrant {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  height: 100%;
+  position: relative;
+}
+
+.center-bar-slot {
+  background: var(--bar-color);
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.9);
+}
+
+/* ポイント三角形 */
+.board-point {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  overflow: visible;
+}
+
+/* 三角形の形状 (CSS Clip-path) */
+.board-point.top .triangle-graphic {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 82%;
+  clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
+  z-index: 1;
+}
+
+.board-point.bottom .triangle-graphic {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 82%;
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+  z-index: 1;
+}
+
+.board-point.light .triangle-graphic {
+  background: linear-gradient(to bottom, #d4b88a 0%, #b89a6a 100%);
+}
+
+.board-point.dark .triangle-graphic {
+  background: linear-gradient(to bottom, #7d2e20 0%, #5a1d12 100%);
+}
+
+.board-point.bottom.light .triangle-graphic {
+  background: linear-gradient(to top, #d4b88a 0%, #b89a6a 100%);
+}
+
+.board-point.bottom.dark .triangle-graphic {
+  background: linear-gradient(to top, #7d2e20 0%, #5a1d12 100%);
+}
+
+/* ポイント番号 */
+.point-number {
+  position: absolute;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.55);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.board-point.top .point-number {
+  top: 2px;
+}
+
+.board-point.bottom .point-number {
+  bottom: 2px;
+}
+
+/* ハイライト表示 */
+.board-point.movable-point .triangle-graphic {
+  filter: drop-shadow(0 0 6px var(--accent-gold));
+}
+
+.board-point.selected-point .triangle-graphic {
+  filter: drop-shadow(0 0 10px #f1c40f) brightness(1.2);
+}
+
+.board-point.destination-point {
+  background: rgba(46, 204, 113, 0.35);
+  animation: pulse-dest 1.5s infinite;
+}
+
+@keyframes pulse-dest {
+  0% { box-shadow: inset 0 0 10px rgba(46, 204, 113, 0.5); }
+  50% { box-shadow: inset 0 0 20px rgba(46, 204, 113, 0.9); }
+  100% { box-shadow: inset 0 0 10px rgba(46, 204, 113, 0.5); }
+}
+
+/* 駒スタック (Checkers Stack) */
+.checkers-stack {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.board-point.top .checkers-stack {
+  justify-content: flex-start;
+  padding-top: 6px;
+}
+
+.board-point.bottom .checkers-stack {
+  justify-content: flex-end;
+  padding-bottom: 6px;
+}
+
+/* 駒のデザイン (Checker) */
+.checker {
+  width: 82%;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  position: relative;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5), inset 0 2px 3px rgba(255, 255, 255, 0.4);
+  margin-top: -14%;
+  pointer-events: auto;
+  transition: transform 0.15s ease;
+}
+
+.board-point.top .checker:first-child,
+.board-point.bottom .checker:first-child {
+  margin-top: 0;
+}
+
+.checker-white {
+  background: radial-gradient(circle at 35% 35%, #ffffff 0%, #e6dccd 65%, #c8baa4 100%);
+  border: 2px solid var(--checker-white-border);
+}
+
+.checker-black {
+  background: radial-gradient(circle at 35% 35%, #4a4d52 0%, #1f2124 70%, #0d0e10 100%);
+  border: 2px solid var(--checker-black-border);
+}
+
+/* 動かせる駒・選択中の駒のオーラ */
+.checker.can-move {
+  cursor: pointer;
+  box-shadow: 0 0 10px 2px var(--accent-gold), 0 4px 6px rgba(0, 0, 0, 0.5);
+  animation: bounce-hint 1.8s infinite;
+}
+
+.checker.selected {
+  box-shadow: 0 0 14px 4px #00e5ff, 0 4px 6px rgba(0, 0, 0, 0.5);
+  transform: scale(1.08);
+}
+
+@keyframes bounce-hint {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+/* 6枚以上の数字バッジ */
+.checker-badge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(244, 196, 48, 0.95);
+  color: #1a1a1a;
+  font-weight: 800;
+  font-size: 0.8rem;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+/* 中央バー領域 (Center Divider) */
+.board-center-divider {
+  background: var(--bar-color);
+  display: grid;
+  grid-template-columns: 6fr 36px 6fr;
+  align-items: center;
+  position: relative;
+  z-index: 10;
+  border-top: 2px solid var(--board-wood);
+  border-bottom: 2px solid var(--board-wood);
+}
+
+.bar-area {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+  height: 100%;
+}
+
+.bar-player-slot {
+  width: 32px;
+  min-height: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+}
+
+.bar-player-slot.movable-bar {
+  outline: 2px solid var(--accent-gold);
+  border-radius: 4px;
+}
+
+.bar-count-label {
+  font-size: 0.65rem;
+  color: var(--accent-gold);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ダブリングキューブ (Cube Slot) */
+.cube-slot {
+  width: 32px;
+  height: 32px;
+  background: #fdf6e2;
+  border: 2px solid #8d734a;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+  user-select: none;
+}
+
+.cube-text {
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #2b1f13;
+}
+
+/* ダイス表示エリア */
+.dice-arena {
+  grid-column: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+}
+
+.dice-container {
+  display: flex;
+  gap: 12px;
+}
+
+/* サイコロ (Dice) */
+.bg-die {
+  width: 44px;
+  height: 44px;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.8);
+  border: 1px solid #ccc;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  padding: 5px;
+  position: relative;
+  transition: transform 0.2s;
+}
+
+.die-player-black {
+  background: #1e242b;
+  border-color: #3b4654;
+}
+
+.die-player-black .die-dot {
+  background: #ffffff;
+}
+
+.bg-die.die-used {
+  opacity: 0.35;
+  filter: grayscale(80%);
+  transform: scale(0.92);
+}
+
+.die-dot {
+  width: 7px;
+  height: 7px;
+  background: #d63031;
+  border-radius: 50%;
+  margin: auto;
+}
+
+.dot-top-left { grid-column: 1; grid-row: 1; }
+.dot-top-right { grid-column: 3; grid-row: 1; }
+.dot-middle-left { grid-column: 1; grid-row: 2; }
+.dot-center { grid-column: 2; grid-row: 2; }
+.dot-middle-right { grid-column: 3; grid-row: 2; }
+.dot-bottom-left { grid-column: 1; grid-row: 3; }
+.dot-bottom-right { grid-column: 3; grid-row: 3; }
+
+/* 右端ベアオフトレイ (Bear Off Tray) */
+.bearoff-tray {
+  background: #20130a;
+  border-left: 3px solid var(--board-felt-border);
+  grid-row: 1 / 4;
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 8px 4px;
+}
+
+.bearoff-slot {
+  flex: 1 1 45%;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid #3d2414;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 2px;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.bearoff-slot.destination-point {
+  outline: 2px dashed var(--accent-green);
+  background: rgba(46, 204, 113, 0.2);
+}
+
+.bearoff-label {
+  font-size: 0.65rem;
+  color: var(--text-sub);
+  margin-bottom: 2px;
+}
+
+.bearoff-number {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+  margin-top: auto;
+}
+
+.bearoff-checkers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 90%;
+  max-height: 120px;
+  overflow: hidden;
+}
+
+.bearoff-bar {
+  width: 100%;
+  height: 6px;
+  border-radius: 2px;
+}
+
+.bearoff-bar-white {
+  background: #f5f0e6;
+  border: 1px solid #d4c5a9;
+}
+
+.bearoff-bar-black {
+  background: #333338;
+  border: 1px solid #555560;
+}
+
+/* ==========================================================================
+   サイド操作パネル (Side Panel)
+   ========================================================================== */
+.game-side-panel {
+  width: 250px;
+  background: #181d24;
+  border-left: 1px solid #2d3848;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.panel-section {
+  background: #202732;
+  border: 1px solid #313d4e;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.panel-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.player-turn-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #151a21;
+}
+
+.player-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.player-mini-checker {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+
+.action-buttons-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.primary-btn {
+  background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3);
+  transition: all 0.2s;
+}
+
+.primary-btn:disabled {
+  background: #384250;
+  color: #728094;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.secondary-btn {
+  background: #2a3442;
+  color: var(--text-main);
+  border: 1px solid #3e4d61;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.secondary-btn:hover:not(:disabled) {
+  background: #394759;
+}
+
+.secondary-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.danger-btn {
+  background: #c0392b;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+/* 棋譜・ログエリア */
+.game-log-box {
+  flex: 1 1 auto;
+  min-height: 80px;
+  background: #14181f;
+  border: 1px solid #2b3543;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 0.8rem;
+  font-family: monospace;
+  overflow-y: auto;
+  color: #cbd5e1;
+}
+
+/* ==========================================================================
+   モーダル・ダイアログ (Settings, Win, Blunder, Cube)
+   ========================================================================== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.75);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.modal-overlay.active {
+  display: flex;
+}
+
+.modal-dialog {
+  background: #1c232d;
+  border: 1px solid #3b495c;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 460px;
+  padding: 20px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal-header {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--accent-gold);
+  border-bottom: 1px solid #2e3a4a;
+  padding-bottom: 8px;
+}
+
+.modal-body {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--text-main);
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ==========================================================================
+   縦向き (Portrait) レスポンシブ最適化
+   スマホ・タブレットの縦持ち時
+   ========================================================================== */
+@media (orientation: portrait) {
+  #game-screen {
+    flex-direction: column;
+  }
+
+  .game-side-panel {
+    width: 100%;
+    height: auto;
+    border-left: none;
+    border-top: 1px solid #2d3848;
+    padding: 8px 12px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .panel-section {
+    padding: 6px;
+    margin: 0;
+  }
+
+  .game-side-panel .panel-section:nth-child(1) {
+    flex: 1 1 45%;
+  }
+
+  .game-side-panel .panel-section:nth-child(2) {
+    flex: 1 1 50%;
+  }
+
+  .game-side-panel .game-log-box {
+    display: none; /* 縦画面では棋譜を省略して盤面を最大化 */
+  }
+
+  .action-buttons-group {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .action-buttons-group .primary-btn,
+  .action-buttons-group .secondary-btn {
+    flex: 1 1 40%;
+    padding: 8px;
+    font-size: 0.9rem;
+  }
+
+  .game-status-bar {
+    height: 38px;
+    padding: 0 8px;
+    font-size: 0.85rem;
+  }
+
+  .board-frame {
+    border-width: 4px;
+  }
+}

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>バックギャモン道場 (bgdojo)</title>
+
+  <!-- PWA & Mobile Web App Meta -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1a1e24">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="バックギャモン道場">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+  <!-- CSS (バージョンクエリ付きでキャッシュ回避) -->
+  <link rel="stylesheet" href="css/style.css?v=20261123_1">
+</head>
+<body>
+  <div id="app">
+    <!-- トップナビゲーションバー -->
+    <header class="top-nav">
+      <div class="brand-title">
+        <span>🎲 バックギャモン道場</span>
+      </div>
+      <div class="nav-controls">
+        <button id="btn-manual" class="icon-btn" title="オンラインマニュアル">📖 マニュアル</button>
+        <button id="btn-sound" class="icon-btn" title="効果音 ON/OFF">🔊 音ON</button>
+        <button id="btn-fullscreen" class="icon-btn" title="全画面表示">⛶ 全画面</button>
+        <button id="btn-install" class="icon-btn" style="display: none;" title="アプリを端末にインストール">📲 アプリ追加</button>
+      </div>
+    </header>
+
+    <!-- 画面①：タイトル＆対局設定メニュー画面 (#menu-screen) -->
+    <main id="menu-screen" class="screen active">
+      <div class="menu-card">
+        <div class="menu-title-group">
+          <h1 class="menu-title">バックギャモン道場</h1>
+          <p class="menu-subtitle">本格Webバックギャモン（AI対戦・2人対戦対応）</p>
+        </div>
+
+        <!-- 1. 対戦モード -->
+        <div class="form-group">
+          <label class="form-label">対戦モード</label>
+          <div class="btn-group" id="group-mode">
+            <button class="btn-option selected" data-value="ai">人間 vs AI</button>
+            <button class="btn-option" data-value="pvp">人間 vs 人間 (1台共有)</button>
+          </div>
+        </div>
+
+        <!-- 2. 試合形式 -->
+        <div class="form-group">
+          <label class="form-label">試合形式 (マッチ)</label>
+          <div class="btn-group" id="group-match">
+            <button class="btn-option selected" data-value="1">1pt (1局勝負)</button>
+            <button class="btn-option" data-value="3">3pt マッチ</button>
+            <button class="btn-option" data-value="5">5pt マッチ</button>
+            <button class="btn-option" data-value="7">7pt マッチ</button>
+          </div>
+        </div>
+
+        <!-- 3. ダブリングキューブ -->
+        <div class="form-group">
+          <label class="form-label">ダブリングキューブ</label>
+          <div class="btn-group" id="group-cube">
+            <button class="btn-option selected" data-value="on">あり (標準ルール)</button>
+            <button class="btn-option" data-value="off">なし (シンプル)</button>
+          </div>
+        </div>
+
+        <!-- 4. AIの強さ -->
+        <div class="form-group" id="group-ai-level-wrapper">
+          <label class="form-label">AIの強さ</label>
+          <div class="btn-group" id="group-ai-level">
+            <button class="btn-option" data-value="1">Lv.1 入門</button>
+            <button class="btn-option" data-value="2">Lv.2 初級</button>
+            <button class="btn-option selected" data-value="3">Lv.3 中級</button>
+            <button class="btn-option" data-value="4">Lv.4 上級</button>
+          </div>
+        </div>
+
+        <!-- 5. サポート＆表示機能 -->
+        <div class="form-group">
+          <label class="form-label">アシスト設定</label>
+          <div class="switch-group">
+            <label class="switch-item">
+              <input type="checkbox" id="chk-highlight" checked>
+              <span>合法手ガイド</span>
+            </label>
+            <label class="switch-item">
+              <input type="checkbox" id="chk-pip" checked>
+              <span>ピップカウント表示</span>
+            </label>
+            <label class="switch-item">
+              <input type="checkbox" id="chk-undo" checked>
+              <span>待った (ターン内Undo)</span>
+            </label>
+            <label class="switch-item">
+              <input type="checkbox" id="chk-hint" checked>
+              <span>ヒント・悪手警告</span>
+            </label>
+          </div>
+        </div>
+
+        <button id="btn-start-game" class="start-btn">🎲 対局開始</button>
+      </div>
+    </main>
+
+    <!-- 画面②：対局画面 (#game-screen) -->
+    <main id="game-screen" class="screen">
+      <!-- 盤面メインコンテンツ -->
+      <div class="game-main-content">
+        <!-- 上部ステータスバー -->
+        <div class="game-status-bar">
+          <div class="match-score-badge" id="match-score-text">あなた 0 - 0 AI (3pt)</div>
+          <div class="pip-counts-display" id="pip-display">
+            <span class="pip-player-white" id="pip-white-text">白: 167</span>
+            <span class="pip-player-black" id="pip-black-text">黒: 167</span>
+            <span id="pip-diff-text">(差: 0)</span>
+          </div>
+          <div class="game-message-banner" id="game-message">ダイスを振ってください</div>
+        </div>
+
+        <!-- 盤面エリア -->
+        <div class="board-container-wrapper" id="board-container">
+          <!-- board-ui.js により内部が動的生成されます -->
+        </div>
+      </div>
+
+      <!-- 右サイド（または縦画面下部）コントロールパネル -->
+      <aside class="game-side-panel">
+        <!-- 手番表示 -->
+        <div class="panel-section">
+          <div class="panel-title">手番</div>
+          <div class="player-turn-card" id="turn-card">
+            <div class="player-indicator">
+              <div class="player-mini-checker checker-white" id="turn-mini-checker"></div>
+              <span id="turn-player-name">白 (あなた)</span>
+            </div>
+            <span id="turn-phase-badge" style="color: var(--accent-gold); font-size: 0.85rem; font-weight: 700;">待機中</span>
+          </div>
+        </div>
+
+        <!-- アクションボタン群 -->
+        <div class="panel-section action-buttons-group">
+          <button id="btn-roll-dice" class="primary-btn">🎲 ダイスを振る</button>
+          <button id="btn-double-cube" class="secondary-btn" style="display: none;">×2 ダブル提案</button>
+          <button id="btn-undo-move" class="secondary-btn" disabled>↩ 1手戻す</button>
+          <button id="btn-confirm-turn" class="primary-btn" style="display: none;">✓ ターン確定</button>
+          <button id="btn-hint" class="secondary-btn">💡 ヒント</button>
+          <button id="btn-resign" class="danger-btn">🏳 投了</button>
+          <button id="btn-back-menu" class="secondary-btn">🏠 メニューへ</button>
+        </div>
+
+        <!-- 棋譜・メッセージログ -->
+        <div class="game-log-box" id="game-log">
+          <div>[対局準備完了]</div>
+        </div>
+      </aside>
+    </main>
+
+    <!-- モーダルダイアログ群 -->
+    <!-- 1. ダブリングキューブ提案モーダル -->
+    <div class="modal-overlay" id="modal-cube">
+      <div class="modal-dialog">
+        <div class="modal-header">ダブリングキューブ提案</div>
+        <div class="modal-body" id="modal-cube-body">
+          相手からダブルの提案がありました！<br>
+          ゲームの勝敗ポイントが <strong id="modal-cube-val" style="color: var(--accent-gold);">2倍</strong> になります。
+        </div>
+        <div class="modal-footer">
+          <button id="btn-cube-drop" class="secondary-btn">ドロップ (降伏・1点失点)</button>
+          <button id="btn-cube-take" class="primary-btn">テイク (受託して続行)</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. ヒント・悪手警告モーダル -->
+    <div class="modal-overlay" id="modal-hint">
+      <div class="modal-dialog">
+        <div class="modal-header" id="modal-hint-title">AIコーチのアドバイス</div>
+        <div class="modal-body" id="modal-hint-body">
+          <!-- ヒント内容 -->
+        </div>
+        <div class="modal-footer">
+          <button id="btn-hint-close" class="primary-btn">閉じる</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. 終局ダイアログ -->
+    <div class="modal-overlay" id="modal-gameover">
+      <div class="modal-dialog">
+        <div class="modal-header" id="modal-gameover-title">ゲーム終了！</div>
+        <div class="modal-body" id="modal-gameover-body">
+          <!-- 結果表示 -->
+        </div>
+        <div class="modal-footer">
+          <button id="btn-gameover-next" class="primary-btn">次のゲームへ</button>
+          <button id="btn-gameover-menu" class="secondary-btn">メニューに戻る</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript (ES Modules, キャッシュ回避クエリ付き) -->
+  <script type="module" src="js/main.js?v=20261123_1"></script>
+</body>
+</html>
