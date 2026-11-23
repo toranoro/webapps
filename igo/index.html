@@ -23,7 +23,7 @@
 
     <title>九路盤・囲碁道場</title>
     <!-- キャッシュ対策のクエリパラメータ付きCSS -->
-    <link rel="stylesheet" href="css/style.css?v=1.0.2">
+    <link rel="stylesheet" href="css/style.css?v=1.0.3">
 </head>
 <body>
     <div id="app">
@@ -181,7 +181,7 @@
                 </div>
             </header>
 
-            <!-- メインエリア -->
+            <!-- メインエリア（CSS Gridによる縦横両対応） -->
             <main class="game-main-content">
                 <!-- 白番プレイヤーカード -->
                 <div class="player-card" id="card-white">
@@ -193,7 +193,7 @@
                         </div>
                     </div>
                     <div class="captures-row">
-                        <span>取った石 (アゲハマ):</span>
+                        <span class="captures-label">取った石:</span>
                         <strong id="captures-white">0</strong>
                     </div>
                     <div class="advantage-bar-container" id="adv-container" title="地合い形勢（黒/白）">
@@ -208,31 +208,28 @@
                     </div>
                 </div>
 
-                <!-- 黒番プレイヤーカード ＆ 操作パネル -->
-                <div class="player-right-panel" style="display:flex; flex-direction:column; gap:10px; flex-shrink:0;">
-                    <!-- 黒番カード -->
-                    <div class="player-card" id="card-black">
-                        <div class="player-header">
-                            <div class="stone-badge black"></div>
-                            <div class="player-meta">
-                                <span class="player-name" id="name-black">黒番 (あなた)</span>
-                                <span class="player-turn-indicator" id="turn-indicator-black">着手待ち</span>
-                            </div>
-                        </div>
-                        <div class="captures-row">
-                            <span>取った石 (アゲハマ):</span>
-                            <strong id="captures-black">0</strong>
+                <!-- 黒番プレイヤーカード -->
+                <div class="player-card" id="card-black">
+                    <div class="player-header">
+                        <div class="stone-badge black"></div>
+                        <div class="player-meta">
+                            <span class="player-name" id="name-black">黒番 (あなた)</span>
+                            <span class="player-turn-indicator" id="turn-indicator-black">着手待ち</span>
                         </div>
                     </div>
+                    <div class="captures-row">
+                        <span class="captures-label">取った石:</span>
+                        <strong id="captures-black">0</strong>
+                    </div>
+                </div>
 
-                    <!-- 操作パネル -->
-                    <div class="game-control-panel">
-                        <button id="btn-pass" class="control-btn warning">パス</button>
-                        <button id="btn-undo" class="control-btn">待った</button>
-                        <button id="btn-hint" class="control-btn">💡 ヒント</button>
-                        <button id="btn-resign" class="control-btn danger">投了</button>
-                        <button id="btn-confirm-move" class="control-btn primary" style="display:none;">着手確定</button>
-                    </div>
+                <!-- 操作パネル -->
+                <div class="game-control-panel">
+                    <button id="btn-pass" class="control-btn warning">パス</button>
+                    <button id="btn-undo" class="control-btn">待った</button>
+                    <button id="btn-hint" class="control-btn">💡 ヒント</button>
+                    <button id="btn-resign" class="control-btn danger">投了</button>
+                    <button id="btn-confirm-move" class="control-btn primary" style="display:none;">着手確定</button>
                 </div>
             </main>
 
@@ -317,6 +314,6 @@
     </div>
 
     <!-- キャッシュ対策のクエリパラメータ付きスクリプト -->
-    <script type="module" src="js/main.js?v=1.0.2"></script>
+    <script type="module" src="js/main.js?v=1.0.3"></script>
 </body>
 </html>

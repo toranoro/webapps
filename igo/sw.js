@@ -3,7 +3,7 @@
  * キャッシュ対策: Network-First 戦略により常に最新ファイルを配信
  */
 
-const CACHE_NAME = 'igo-dojo-v1.0.2';
+const CACHE_NAME = 'igo-dojo-v1.0.3';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
