@@ -119,9 +119,12 @@
       if (vm.handEnabled && vm.handEnabled[c] && n) cls += ' enabled';
       if (vm.selected && vm.selected.kind === 'hand' && vm.selected.c === c && vm.selected.t === t) cls += ' selected';
       if (vm.hint && vm.hint.drop && vm.hint.c === c && vm.hint.t === t) cls += ' hint-from';
-      html += '<div class="' + cls + '" data-c="' + c + '" data-t="' + t + '">' +
-        pieceHTML({ t: t, c: c, p: false }, c !== bottomColor) +
-        '<span class="count">' + (n > 1 ? '×' + n : '') + '</span></div>';
+      var inner = '';
+      if (n > 0) {
+        inner = pieceHTML({ t: t, c: c, p: false }, c !== bottomColor) +
+          '<span class="count">' + (n > 1 ? '×' + n : '') + '</span>';
+      }
+      html += '<div class="' + cls + '" data-c="' + c + '" data-t="' + t + '">' + inner + '</div>';
     });
     el.innerHTML = html;
   }

@@ -5,7 +5,7 @@
 (function () {
   'use strict';
   var E = window.ShogiEngine, AI = window.ShogiAI, UI = window.BoardUI;
-  var APP_VERSION = '0.7.0';
+  var APP_VERSION = '0.7.2';
   var STORAGE_KEY = 'shogi-dojo-config-v1';
 
   function $(id) { return document.getElementById(id); }
@@ -742,6 +742,16 @@
     var handTop = $('hand-top');
     var handBottom = $('hand-bottom');
 
+    function getLiveSourceEl(source) {
+      if (!source) return null;
+      if (source.kind === 'board') {
+        return UI.getCellEl(source.x, source.y);
+      } else if (source.kind === 'hand') {
+        return UI.getHandSlotEl(source.c, source.t);
+      }
+      return null;
+    }
+
     function onPointerDown(e) {
       if (!canInteract() || !app || !app.cfg.drag) return;
       if (e.button !== undefined && e.button !== 0) return;
@@ -778,6 +788,7 @@
       dragMoved = false;
       dragState = {
         pointerId: e.pointerId,
+        pointerType: e.pointerType || 'mouse',
         startX: e.clientX,
         startY: e.clientY,
         source: source,
@@ -795,6 +806,12 @@
       }
       render();
 
+      // render() 後に DOM が再構築されるため、最新の要素参照を再取得
+      var liveEl = getLiveSourceEl(source);
+      if (liveEl) {
+        dragState.sourceEl = liveEl;
+      }
+
       window.addEventListener('pointermove', onPointerMove, { passive: false });
       window.addEventListener('pointerup', onPointerUp, { passive: false });
       window.addEventListener('pointercancel', onPointerCancel, { passive: false });
@@ -807,19 +824,30 @@
       var dy = e.clientY - dragState.startY;
       var dist = Math.hypot(dx, dy);
 
+      var isTouch = (dragState.pointerType === 'touch' || dragState.pointerType === 'pen');
+
       if (!dragState.isDragging) {
         if (dist > 7) {
           dragState.isDragging = true;
           dragMoved = true;
 
-          var r1 = dragState.sourceEl.getBoundingClientRect();
+          var liveEl = getLiveSourceEl(dragState.source) || dragState.sourceEl;
+          var r1 = liveEl ? liveEl.getBoundingClientRect() : { left: e.clientX, top: e.clientY, width: 56, height: 56 };
+
+          var appEl = $('app');
+          var cellSize = (appEl ? parseFloat(getComputedStyle(appEl).getPropertyValue('--cell')) : 56) || 56;
+          var ghostW = (r1.width > 12) ? r1.width : cellSize;
+          var ghostH = (r1.height > 12) ? r1.height : Math.round(ghostW * 1.08);
+
           var ghost = document.createElement('div');
           ghost.className = 'drag-ghost';
-          ghost.style.width = r1.width + 'px';
-          ghost.style.height = r1.height + 'px';
-          ghost.style.setProperty('--cell', r1.width + 'px');
-          ghost.style.left = (e.clientX - r1.width / 2) + 'px';
-          ghost.style.top = (e.clientY - r1.height / 2) + 'px';
+          ghost.style.width = ghostW + 'px';
+          ghost.style.height = ghostH + 'px';
+          ghost.style.setProperty('--cell', ghostW + 'px');
+
+          var initY = isTouch ? (e.clientY - ghostH * 0.8) : (e.clientY - ghostH / 2);
+          ghost.style.left = (e.clientX - ghostW / 2) + 'px';
+          ghost.style.top = initY + 'px';
 
           var bottom = app.flipped ? E.WHITE : E.BLACK;
           var isOpp = dragState.piece.c !== bottom;
@@ -827,21 +855,24 @@
           document.body.appendChild(ghost);
           dragState.ghost = ghost;
 
-          var pEl = dragState.sourceEl.querySelector('.piece');
-          if (pEl) pEl.classList.add('anim-hidden');
+          if (liveEl) {
+            var pEl = liveEl.querySelector('.piece');
+            if (pEl) pEl.classList.add('anim-hidden');
+          }
         } else {
           return;
         }
       }
 
-      e.preventDefault();
+      if (e.cancelable) e.preventDefault();
 
       var ghostEl = dragState.ghost;
       if (ghostEl) {
-        var w = ghostEl.offsetWidth;
-        var h = ghostEl.offsetHeight;
+        var w = ghostEl.offsetWidth || 56;
+        var h = ghostEl.offsetHeight || 60;
+        var curY = isTouch ? (e.clientY - h * 0.8) : (e.clientY - h / 2);
         ghostEl.style.left = (e.clientX - w / 2) + 'px';
-        ghostEl.style.top = (e.clientY - h / 2) + 'px';
+        ghostEl.style.top = curY + 'px';
       }
 
       var elem = document.elementFromPoint(e.clientX, e.clientY);
@@ -909,7 +940,9 @@
           executeTarget(targetMove);
         }, 90);
       } else {
-        var r1 = ds.sourceEl.getBoundingClientRect();
+        var liveEl = getLiveSourceEl(ds.source) || ds.sourceEl;
+        var r1 = liveEl ? liveEl.getBoundingClientRect() : { left: e.clientX, top: e.clientY };
+
         ghost.classList.add('snapping');
         ghost.style.left = r1.left + 'px';
         ghost.style.top = r1.top + 'px';
@@ -921,8 +954,11 @@
 
         setTimeout(function () {
           if (ghost.parentNode) ghost.parentNode.removeChild(ghost);
-          var pEl = ds.sourceEl.querySelector('.piece');
-          if (pEl) pEl.classList.remove('anim-hidden');
+          var curEl = getLiveSourceEl(ds.source) || ds.sourceEl;
+          if (curEl) {
+            var pEl = curEl.querySelector('.piece');
+            if (pEl) pEl.classList.remove('anim-hidden');
+          }
           render();
         }, 140);
       }
