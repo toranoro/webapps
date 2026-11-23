@@ -1,0 +1,30 @@
+/* オンラインマニュアル用スタイル（アプリ本体とは独立。拡大縮小・スクロール可） */
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Meiryo", "Noto Sans JP", sans-serif; color: #1b1209; background: #f3ead2; line-height: 1.8; font-size: 18px; }
+header { background: #3b2a14; color: #fff; padding: 18px 20px; }
+header h1 { margin: 0; font-size: 26px; }
+header p { margin: 4px 0 0; opacity: .85; font-size: 15px; }
+.wrap { display: flex; max-width: 1100px; margin: 0 auto; }
+nav { flex: none; width: 250px; padding: 16px; position: sticky; top: 0; align-self: flex-start; max-height: 100vh; overflow-y: auto; }
+nav ol { margin: 0; padding-left: 1.4em; }
+nav a { color: #7d1913; text-decoration: none; display: block; padding: 3px 0; }
+nav a:hover { text-decoration: underline; }
+main { flex: 1; min-width: 0; padding: 16px 22px 60px; background: #fffaf0; border-left: 3px solid #5a3b14; }
+h2 { margin-top: 2.2em; padding: 4px 10px; background: #5a3b14; color: #fff; border-radius: 6px; font-size: 22px; }
+h3 { margin-top: 1.6em; border-bottom: 3px solid #b3261e; font-size: 19px; }
+table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 16px; }
+th, td { border: 1px solid #8a6a3a; padding: 6px 10px; vertical-align: top; }
+th { background: #ecd9a8; text-align: left; }
+code, kbd { background: #eee2c0; padding: 1px 6px; border-radius: 4px; font-size: .92em; }
+.note { background: #e8f1fb; border-left: 6px solid #1a5fb4; padding: 8px 14px; margin: 12px 0; }
+.warn { background: #fdecea; border-left: 6px solid #b3261e; padding: 8px 14px; margin: 12px 0; }
+.flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0; }
+.flow span { background: #ffe08a; border: 2px solid #5a3b14; border-radius: 8px; padding: 4px 10px; font-weight: bold; }
+.flow i { font-style: normal; font-weight: bold; }
+footer { text-align: center; padding: 20px; font-size: 14px; color: #5b4a2c; }
+@media (max-width: 760px) {
+  .wrap { display: block; }
+  nav { position: static; width: auto; max-height: none; }
+  main { border-left: 0; }
+}
