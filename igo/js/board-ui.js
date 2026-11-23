@@ -134,7 +134,12 @@ export class BoardUI {
         // 座標ラベル用（横：1〜9、縦：一〜九）
         const kanjiNumbers = ['一', '二', '三', '四', '五', '六', '七', '八', '九'];
 
-        // 上部座標 (1-9)
+        // 左上角の余白セル (grid-column: 1, grid-row: 1)
+        const cornerCell = document.createElement('div');
+        cornerCell.className = 'board-coord-corner';
+        boardElement.appendChild(cornerCell);
+
+        // 上部座標 (1-9) (grid-column: 2, grid-row: 1)
         const topCoord = document.createElement('div');
         topCoord.className = 'board-coord-row top';
         for (let x = 1; x <= BOARD_SIZE; x++) {
@@ -144,11 +149,7 @@ export class BoardUI {
         }
         boardElement.appendChild(topCoord);
 
-        // メイン碁盤本体（木目・グリッド）
-        const gridArea = document.createElement('div');
-        gridArea.className = 'board-grid-area';
-
-        // 左側座標 (一-九)
+        // 左側座標 (一-九) (grid-column: 1, grid-row: 2)
         const leftCoord = document.createElement('div');
         leftCoord.className = 'board-coord-col left';
         for (let y = 0; y < BOARD_SIZE; y++) {
@@ -157,6 +158,10 @@ export class BoardUI {
             leftCoord.appendChild(span);
         }
         boardElement.appendChild(leftCoord);
+
+        // メイン碁盤本体（木目・グリッド）(grid-column: 2, grid-row: 2)
+        const gridArea = document.createElement('div');
+        gridArea.className = 'board-grid-area';
 
         // グリッド線描画用SVG
         const svgLines = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
