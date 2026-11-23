@@ -74,6 +74,7 @@
             <label class="switch"><input type="checkbox" id="opt-undo" checked><span class="sw-track"><i></i></span><span class="sw-text">「待った」を許可<small>1手戻すボタンを表示します</small></span></label>
             <label class="switch"><input type="checkbox" id="opt-anim" checked><span class="sw-track"><i></i></span><span class="sw-text">駒のアニメーション<small>駒がスッと滑らかに動きます</small></span></label>
             <label class="switch"><input type="checkbox" id="opt-drag" checked><span class="sw-track"><i></i></span><span class="sw-text">駒のドラッグ操作<small>ドラッグ＆ドロップでも指せます</small></span></label>
+            <label class="switch"><input type="checkbox" id="opt-sound" checked><span class="sw-track"><i></i></span><span class="sw-text">駒音・効果音<small>パチッという着手音や和風効果音を鳴らします</small></span></label>
             <label class="switch"><input type="checkbox" id="opt-eval"><span class="sw-track"><i></i></span><span class="sw-text">形勢判断バーを表示<small>どちらが優勢かを帯で表示します</small></span></label>
           </div>
         </fieldset>
@@ -94,7 +95,7 @@
       </aside>
 
       <main id="area-center">
-        <div id="status-bar" class="status"><span id="status-text"></span></div>
+        <div id="status-bar" class="status"><span id="status-text"></span><button type="button" id="btn-sound-toggle" class="sound-toggle-btn" title="効果音 ON/OFF" aria-label="効果音切り替え">🔊</button></div>
         <div id="eval-wrap"><div id="eval-bar"><div id="eval-black"></div></div><span id="eval-label"></span></div>
         <div id="board-wrap">
           <div id="file-labels" class="labels-h"></div>
@@ -145,7 +146,7 @@
 
 <script>
 (function () {
-  var list = ['js/game-engine.js', 'js/ai-worker.js', 'js/board-ui.js', 'js/main.js'];
+  var list = ['js/sound.js', 'js/game-engine.js', 'js/ai-worker.js', 'js/board-ui.js', 'js/main.js'];
   list.forEach(function (src) {
     document.write('<script src="' + src + '?_=' + window.__BUILD + '"><\/script>');
   });

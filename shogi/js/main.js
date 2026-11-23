@@ -5,7 +5,7 @@
 (function () {
   'use strict';
   var E = window.ShogiEngine, AI = window.ShogiAI, UI = window.BoardUI;
-  var APP_VERSION = '0.6.0';
+  var APP_VERSION = '0.7.0';
   var STORAGE_KEY = 'shogi-dojo-config-v1';
 
   function $(id) { return document.getElementById(id); }
@@ -59,7 +59,7 @@
   /* =====================================================
    * 3. メニュー設定
    * ===================================================== */
-  var DEFAULT_CONFIG = { mode: 'ai', level: 2, side: 'sente', guide: true, hint: true, blunder: true, warn: true, undo: true, anim: true, drag: true, eval: false };
+  var DEFAULT_CONFIG = { mode: 'ai', level: 2, side: 'sente', guide: true, hint: true, blunder: true, warn: true, undo: true, anim: true, drag: true, sound: true, eval: false };
 
   function radioValue(name) {
     var r = document.querySelector('input[name="' + name + '"]:checked');
@@ -81,6 +81,7 @@
       undo: $('opt-undo').checked,
       anim: $('opt-anim') ? $('opt-anim').checked : true,
       drag: $('opt-drag') ? $('opt-drag').checked : true,
+      sound: $('opt-sound') ? $('opt-sound').checked : true,
       eval: $('opt-eval').checked
     };
   }
@@ -93,6 +94,7 @@
     $('opt-undo').checked = !!cfg.undo;
     if ($('opt-anim')) $('opt-anim').checked = cfg.anim !== false;
     if ($('opt-drag')) $('opt-drag').checked = cfg.drag !== false;
+    if ($('opt-sound')) $('opt-sound').checked = cfg.sound !== false;
     $('opt-eval').checked = !!cfg.eval;
     syncMenuState();
   }
@@ -133,6 +135,10 @@
   function startGame() {
     var cfg = readConfig();
     saveConfig(cfg);
+    if (window.ShogiSound) {
+      window.ShogiSound.setEnabled(cfg.sound !== false);
+    }
+    syncSoundBtn();
     var human = null;
     if (cfg.mode === 'ai') {
       if (cfg.side === 'sente') human = E.BLACK;
@@ -156,6 +162,28 @@
     }
     render();
     maybeAI();
+  }
+
+  /* ---------- 効果音トグル ---------- */
+  function syncSoundBtn() {
+    var btn = $('btn-sound-toggle');
+    if (!btn || !window.ShogiSound) return;
+    var enabled = window.ShogiSound.isEnabled();
+    btn.textContent = enabled ? '🔊' : '🔇';
+    btn.classList.toggle('muted', !enabled);
+    btn.title = enabled ? '効果音：ON（タップで消音）' : '効果音：OFF（タップで有効化）';
+  }
+
+  function toggleSound() {
+    if (!window.ShogiSound) return;
+    var next = !window.ShogiSound.isEnabled();
+    window.ShogiSound.setEnabled(next);
+    if (app && app.cfg) app.cfg.sound = next;
+    var opt = $('opt-sound');
+    if (opt) opt.checked = next;
+    var cfg = readConfig();
+    saveConfig(cfg);
+    syncSoundBtn();
   }
 
   function backToMenu() {
@@ -364,6 +392,15 @@
     clearMsg();
     app.hint = null;
 
+    if (window.ShogiSound) {
+      window.ShogiSound.playMove(!!(r.move && r.move.captured));
+      if (r.move && r.move.promote) {
+        setTimeout(function () {
+          if (window.ShogiSound) window.ShogiSound.playPromote();
+        }, 70);
+      }
+    }
+
     var mover = 1 - r.state.turn, st = E.status(r.state);
     var who = mover === E.BLACK ? '先手' : '後手';
     if (st === 'checkmate') {
@@ -388,6 +425,7 @@
     if (isBlunder) {
       showBlunderMsg();
     } else if (st === 'check' && app.cfg.warn) {
+      if (window.ShogiSound) window.ShogiSound.playCheck();
       showMsg('王手！', 'warn', 3000);
     }
 
@@ -459,6 +497,9 @@
   }
 
   function finish(text, win) {
+    if (window.ShogiSound) {
+      window.ShogiSound.playEnd();
+    }
     app.over = true;
     app.resultText = text;
     clearSel();
@@ -950,6 +991,23 @@
     $('btn-flip').addEventListener('click', onFlip);
     var fullBtn = $('btn-full');
     if (fullBtn) fullBtn.addEventListener('click', toggleFullscreen);
+    var sndBtn = $('btn-sound-toggle');
+    if (sndBtn) sndBtn.addEventListener('click', toggleSound);
+    var sndOpt = $('opt-sound');
+    if (sndOpt) {
+      sndOpt.addEventListener('change', function () {
+        if (window.ShogiSound) window.ShogiSound.setEnabled(sndOpt.checked);
+        var cfg = readConfig();
+        saveConfig(cfg);
+        syncSoundBtn();
+      });
+    }
+    if (window.ShogiSound) {
+      var initialCfg = loadConfig();
+      window.ShogiSound.setEnabled(initialCfg.sound !== false);
+    }
+    syncSoundBtn();
+
     $('btn-menu').addEventListener('click', onMenu);
     $('rv-first').addEventListener('click', function () { review(0); });
     $('rv-prev').addEventListener('click', function () { review(app.idx - 1); });
