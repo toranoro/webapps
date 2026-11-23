@@ -1,4 +1,4 @@
-import * as THREE from '../../vendor/three.module.min.js?v=20261122222828';
+import * as THREE from '../../vendor/three.module.min.js?v=20261123174047';
 
 /**
  * 90年代風ローポリ（立方体・三角錐・八面体）のヒットスパーク＆土煙＆紙吹雪エフェクト管理

@@ -1,5 +1,5 @@
-import * as THREE from '../../vendor/three.module.min.js?v=20261122222828';
-import { FIGHTER_STATE } from '../config/constants.js?v=20261122222828';
+import * as THREE from '../../vendor/three.module.min.js?v=20261123174047';
+import { FIGHTER_STATE } from '../config/constants.js?v=20261123174047';
 
 /**
  * 動物キャラクター共通ローポリ・スケルトン（Phase 2 基盤）

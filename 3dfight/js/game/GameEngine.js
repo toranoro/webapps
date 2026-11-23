@@ -1,18 +1,18 @@
-import * as THREE from '../../vendor/three.module.min.js?v=20261122222828';
+import * as THREE from '../../vendor/three.module.min.js?v=20261123174047';
 import {
   FIGHTER_STATE,
   FIGHTER_STATS,
   GAME_CONFIG,
   MOVES,
   THROW_VARIANTS,
-} from '../config/constants.js?v=20261122222828';
-import { CHARACTERS } from '../data/characters.js?v=20261122222828';
-import { createStage } from './Stage.js?v=20261122222828';
-import { Fighter } from './Fighter.js?v=20261122222828';
-import { AnimalRig } from './AnimalRig.js?v=20261122222828';
-import { ComAI } from './ComAI.js?v=20261122222828';
-import { ParticleManager } from './Particles.js?v=20261122222828';
-import { SkillSystem } from './SkillSystem.js?v=20261122222828';
+} from '../config/constants.js?v=20261123174047';
+import { CHARACTERS } from '../data/characters.js?v=20261123174047';
+import { createStage } from './Stage.js?v=20261123174047';
+import { Fighter } from './Fighter.js?v=20261123174047';
+import { AnimalRig } from './AnimalRig.js?v=20261123174047';
+import { ComAI } from './ComAI.js?v=20261123174047';
+import { ParticleManager } from './Particles.js?v=20261123174047';
+import { SkillSystem } from './SkillSystem.js?v=20261123174047';
 
 /**
  * 3D格闘ゲームのメインエンジン

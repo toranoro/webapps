@@ -1,4 +1,4 @@
-import { AI_PROFILES, FIGHTER_STATE } from '../config/constants.js?v=20261122222828';
+import { AI_PROFILES, FIGHTER_STATE } from '../config/constants.js?v=20261123174047';
 
 /**
  * COM（CPU）のステートマシン思考ルーチン

@@ -1,4 +1,4 @@
-import { GAME_CONFIG } from '../config/constants.js?v=20261122222828';
+import { GAME_CONFIG } from '../config/constants.js?v=20261123174047';
 
 /**
  * 体力バー・必殺技クールタイム・ラウンド表示・タイマー・タイトル/キャラ選択/リザルト/途中休憩画面を管理するクラス

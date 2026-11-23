@@ -1,12 +1,12 @@
-import { GameEngine } from './game/GameEngine.js?v=20261122222828';
-import { TournamentManager } from './game/TournamentManager.js?v=20261122222828';
-import { generateHeadPortraits } from './game/AnimalRig.js?v=20261122222828';
-import { InputManager } from './input/InputManager.js?v=20261122222828';
-import { VirtualPad } from './input/VirtualPad.js?v=20261122222828';
-import { SoundEngine } from './audio/SoundEngine.js?v=20261122222828';
-import { BgmManager } from './audio/BgmManager.js?v=20261122222828';
-import { HudManager } from './ui/HudManager.js?v=20261122222828';
-import { MenuNavigator } from './input/MenuNavigator.js?v=20261122222828';
+import { GameEngine } from './game/GameEngine.js?v=20261123174047';
+import { TournamentManager } from './game/TournamentManager.js?v=20261123174047';
+import { generateHeadPortraits } from './game/AnimalRig.js?v=20261123174047';
+import { InputManager } from './input/InputManager.js?v=20261123174047';
+import { VirtualPad } from './input/VirtualPad.js?v=20261123174047';
+import { SoundEngine } from './audio/SoundEngine.js?v=20261123174047';
+import { BgmManager } from './audio/BgmManager.js?v=20261123174047';
+import { HudManager } from './ui/HudManager.js?v=20261123174047';
+import { MenuNavigator } from './input/MenuNavigator.js?v=20261123174047';
 import {
   ALL_CHARACTER_ORDER,
   CHARACTERS,
@@ -14,8 +14,8 @@ import {
   getPlayableCharacterOrder,
   isPhase4Unlocked,
   setPhase4Unlocked,
-} from './data/characters.js?v=20261122222828';
-import { ANIMAL_ENDINGS } from './data/endings.js?v=20261122222828';
+} from './data/characters.js?v=20261123174047';
+import { ANIMAL_ENDINGS } from './data/endings.js?v=20261123174047';
 
 /**
  * キャッシュ・BFCache残存の徹底抑止

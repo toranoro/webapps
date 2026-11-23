@@ -1,4 +1,4 @@
-import { CHARACTER_ORDER, FOUR_KINGS_ORDER } from '../data/characters.js?v=20261122222828';
+import { CHARACTER_ORDER, FOUR_KINGS_ORDER } from '../data/characters.js?v=20261123174047';
 
 const MAIN_LADDER_SCALES = [0.65, 0.72, 0.80, 0.90, 1.00, 1.08, 1.16, 1.25];
 const HIDDEN_LADDER_SCALES = [1.12, 1.20, 1.28, 1.36, 1.45];

@@ -1,5 +1,5 @@
-import * as THREE from '../../vendor/three.module.min.js?v=20261122222828';
-import { FIGHTER_STATE, FIGHTER_STATS } from '../config/constants.js?v=20261122222828';
+import * as THREE from '../../vendor/three.module.min.js?v=20261123174047';
+import { FIGHTER_STATE, FIGHTER_STATS } from '../config/constants.js?v=20261123174047';
 
 /**
  * 4種共通必殺技ギミック管理システム（PROJECTILE / STRETCH / RUSH_SPIN / BUFF_AOE）

@@ -1,6 +1,6 @@
-import * as THREE from '../../vendor/three.module.min.js?v=20261122222828';
-import { FIGHTER_STATE, FIGHTER_STATS, GAME_CONFIG, MOVES } from '../config/constants.js?v=20261122222828';
-import { AnimalRig } from './AnimalRig.js?v=20261122222828';
+import * as THREE from '../../vendor/three.module.min.js?v=20261123174047';
+import { FIGHTER_STATE, FIGHTER_STATS, GAME_CONFIG, MOVES } from '../config/constants.js?v=20261123174047';
+import { AnimalRig } from './AnimalRig.js?v=20261123174047';
 
 /**
  * 格闘キャラクターの物理・状態遷移・ヒットボックス・必殺技・ダメージ管理クラス

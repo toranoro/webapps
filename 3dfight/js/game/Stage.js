@@ -1,5 +1,5 @@
-import * as THREE from '../../vendor/three.module.min.js?v=20261122222828';
-import { GAME_CONFIG } from '../config/constants.js?v=20261122222828';
+import * as THREE from '../../vendor/three.module.min.js?v=20261123174047';
+import { GAME_CONFIG } from '../config/constants.js?v=20261123174047';
 
 /**
  * 天下一武道会風の正方形武道場ステージを構築します。

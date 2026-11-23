@@ -28,12 +28,14 @@ export const BGM_FIGHTER_TRACKS = {
   POLAR_KING: { battle: '14_battle_polar_king', ending: '14_ending_polar_king' },
 };
 
-const EXTENSIONS = ['flac', 'mp3', 'ogg', 'wav'];
+const BASE_DIRS = ['./assets/bgm', './music', './assets/music'];
+const EXTENSIONS = ['ogg', 'mp3', 'flac', 'wav'];
 
 export class BgmManager {
   constructor() {
     this.audio = new Audio();
     this.audio.loop = true;
+    this.audio.preload = 'auto';
     this.baseVolume = 0.36;
     this.ducked = false;
     this.muted = false;
@@ -44,8 +46,20 @@ export class BgmManager {
     this.unlocked = false;
     this._requestSeq = 0;
 
-    // 一度確認したトラックURL（見つかったURLまたはnull）をキャッシュ
+    // 解決済み・失敗済みキャッシュ（高速切り替え＆重複404抑止）
     this._resolvedUrls = new Map();
+    this._fallbackTried = new Set();
+
+    this.audio.addEventListener('error', () => {
+      const failedKey = this.currentKey;
+      if (!failedKey || this.muted || this.desiredKey !== failedKey) return;
+      if (this._fallbackTried.has(failedKey)) {
+        this.currentKey = null;
+        return;
+      }
+      this._fallbackTried.add(failedKey);
+      this._resolveFallbackAndPlay(failedKey, this.audio.src, this._requestSeq);
+    });
   }
 
   unlock() {
@@ -87,24 +101,31 @@ export class BgmManager {
     this.audio.volume = this.ducked ? this.baseVolume * 0.42 : this.baseVolume;
   }
 
-  async _resolveTrackUrl(trackKey) {
-    if (this._resolvedUrls.has(trackKey)) {
-      return this._resolvedUrls.get(trackKey);
-    }
-    for (const ext of EXTENSIONS) {
-      const url = `./assets/bgm/${trackKey}.${ext}`;
-      try {
-        const res = await fetch(url, { method: 'HEAD', cache: 'no-store' });
-        if (res.ok) {
-          this._resolvedUrls.set(trackKey, url);
-          return url;
+  async _resolveFallbackAndPlay(trackKey, failedSrc, seq) {
+    for (const dir of BASE_DIRS) {
+      for (const ext of EXTENSIONS) {
+        const url = `${dir}/${trackKey}.${ext}`;
+        if (failedSrc && failedSrc.endsWith(url.replace('./', '/'))) continue;
+        try {
+          const res = await fetch(url, { method: 'HEAD' });
+          if (seq !== this._requestSeq || this.muted || this.desiredKey !== trackKey) {
+            return;
+          }
+          if (res.ok) {
+            this._resolvedUrls.set(trackKey, url);
+            this.audio.loop = this.desiredLoop;
+            this.audio.src = url;
+            this._applyVolume();
+            this.audio.play().catch(() => {});
+            return;
+          }
+        } catch {
+          // 次の候補へ
         }
-      } catch {
-        // 次の拡張子を試す
       }
     }
-    // 未生成トラックは現状サイレント待機（ただし再起動・別タブで再検出可能）
-    return null;
+    this._resolvedUrls.set(trackKey, null);
+    this.currentKey = null;
   }
 
   async playTrack(trackKey, { loop = true } = {}) {
@@ -117,25 +138,25 @@ export class BgmManager {
       return;
     }
 
-    if (this.currentKey === trackKey && !this.audio.paused) {
+    if (this.currentKey === trackKey && this.audio.src && !this.audio.paused) {
       this.audio.loop = loop;
       this._applyVolume();
       return;
     }
 
     const seq = ++this._requestSeq;
-    const url = await this._resolveTrackUrl(trackKey);
-    if (seq !== this._requestSeq || this.muted || this.desiredKey !== trackKey) {
-      return;
-    }
-
-    if (!url) {
+    let url = this._resolvedUrls.get(trackKey);
+    if (url === null) {
       this.audio.pause();
       this.currentKey = null;
       return;
     }
+    if (!url) {
+      // 最軽量な .ogg を事前HEADリクエスト無しのダイレクト再生で即ストリーミング開始
+      url = `${BASE_DIRS[0]}/${trackKey}.${EXTENSIONS[0]}`;
+    }
 
-    if (this.currentKey === trackKey && this.audio.src && !this.audio.paused) {
+    if (seq !== this._requestSeq || this.muted || this.desiredKey !== trackKey) {
       return;
     }
 
@@ -146,6 +167,7 @@ export class BgmManager {
 
     try {
       await this.audio.play();
+      this._resolvedUrls.set(trackKey, url);
       this.unlocked = true;
     } catch {
       // ユーザー操作前の自動再生ブロック時は unlock() まで再生保留
