@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>オンラインマニュアル - ANIMAL BUDOKAI '96</title>
+  <link rel="stylesheet" href="./manual.css?v=20261121-2">
+</head>
+<body>
+  <header class="manual-header">
+    <div class="container header-inner">
+      <div>
+        <p class="kicker">ONLINE MANUAL // ANIMAL BUDOKAI '96</p>
+        <h1>ANIMAL BUDOKAI 操作マニュアル</h1>
+      </div>
+      <a id="back-to-game" class="back-btn" href="../index.html">ゲームへ戻る</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <nav class="manual-nav" aria-label="目次">
+      <a href="#rules">ルール・勝敗条件</a>
+      <a href="#animals">動物キャラ＆必殺技</a>
+      <a href="#triangle">三すくみ（駆け引き）</a>
+      <a href="#pc-controls">PCキーボード操作</a>
+      <a href="#tablet-controls">タブレット・スマホ操作</a>
+      <a href="#moves">技データ一覧</a>
+      <a href="#env">動作環境・注意事項</a>
+    </nav>
+
+    <section id="rules" class="card">
+      <h2>1. ルールと勝敗条件（Phase 3 トーナメント対応）</h2>
+      <p>
+        90年代ローポリ風3D動物格闘ゲーム（Phase 3 / 全9体参戦）です。正方形の武道場リング（-10 ～ +10）の上で、固有の思考AIを持つ動物ファイター同士が戦います。<strong>2ラウンド先取（1ラウンド60秒）</strong>で勝利となります。
+      </p>
+      <ul>
+        <li><strong>ANIMAL BUDOKAI（全員勝ち抜き）：</strong> オモテは自分以外のレギュラー8体全員と戦う全8連戦！制覇後のヒーローインタビュー中に猛獣四天王全員＋極北の帝王しろくまが乱入し、裏5連戦が開幕します。</li>
+        <li><strong>SINGLE MATCH（フリー対戦）：</strong> 好きな自キャラと難易度（EASY / NORMAL / HARD）を選んで1戦する練習・検証モード。</li>
+        <li><strong>K.O.勝ち：</strong> 相手の体力（HP）を <code>0</code> にする。</li>
+        <li><strong>リングアウト（RING OUT）勝ち：</strong> 赤い境界線の外へ相手を吹き飛ばす、または落下させる。</li>
+        <li><strong>タイムオーバー：</strong> 制限時間終了時に残りHP割合が多い方の勝利。</li>
+      </ul>
+    </section>
+
+    <section id="animals" class="card">
+      <h2>2. 登場キャラクター＆必殺技（Q / W）</h2>
+      <div class="triangle-grid">
+        <div class="triangle-box">
+          <h3>グリズリー（HP 120 / 重量級）</h3>
+          <p><strong>SP1（<code>Q</code>）：ヘッドスロー</strong><br>頭をもぎ取ってブーメラン投擲！飛行中は首なしで行動可能。</p>
+          <p><strong>SP2（<code>W</code>）：ベア・ミサイル</strong><br>大の字で水平砲弾突進。ガードされても大きく押し出す。</p>
+        </div>
+        <div class="triangle-box">
+          <h3>キリン（HP 100 / 超リーチ）</h3>
+          <p><strong>SP1（<code>Q</code>）：キリン・ランス</strong><br>長い首を水平に突き出し、全身を槍にして超高速突進。</p>
+          <p><strong>SP2（<code>W</code>）：エクステンド・キック</strong><br>右脚が通常の3倍に伸びて遠距離の相手を蹴り飛ばす。</p>
+        </div>
+        <div class="triangle-box">
+          <h3>コアラ（HP 90 / 高速ラッシュ）</h3>
+          <p><strong>SP1（<code>Q</code>）：クロー・ラッシュ</strong><br>白い爪を巨大化させて前進連続引っかき（多段ヒット）。</p>
+          <p><strong>SP2（<code>W</code>）：コアラ・トルネード</strong><br>T字ポーズでコマのように高速回転突進する多段ヒット技。</p>
+        </div>
+        <div class="triangle-box">
+          <h3>カンガルー（HP 100 / ボクサー）</h3>
+          <p><strong>SP1（<code>Q</code>）：アイロンボールアタック</strong><br>お腹の袋から子カンガルーが出てきて、重厚な鉄球を投げつける！</p>
+          <p><strong>SP2（<code>W</code>）：テール・スプリング</strong><br>尻尾をバネに反動をつけて真横にロケット突進。</p>
+        </div>
+        <div class="triangle-box">
+          <h3>ペンギン（HP 85 / 低姿勢トリック）</h3>
+          <p><strong>SP1（<code>Q</code>）：トピード・スライド</strong><br>超高速の腹滑り魚雷！下段判定で立ちガードを崩す。</p>
+          <p><strong>SP2（<code>W</code>）：マーチ・オブ・ペンギンズ</strong><br>左右からミニペンギン2羽を呼び出して一斉行進攻撃。</p>
+        </div>
+        <div class="triangle-box">
+          <h3>カメレオン（HP 80 / 最速ステルス）</h3>
+          <p><strong>SP1（<code>Q</code>）：タング・スナイプ</strong><br>ピンク色の超ロング舌で遠距離から相手を引き寄せる！</p>
+          <p><strong>SP2（<code>W</code>）：ポリゴン・ステルス</strong><br>約3秒間半透明ワイヤーフレーム化して無敵＋高速移動。</p>
+        </div>
+        <div class="triangle-box">
+          <h3>カバ（HP 140 / 重量級スーパーアーマー）</h3>
+          <p><strong>パッシブ特性：</strong>通常弱攻撃（<code>C</code>/<code>Z</code>）を受けてもひるまないスーパーアーマー持ち！</p>
+          <p><strong>SP1（<code>Q</code>）：マッド・ショットガン</strong><br>巨大な口を開けて5方向扇状の水塊弾を発射！</p>
+          <p><strong>SP2（<code>W</code>）：ギガ・バイト</strong><br>体を大きく反らして踏み込み、ガード不能の噛みつきで相手を横方向へ放り投げる！</p>
+        </div>
+        <div class="triangle-box">
+          <h3>フラミンゴ（HP 90 / 超速・超リーチ）</h3>
+          <p><strong>SP1（<code>Q</code>）：ネック・ウィップ</strong><br>細長い首をムチのように前方へ伸ばして連続3ヒットの頭突き！</p>
+          <p><strong>SP2（<code>W</code>）：バレリーナ・トルネード</strong><br>片脚立ちで高速スピンしながら突進する多段ヒット乱舞！</p>
+        </div>
+        <div class="triangle-box">
+          <h3>アルパカ（HP 105 / モコモコ）</h3>
+          <p><strong>SP1（<code>Q</code>）：ソニック・スピット</strong><br>全技最速級のつば弾を発射！当たった相手の硬直が非常に長く、追撃コンボの起点に最適。</p>
+          <p><strong>SP2（<code>W</code>）：ウール・エクスプロージョン</strong><br>全身の白い毛皮が一気に3倍へ大膨張し、360度周囲の敵を弾き飛ばす！</p>
+        </div>
+        <div class="triangle-box">
+          <h3>【裏・猛獣四天王】ライオン／タイガー／ゾウ／サイ</h3>
+          <p>表トーナメント優勝直後の <code>EMERGENCY!!</code> 乱入で立ち塞がる強敵！ライオンの黄金気功波、タイガーの空中急襲＆超速残像、ゾウの常時アーマー＆地震、サイの無敵ブルドーザー突進に警戒せよ。</p>
+        </div>
+        <div class="triangle-box">
+          <h3>【真のラスボス】しろくま / POLAR KING（HP 180）</h3>
+          <p><strong>SP1（<code>Q</code>）：アブソリュート・ゼロ</strong><br>氷塊ヒットで約2.5秒間「氷漬け（<code>FROZEN</code>）」状態に！方向キー・ボタン連打（レバガチャ）で早く脱出可能。</p>
+          <p><strong>SP2（<code>W</code>）：ポーラー・メテオ</strong><br>上空から隕石急降下し着弾と同時に氷結衝撃波！裏制覇で<strong>全14体が解放</strong>されます。</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="triangle" class="card">
+      <h2>3. 戦闘の基本：三すくみシステム</h2>
+      <div class="triangle-grid">
+        <div class="triangle-box">
+          <h3>打撃（Z / X / C / V）</h3>
+          <p><strong>「投げ」に勝つ！</strong> 相手が投げを狙っている最中に打撃を当てると <code>COUNTER!</code> となり、ダメージが1.25倍になります。</p>
+        </div>
+        <div class="triangle-box">
+          <h3>防御／ガード（S）</h3>
+          <p><strong>「打撃」を防ぐ！</strong> 押している間は打撃ダメージを完全に防ぎます。ただし強い攻撃を受けると少しノックバックします。</p>
+        </div>
+        <div class="triangle-box">
+          <h3>投げ（A）</h3>
+          <p><strong>「防御」を崩す！</strong> 接近戦で相手のガードを無視して掴み、<strong>巴投・大外刈・一本背負投・小外刈・肩車</strong>の5種の柔道技がランダムで発動します（巴投は後方へ投げるため逆転リングアウトも可能）。</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="pc-controls" class="card">
+      <h2>4. PCキーボード操作（左手：攻撃・防御・必殺技 / 右手：移動・ジャンプ）</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>キー</th><th>アクション</th><th>内容</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>J</code> / <code>L</code> / <code>←</code> / <code>→</code></td><td>左右移動</td><td>リング上で相手との間合いを調整</td></tr>
+            <tr><td><code>U</code> / <code>O</code> または <code>Shift+↑↓</code></td><td>3Dサイドステップ</td><td>奥（<code>U</code> / <code>Shift+↑</code>）・手前（<code>O</code> / <code>Shift+↓</code>）へ素早く回り込み回避！終盤は攻撃や投げへ即連携可能</td></tr>
+            <tr><td><code>I</code> / <code>↑</code> / <code>SPACE</code></td><td>ジャンプ</td><td>上方向へジャンプ（空中で<code>Z/X</code>を押すと飛び蹴り→着地追撃コンボ！）</td></tr>
+            <tr><td><code>K</code> / <code>↓</code></td><td>しゃがみ</td><td>姿勢を低くして上段攻撃を回避。<code>C/V</code>・<code>Z/X</code>・<code>S</code>・<code>A</code>と連携可能</td></tr>
+            <tr><td><code>C</code> / <code>V</code></td><td>弱・強パンチ</td><td>立ちパンチ（しゃがみ中はしゃがみパンチ、空中ではジャンプパンチ）</td></tr>
+            <tr><td><code>Z</code> / <code>X</code></td><td>弱・強キック</td><td>立ちキック（しゃがみ中は立ちガード崩しの足払い、空中ではジャンプキック）</td></tr>
+            <tr><td><code>A</code></td><td>投げ</td><td>近距離で成立。立ち投げは柔道5種ランダム、<strong>しゃがみ投げ（<code>K/↓+A</code>）は確定で巴投！</strong></td></tr>
+            <tr><td><code>Q</code> / <code>W</code></td><td>必殺技1 / 必殺技2</td><td>動物固有の必殺技（SP1/SP2）を発動（各技にクールタイムあり）</td></tr>
+            <tr><td><code>S</code></td><td>防御（ガード）</td><td>押下中はガード（立ちガードは上中段、しゃがみガードは中下段を防ぐ）</td></tr>
+            <tr><td><code>IJKL</code> / <code>方向キー</code></td><td>メニュー・キャラ選択</td><td>キャラ一覧アイコン移動（<code>Tab</code>で難易度切替）、ポーズ・リザルト選択</td></tr>
+            <tr><td><code>Enter</code></td><td>決定</td><td>キャラ決定（COMランダム選出で対戦開始）・リマッチ・再開等</td></tr>
+            <tr><td><code>ESC</code></td><td>途中休憩／戻る</td><td>試合中は途中休憩（試合に戻る／棄権する等）を開閉、リザルト画面ではタイトルへ戻る</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="tablet-controls" class="card">
+      <h2>5. タブレット・スマートフォン操作</h2>
+      <div class="vpad-diagram">
+        <div class="diagram-stick">
+          <div class="diagram-knob">◯</div>
+        </div>
+        <div>
+          <p><strong>方向操作（◯ドラッグ＝3D 4方向移動）：</strong> 円の中の <code>◯</code> を上下左右へドラッグすると、前後・奥手前の4方向へ自由に3D移動できます。指を離すと中央へ戻ります。</p>
+          <p><strong>専用 <code>JUMP</code> ＆ <code>かがむ</code> ボタン：</strong> 右側の <code>JUMP</code> でジャンプ、<code>かがむ</code> でしゃがみます（<code>かがむ</code> は<strong>長押し</strong>でも、<strong>短タップでON/OFF切替</strong>でも使え、しゃがみ状態＋<code>投げ</code> で確定「巴投」が出ます）。</p>
+          <p><strong>マルチタッチ対応：</strong> 左手で <code>◯</code> をドラッグしながら、右手で攻撃や <code>SP1(Q)</code>・<code>SP2(W)</code>・<code>防御</code> を同時に押せます。</p>
+          <p><strong>表示切替・左右反転：</strong> 画面上部の <code>PAD: AUTO/ON/OFF</code> で表示切替、<code>配置: 左◯/右◯</code> で利き手に合わせた左右入替が可能です。</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="moves" class="card">
+      <h2>6. 技データ一覧（60fps基準）</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>技名</th><th>操作</th><th>発生</th><th>持続</th><th>硬直</th><th>ダメージ</th><th>ノックバック</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>弱パンチ</td><td><code>C</code> / 弱P</td><td>4F</td><td>4F</td><td>7F</td><td>6</td><td>1.8</td></tr>
+            <tr><td>強パンチ</td><td><code>V</code> / 強P</td><td>9F</td><td>5F</td><td>14F</td><td>14</td><td>4.2</td></tr>
+            <tr><td>弱キック</td><td><code>Z</code> / 弱K</td><td>6F</td><td>4F</td><td>10F</td><td>8</td><td>2.5</td></tr>
+            <tr><td>強キック</td><td><code>X</code> / 強K</td><td>12F</td><td>5F</td><td>18F</td><td>18</td><td>7.4</td></tr>
+            <tr><td>ジャンプキック</td><td>空中 <code>Z</code> / <code>X</code></td><td>4F</td><td>16F</td><td>着地0F</td><td>11</td><td>2.0（着地コンボ始動）</td></tr>
+            <tr><td>ジャンプパンチ</td><td>空中 <code>C</code> / <code>V</code></td><td>3F</td><td>14F</td><td>着地0F</td><td>8</td><td>1.5（着地コンボ始動）</td></tr>
+            <tr><td>しゃがみパンチ</td><td><code>K/↓</code>＋<code>C</code>/<code>V</code></td><td>4F</td><td>4F</td><td>7F</td><td>7</td><td>1.5</td></tr>
+            <tr><td>しゃがみキック</td><td><code>K/↓</code>＋<code>Z</code>/<code>X</code></td><td>6F</td><td>5F</td><td>12F</td><td>10</td><td>3.1（下段・立ちガード崩し）</td></tr>
+            <tr><td>投げ</td><td><code>A</code> / 投げ</td><td>5F</td><td>4F</td><td>20F</td><td>16</td><td>5.4〜7.4（ガード不能／しゃがみ時は巴投確定）</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="env" class="card">
+      <h2>7. 動作環境・注意事項</h2>
+      <ul>
+        <li><strong>推奨ブラウザ：</strong> PC版 Google Chrome / Android版 Google Chrome / iOS版 Safari</li>
+        <li><strong>画面サイズ：</strong> アドレスバー・タブバー・セーフエリアに追従する全画面設計です。画面回転時も自動調整されます。</li>
+        <li><strong>誤操作防止：</strong> ゲーム盤面と操作パッド上のスワイプスクロール・ピンチズームは無効化していますが、上部ボタン・ポーズ画面・マニュアルリンクは通常通りタップできます。</li>
+        <li><strong>キャッシュ無効化：</strong> 常に最新プログラムで動作するよう、HTMLメタタグ・起動時キャッシュ削除・BFCacheリロード制御を組み込んでいます。</li>
+      </ul>
+      <p class="note">※ ローカルPC上でテストする場合は、ES Modules仕様のため <code>file://</code> 直開きではなく静的HTTPサーバー経由でアクセスしてください。</p>
+    </section>
+  </main>
+
+  <footer>
+    BUDOKAI POLYGON '95 Prototype Manual
+  </footer>
+
+  <script>
+    // dist/manual/ から開かれた場合は ../index.html、ワークスペース直下 manual/ から開かれた場合は ../dist/index.html へ誘導
+    (function () {
+      const link = document.getElementById('back-to-game');
+      if (!window.location.pathname.includes('/dist/') && window.location.pathname.includes('/manual/')) {
+        // ルートで配信されている場合は環境に応じて遷移先を維持
+        fetch('../index.html', { method: 'HEAD' }).then((res) => {
+          if (!res.ok) link.href = '../dist/index.html';
+        }).catch(() => {});
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>ANIMAL BUDOKAI '96 - 動物ローポリ3D格闘ゲーム</title>
+  <link rel="stylesheet" href="./css/style.css?v=20261122222828">
+</head>
+<body>
+  <div id="app">
+    <canvas id="game-canvas"></canvas>
+
+    <!-- 上部HUD -->
+    <header id="hud-top">
+      <div class="hud-utility-bar">
+        <div class="hud-brand">ANIMAL BUDOKAI '96</div>
+        <div class="hud-tools">
+          <button id="btn-pad-toggle" class="tool-btn" type="button">PAD: AUTO</button>
+          <button id="btn-pad-swap" class="tool-btn" type="button">配置: 左◯</button>
+          <button id="btn-mute" class="tool-btn" type="button">SE: ON</button>
+          <button id="btn-bgm-toggle" class="tool-btn" type="button">BGM: ON</button>
+          <a class="tool-btn tool-link" href="./manual/index.html" target="_blank" rel="noopener">マニュアル</a>
+          <button id="btn-dev-toggle" class="tool-btn tool-btn--dev" type="button" title="Phase 4 検証用デバッグ細工 (Shift+D)">DEV</button>
+          <button id="btn-pause" class="tool-btn" type="button">PAUSE</button>
+        </div>
+      </div>
+
+      <!-- Phase 3/4 検証用デバッグバー（DEVボタンまたは Shift+D で表示） -->
+      <div id="dev-toolbar" class="dev-toolbar is-hidden" aria-label="開発テストツール">
+        <span class="dev-badge">DEV TEST</span>
+        <button id="btn-dev-final" class="dev-btn" type="button">⏩ 最終戦へ直行</button>
+        <button id="btn-dev-win" class="dev-btn" type="button">⚡ 即1P勝利</button>
+        <button id="btn-dev-champ" class="dev-btn" type="button">🎤 インタビュー(Phase4)デモ</button>
+        <button id="btn-dev-emergency" class="dev-btn dev-btn--danger" type="button">🚨 EMERGENCY!!直行</button>
+        <button id="btn-dev-ending" class="dev-btn" type="button">🎬 選択キャラED</button>
+        <button id="btn-dev-unlock" class="dev-btn" type="button">🔓 14体解放切替</button>
+      </div>
+
+      <div class="hud-battle-bar">
+        <!-- 1P ステータス -->
+        <div class="fighter-hud fighter-hud--p1">
+          <div class="fighter-meta">
+            <span id="name-p1" class="fighter-name">1P グリズリー</span>
+            <div id="rounds-p1" class="round-pips" aria-label="1P獲得ラウンド">
+              <span class="round-pip"></span>
+              <span class="round-pip"></span>
+            </div>
+          </div>
+          <div class="hp-track">
+            <div id="hp-p1-trail" class="hp-trail"></div>
+            <div id="hp-p1" class="hp-fill hp-fill--p1"></div>
+          </div>
+          <div class="skill-gauges">
+            <div class="skill-gauge is-ready">
+              <div id="sp1-fill-p1" class="skill-fill"></div>
+              <span id="sp1-text-p1" class="skill-text">Q: ヘッドスロー</span>
+            </div>
+            <div class="skill-gauge is-ready">
+              <div id="sp2-fill-p1" class="skill-fill"></div>
+              <span id="sp2-text-p1" class="skill-text">W: ベア・ミサイル</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- タイマー -->
+        <div class="timer-box">
+          <div id="round-timer" class="timer-value">60</div>
+        </div>
+
+        <!-- COM ステータス -->
+        <div class="fighter-hud fighter-hud--p2">
+          <div class="fighter-meta">
+            <div id="rounds-p2" class="round-pips" aria-label="COM獲得ラウンド">
+              <span class="round-pip"></span>
+              <span class="round-pip"></span>
+            </div>
+            <span id="name-p2" class="fighter-name">COM キリン</span>
+          </div>
+          <div class="hp-track">
+            <div id="hp-p2-trail" class="hp-trail"></div>
+            <div id="hp-p2" class="hp-fill hp-fill--p2"></div>
+          </div>
+          <div class="skill-gauges">
+            <div class="skill-gauge is-ready">
+              <div id="sp1-fill-p2" class="skill-fill"></div>
+              <span id="sp1-text-p2" class="skill-text">Q: キリン・ランス</span>
+            </div>
+            <div class="skill-gauge is-ready">
+              <div id="sp2-fill-p2" class="skill-fill"></div>
+              <span id="sp2-text-p2" class="skill-text">W: エクステンド・キック</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- 戦闘コールアウト & 中央バナー -->
+    <div id="combat-callout" class="combat-callout" aria-live="polite"></div>
+    <div id="center-banner" class="center-banner" aria-live="polite"></div>
+
+    <!-- タブレット・スマホ用バーチャルコントローラー -->
+    <div id="touch-controls" class="touch-controls is-hidden" aria-label="タッチコントローラー">
+      <div id="vpad-stick-zone" class="vpad-stick-zone" role="application" aria-label="3D移動スティック">
+        <div class="vpad-dir vpad-dir--up">▲奥</div>
+        <div class="vpad-dir vpad-dir--down">▼手前</div>
+        <div class="vpad-dir vpad-dir--left">◀</div>
+        <div class="vpad-dir vpad-dir--right">▶</div>
+        <div id="vpad-stick-knob" class="vpad-stick-knob">◯</div>
+      </div>
+
+      <div id="vpad-actions" class="vpad-actions">
+        <button class="pad-btn pad-btn--sp1" type="button" data-action="SP1">
+          <span class="pad-main">SP1</span><span class="pad-sub">Q</span>
+        </button>
+        <button class="pad-btn pad-btn--sp2" type="button" data-action="SP2">
+          <span class="pad-main">SP2</span><span class="pad-sub">W</span>
+        </button>
+        <button class="pad-btn pad-btn--throw" type="button" data-action="THROW">
+          <span class="pad-main">投げ</span><span class="pad-sub">A</span>
+        </button>
+        <button class="pad-btn pad-btn--jump" type="button" data-action="JUMP">
+          <span class="pad-main">JUMP</span><span class="pad-sub">I/SP</span>
+        </button>
+        <button class="pad-btn pad-btn--lp" type="button" data-action="LIGHT_PUNCH">
+          <span class="pad-main">弱P</span><span class="pad-sub">C</span>
+        </button>
+        <button class="pad-btn pad-btn--hp" type="button" data-action="HEAVY_PUNCH">
+          <span class="pad-main">強P</span><span class="pad-sub">V</span>
+        </button>
+        <button class="pad-btn pad-btn--guard" type="button" data-action="GUARD">
+          <span class="pad-main">防御</span><span class="pad-sub">S</span>
+        </button>
+        <button class="pad-btn pad-btn--crouch" type="button" data-action="CROUCH">
+          <span class="pad-main">かがむ</span><span class="pad-sub">K/↓</span>
+        </button>
+        <button class="pad-btn pad-btn--lk" type="button" data-action="LIGHT_KICK">
+          <span class="pad-main">弱K</span><span class="pad-sub">Z</span>
+        </button>
+        <button class="pad-btn pad-btn--hk" type="button" data-action="HEAVY_KICK">
+          <span class="pad-main">強K</span><span class="pad-sub">X</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- タイトルオーバーレイ -->
+    <section id="overlay-title" class="overlay-screen">
+      <div class="panel-card allow-scroll">
+        <p class="panel-kicker">PHASE 3 TOURNAMENT // SURREAL ANIMAL 3D FIGHTER</p>
+        <h1 class="panel-title">ANIMAL BUDOKAI</h1>
+        <p class="panel-desc">
+          動物ファイター全9体＋裏に潜む猛獣たちがリングに集結！<br>
+          全キャラをなぎ倒す「地獄の勝ち抜き戦」を制覇せよ！
+        </p>
+
+        <div class="panel-actions">
+          <button id="btn-mode-tournament" class="primary-btn" type="button">ANIMAL BUDOKAI（全員勝ち抜き）</button>
+          <button id="btn-mode-single" class="secondary-btn" type="button">SINGLE MATCH（フリー対戦）</button>
+          <a id="btn-title-manual" class="secondary-btn" href="./manual/index.html" target="_blank" rel="noopener">操作マニュアル</a>
+        </div>
+
+        <div class="quick-controls">
+          <div><strong>必殺技:</strong> <code>Q</code> 必殺技1（SP1） / <code>W</code> 必殺技2（SP2）</div>
+          <div><strong>移動・3D回避:</strong> <code>J/L・←→</code> 移動 / <code>U/O</code>・<code>Shift+↑↓</code> 3Dサイドステップ（奥・手前回避） / <code>I・↑・SPACE</code> ジャンプ / <code>K・↓</code> しゃがみ（<code>+A</code>で確定巴投）</div>
+          <div><strong>タブレット:</strong> 左の <code>◯</code> で前後＋奥手前の4方向3D移動 ／ 右の専用ボタンで <code>JUMP</code>・<code>かがむ</code>・攻撃・防御</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- キャラクター選択オーバーレイ（一覧アイコン＋中央3D回転モデル） -->
+    <section id="overlay-char-select" class="overlay-screen overlay-char-select is-hidden">
+      <div class="char-select-top">
+        <div class="char-info-box char-info-box--p1">
+          <div class="char-tag">1P PLAYER</div>
+          <div id="cs-p1-name" class="char-name">グリズリー</div>
+          <div id="cs-p1-meta" class="char-meta">HP 120 / 豪腕ヘッドスロワー</div>
+          <div id="cs-p1-skills" class="char-skills">Q: ヘッドスロー / W: ベア・ミサイル</div>
+        </div>
+        <div class="char-vs-badge">VS</div>
+        <div class="char-info-box char-info-box--p2">
+          <div id="cs-com-tag" class="char-tag">CHALLENGE LADDER</div>
+          <div id="cs-com-title" class="char-name">8 FIGHTERS GAUNTLET</div>
+          <div id="cs-com-meta" class="char-meta">全8体総当たり勝ち抜き（オモテ→裏5戦へ！）</div>
+          <div id="cs-diff-group" class="diff-selector diff-selector--compact is-hidden" role="group" aria-label="COM強さ選択">
+            <button class="diff-btn" type="button" data-difficulty="EASY">EASY</button>
+            <button class="diff-btn is-active" type="button" data-difficulty="NORMAL">NORMAL</button>
+            <button class="diff-btn" type="button" data-difficulty="HARD">HARD</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="char-select-dock allow-scroll">
+        <div id="char-grid" class="char-grid" role="listbox" aria-label="1Pキャラクター一覧"></div>
+
+        <div class="panel-actions panel-actions--compact">
+          <button id="btn-char-fight" class="primary-btn" type="button">NEXT! (Enter)</button>
+          <button id="btn-char-back" class="secondary-btn" type="button">戻る (Esc)</button>
+        </div>
+        <p class="menu-hint"><code>I / K / J / L / 矢印</code> キャラ選択 ・ <code>Enter</code> 決定 ・ <code>Tab</code> 難易度(フリー) ・ <code>Esc</code> 戻る</p>
+      </div>
+    </section>
+
+    <!-- トーナメント対戦表（ブラケット）オーバーレイ -->
+    <section id="overlay-bracket" class="overlay-screen overlay-bracket is-hidden">
+      <div class="panel-card bracket-card allow-scroll">
+        <p id="bracket-kicker" class="panel-kicker">TOURNAMENT // QUARTER FINAL</p>
+        <h2 id="bracket-title" class="panel-title bracket-title">第1回戦：準々決勝</h2>
+        <p id="bracket-next-card" class="bracket-next-card">NEXT MATCH: グリズリー VS キリン</p>
+
+        <div id="bracket-board" class="bracket-board" aria-label="トーナメント対戦表"></div>
+
+        <div class="panel-actions panel-actions--compact">
+          <button id="btn-bracket-fight" class="primary-btn" type="button">試合開始！ (Enter)</button>
+          <button id="btn-bracket-back" class="secondary-btn" type="button">タイトルへ (Esc)</button>
+        </div>
+        <p class="menu-hint"><code>Enter</code> 試合開始 ・ <code>Esc</code> タイトルへ ・ <code>DEV / Shift+D</code> でショートカット表示</p>
+      </div>
+    </section>
+
+    <!-- 優勝トロフィー＆ヒーローインタビューオーバーレイ -->
+    <section id="overlay-champion" class="overlay-screen overlay-champion is-hidden">
+      <div class="champion-banner">
+        <div id="champ-crown" class="champion-crown" aria-hidden="true">🏆</div>
+        <p id="champ-kicker" class="panel-kicker">HERO INTERVIEW // NEW CHAMPION</p>
+        <div id="champ-speaker" class="champ-speaker is-hidden">アナウンサー</div>
+        <h2 id="champ-title" class="panel-title">グリズリー 優勝!!</h2>
+        <p id="champ-desc" class="panel-desc">全8体の頂点に立ち、動物武道会の王者に輝きました！</p>
+        <div class="panel-actions panel-actions--compact">
+          <button id="btn-champ-next" class="primary-btn is-hidden" type="button">次へ (Enter)</button>
+          <button id="btn-champ-ending" class="primary-btn" type="button">エンディングを見る (Enter)</button>
+          <button id="btn-champ-title" class="secondary-btn" type="button">タイトルへ (Esc)</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Phase 4 緊急乱入 (EMERGENCY!!) シネマティックオーバーレイ -->
+    <section id="overlay-emergency" class="overlay-screen overlay-emergency is-hidden">
+      <div id="emergency-subtitle-bar" class="emergency-subtitle-bar is-hidden">
+        <p id="emergency-subtitle-text" class="emergency-subtitle-text">――誰だ！！</p>
+        <p class="emergency-skip-hint">（クリック / Enter で演出を早送りできます）</p>
+      </div>
+      <div id="emergency-banner" class="emergency-banner is-hidden">
+        <div class="emergency-alert">⚠ EMERGENCY!! ⚠</div>
+        <p class="emergency-sub">TRUE CHALLENGERS APPEAR!</p>
+        <p class="panel-desc">
+          覇者「しろくま」と猛獣四天王（タイガー・ライオン・ゾウ・サイ）が降臨！！<br>
+          このまま「裏・ANIMAL BUDOKAI」地獄の5連戦へ強制突入する！！
+        </p>
+        <div class="panel-actions panel-actions--compact">
+          <button id="btn-emergency-go" class="danger-btn" type="button">出てこいやぁ！！ 裏武道会へ突入！ (Enter)</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 動物別シネマティックエンディングオーバーレイ -->
+    <section id="overlay-ending" class="overlay-screen overlay-ending is-hidden">
+      <div id="ending-dialogue-box" class="ending-dialogue-box allow-scroll">
+        <div class="ending-header">
+          <span id="ending-speaker" class="ending-speaker">グリズリー ENDING</span>
+          <span id="ending-location" class="ending-location">深い森の奥・夕暮れの切り株にて</span>
+        </div>
+        <div id="ending-lines" class="ending-lines"></div>
+        <div class="panel-actions panel-actions--compact">
+          <button id="btn-ending-next" class="primary-btn" type="button">次の台詞 (Enter)</button>
+          <button id="btn-ending-again" class="secondary-btn is-hidden" type="button">もう一度挑戦 (Enter)</button>
+          <button id="btn-ending-title" class="secondary-btn" type="button">タイトルへ (Esc)</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- リザルトオーバーレイ -->
+    <section id="overlay-result" class="overlay-screen is-hidden">
+      <div class="panel-card">
+        <p class="panel-kicker">MATCH RESULT</p>
+        <h2 id="result-title" class="panel-title">YOU WIN!</h2>
+        <p id="result-detail" class="panel-desc">ROUND 2 - 0</p>
+        <div class="panel-actions">
+          <button id="btn-rematch" class="primary-btn" type="button">REMATCH</button>
+          <button id="btn-result-title" class="secondary-btn" type="button">TITLE</button>
+        </div>
+        <p class="menu-hint"><code>J / L / ←→</code> 選択 ・ <code>Enter</code> 決定 ・ <code>Esc</code> タイトルへ</p>
+      </div>
+    </section>
+
+    <!-- ポーズ（途中休憩）オーバーレイ -->
+    <section id="overlay-pause" class="overlay-screen is-hidden">
+      <div class="panel-card">
+        <p class="panel-kicker">INTERMISSION</p>
+        <h2 class="panel-title">途中休憩（PAUSE）</h2>
+        <div class="panel-actions">
+          <button id="btn-resume" class="primary-btn" type="button">試合に戻る</button>
+          <button id="btn-forfeit" class="danger-btn" type="button">棄権する</button>
+          <a id="btn-pause-manual" class="secondary-btn" href="./manual/index.html" target="_blank" rel="noopener">マニュアル</a>
+          <button id="btn-pause-title" class="secondary-btn" type="button">タイトルへ</button>
+        </div>
+        <p class="menu-hint"><code>J / L / ←→</code> 選択 ・ <code>Enter</code> 決定 ・ <code>Esc</code> 試合に戻る</p>
+      </div>
+    </section>
+
+    <!-- file:// 直開き時の案内 -->
+    <div id="file-protocol-warning" class="file-warning is-hidden">
+      ローカルファイル（file://）として開かれています。ES Modules動作のため、簡易Webサーバー経由（http://）で開いてください。
+    </div>
+  </div>
+
+  <script>
+    if (window.location.protocol === 'file:') {
+      document.getElementById('file-protocol-warning').classList.remove('is-hidden');
+    }
+  </script>
+  <script type="module">
+    const bust = Date.now();
+    import(`./js/main.js?v=${bust}`).catch((err) => {
+      console.error('Failed to boot game module:', err);
+      const warn = document.getElementById('file-protocol-warning');
+      if (warn) {
+        warn.textContent = 'プログラムの読み込みに失敗しました。スーパーリロード（Ctrl+Shift+R）またはdist一式の再アップロードをお試しください。';
+        warn.classList.remove('is-hidden');
+      }
+    });
+  </script>
+</body>
+</html>

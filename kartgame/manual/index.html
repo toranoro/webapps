@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>3D KART GRAND PRIX マニュアル</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 24px 16px 60px;
+        font-family: "Hiragino Maru Gothic ProN", "Yu Gothic UI", "Meiryo", sans-serif;
+        background: linear-gradient(180deg, #e0f2fe 0%, #fef9c3 100%);
+        color: #1e293b;
+        line-height: 1.9;
+      }
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+      }
+      header {
+        background: linear-gradient(135deg, #ef4444, #f97316);
+        color: #ffffff;
+        padding: 28px 24px;
+        border-radius: 24px;
+        text-align: center;
+        box-shadow: 0 10px 25px rgba(239, 68, 68, 0.25);
+        margin-bottom: 24px;
+      }
+      header h1 {
+        margin: 0 0 8px;
+        font-size: 32px;
+      }
+      .back-btn {
+        display: inline-block;
+        margin-top: 10px;
+        padding: 10px 20px;
+        background: #facc15;
+        color: #0f172a;
+        font-weight: 800;
+        border-radius: 999px;
+        text-decoration: none;
+        border: 3px solid #ffffff;
+      }
+      .card {
+        background: #ffffff;
+        border-radius: 20px;
+        padding: 22px 24px;
+        margin-bottom: 20px;
+        border: 3px solid #bae6fd;
+        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+      }
+      .card h2 {
+        margin-top: 0;
+        font-size: 22px;
+        color: #0284c7;
+        border-bottom: 3px dashed #bae6fd;
+        padding-bottom: 6px;
+      }
+      .key-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+        margin-top: 12px;
+      }
+      .key-item {
+        background: #f8fafc;
+        border: 2px solid #cbd5e1;
+        border-radius: 14px;
+        padding: 12px 14px;
+      }
+      .kbd {
+        display: inline-block;
+        background: #1e293b;
+        color: #ffffff;
+        padding: 2px 10px;
+        border-radius: 8px;
+        font-weight: 800;
+        font-size: 15px;
+        margin-right: 4px;
+      }
+      .item-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 14px;
+        margin-top: 12px;
+      }
+      .item-card {
+        border-radius: 16px;
+        padding: 14px;
+        background: #fffbeb;
+        border: 2px solid #fde047;
+        text-align: center;
+      }
+      .item-emoji {
+        font-size: 42px;
+        line-height: 1.2;
+      }
+      .svg-box {
+        background: #f1f5f9;
+        border-radius: 16px;
+        padding: 12px;
+        text-align: center;
+        margin: 12px 0;
+      }
+      .tip {
+        background: #ecfeff;
+        border-left: 6px solid #06b6d4;
+        padding: 12px 16px;
+        border-radius: 10px;
+        margin-top: 12px;
+      }
+      ruby rt {
+        font-size: 0.6em;
+        color: #475569;
+      }
+      header ruby rt {
+        color: #fef08a;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>🏎️ マニュアル</h1>
+        <p>
+          <ruby>全<rt>ぜん</rt></ruby>6カップ・24コースを 走りぬけて、<ruby>総合<rt>そうごう</rt></ruby><ruby>優勝<rt>ゆうしょう</rt></ruby>（グランプリ）を めざそう！
+        </p>
+        <a class="back-btn" href="../index.html">🎮 ゲームに <ruby>戻<rt>もど</rt></ruby>る</a>
+      </header>
+
+      <section class="card">
+        <h2>1. <ruby>基本<rt>きほん</rt></ruby>の <ruby>操作<rt>そうさ</rt></ruby>（キーの <ruby>押<rt>お</rt></ruby>しかた）</h2>
+        <div class="svg-box">
+          <svg viewBox="0 0 640 175" width="100%" style="max-width: 620px" aria-label="キーボード図解">
+            <!-- Left hand: Z / X / Space -->
+            <rect x="20" y="25" width="58" height="50" rx="10" fill="#1e293b" />
+            <text x="49" y="56" fill="#fff" font-size="22" font-weight="bold" text-anchor="middle">Z</text>
+            <text x="49" y="16" fill="#0284c7" font-size="12" font-weight="bold" text-anchor="middle">ブレーキ</text>
+
+            <rect x="86" y="25" width="58" height="50" rx="10" fill="#0284c7" />
+            <text x="115" y="56" fill="#fff" font-size="22" font-weight="bold" text-anchor="middle">X</text>
+            <text x="115" y="16" fill="#0369a1" font-size="12" font-weight="bold" text-anchor="middle">アクセル</text>
+
+            <rect x="20" y="92" width="180" height="50" rx="10" fill="#ef4444" />
+            <text x="110" y="123" fill="#fff" font-size="20" font-weight="bold" text-anchor="middle">Space</text>
+            <text x="110" y="160" fill="#dc2626" font-size="13" font-weight="bold" text-anchor="middle">ジャンプ ＆ ドリフト！</text>
+
+            <!-- Right hand: J / K / L -->
+            <rect x="245" y="45" width="58" height="50" rx="10" fill="#1e293b" />
+            <text x="274" y="76" fill="#fff" font-size="22" font-weight="bold" text-anchor="middle">J</text>
+            <text x="274" y="114" fill="#0284c7" font-size="12" font-weight="bold" text-anchor="middle">ひだりハンドル</text>
+
+            <rect x="313" y="45" width="58" height="50" rx="10" fill="#f59e0b" />
+            <text x="342" y="76" fill="#fff" font-size="22" font-weight="bold" text-anchor="middle">K</text>
+            <text x="342" y="34" fill="#d97706" font-size="12" font-weight="bold" text-anchor="middle">アイテムをつかう</text>
+
+            <rect x="381" y="45" width="58" height="50" rx="10" fill="#1e293b" />
+            <text x="410" y="76" fill="#fff" font-size="22" font-weight="bold" text-anchor="middle">L</text>
+            <text x="410" y="114" fill="#0284c7" font-size="12" font-weight="bold" text-anchor="middle">みぎハンドル</text>
+
+            <!-- Extra keys: C / R -->
+            <rect x="475" y="45" width="68" height="50" rx="10" fill="#475569" />
+            <text x="509" y="76" fill="#fff" font-size="18" font-weight="bold" text-anchor="middle">C</text>
+            <text x="509" y="114" fill="#475569" font-size="12" font-weight="bold" text-anchor="middle">うしろを見る</text>
+
+            <rect x="553" y="45" width="68" height="50" rx="10" fill="#475569" />
+            <text x="587" y="76" fill="#fff" font-size="18" font-weight="bold" text-anchor="middle">R</text>
+            <text x="587" y="114" fill="#475569" font-size="12" font-weight="bold" text-anchor="middle">コースへもどる</text>
+          </svg>
+        </div>
+
+        <div class="key-grid">
+          <div class="key-item">
+            <span class="kbd">X</span><br />
+            アクセル（<ruby>前<rt>まえ</rt></ruby>へ <ruby>進<rt>すす</rt></ruby>む）
+          </div>
+          <div class="key-item">
+            <span class="kbd">Z</span><br />
+            ブレーキ・バック（<ruby>止<rt>と</rt></ruby>まる・さがる）
+          </div>
+          <div class="key-item">
+            <span class="kbd">J</span>（<ruby>左<rt>ひだり</rt></ruby>） / <span class="kbd">L</span>（<ruby>右<rt>みぎ</rt></ruby>）<br />
+            ハンドル（<ruby>左<rt>ひだり</rt></ruby>・<ruby>右<rt>みぎ</rt></ruby>へ まがる）
+          </div>
+          <div class="key-item">
+            <span class="kbd">Space</span><br />
+            ジャンプ ＆ ドリフト！
+          </div>
+          <div class="key-item">
+            <span class="kbd">K</span><br />
+            とった アイテムを つかう！
+          </div>
+          <div class="key-item">
+            <span class="kbd">Esc</span> / <span class="kbd">V</span> / <span class="kbd">R</span><br />
+            <ruby>一時停止<rt>いちじていし</rt></ruby> / <ruby>下画面<rt>したがめん</rt></ruby>カメラ / レスキューバード<ruby>救出<rt>きゅうしゅつ</rt></ruby>
+          </div>
+          <div class="key-item">
+            <span class="kbd">Enter</span> / <span class="kbd">M</span><br />
+            スタート・<ruby>決定<rt>けってい</rt></ruby>・やり<ruby>直<rt>なお</rt></ruby>し ／ <ruby>効果音<rt>こうかおん</rt></ruby> ON/OFF
+          </div>
+        </div>
+        <div class="tip">
+          💡 <strong>ロケットスタートのコツ：</strong> カウントダウンの「<strong>1</strong>」から「<strong>GO!</strong>」になる しゅんかんに <span class="kbd">X</span> を おしっぱなしにすると、スタートダッシュが きまるよ！
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>2. ドリフト ＆ 2<ruby>段階<rt>だんかい</rt></ruby>ミニターボの <ruby>出<rt>だ</rt></ruby>しかた</h2>
+        <p>
+          カーブを <ruby>速<rt>はや</rt></ruby>く まがりながら、タイヤから <ruby>火花<rt>ひばな</rt></ruby>を
+          ためて ダッシュする すごいワザだよ！
+        </p>
+        <div class="svg-box">
+          <svg viewBox="0 0 640 155" width="100%" style="max-width: 620px" aria-label="ドリフト図解">
+            <rect x="10" y="20" width="185" height="115" rx="14" fill="#ffffff" stroke="#cbd5e1" stroke-width="2" />
+            <text x="102" y="46" fill="#0f172a" font-size="14" font-weight="bold" text-anchor="middle">ステップ 1：ホップ</text>
+            <text x="102" y="75" fill="#334155" font-size="13" text-anchor="middle">J か L を おしながら</text>
+            <text x="102" y="98" fill="#ef4444" font-size="15" font-weight="bold" text-anchor="middle">Space を おしっぱなし！</text>
+            <text x="102" y="120" fill="#64748b" font-size="12" text-anchor="middle">カートが ピョンと はねるよ</text>
+
+            <text x="210" y="84" fill="#f97316" font-size="24" font-weight="bold" text-anchor="middle">▶</text>
+
+            <rect x="225" y="20" width="195" height="115" rx="14" fill="#ffffff" stroke="#38bdf8" stroke-width="3" />
+            <text x="322" y="46" fill="#0284c7" font-size="14" font-weight="bold" text-anchor="middle">ステップ 2：火花をためる</text>
+            <text x="322" y="75" fill="#0284c7" font-size="14" font-weight="bold" text-anchor="middle">💙 0.7びょう → 青い火花！</text>
+            <text x="322" y="100" fill="#ea580c" font-size="14" font-weight="bold" text-anchor="middle">🧡 1.6びょう → オレンジ火花！</text>
+            <text x="322" y="120" fill="#64748b" font-size="12" text-anchor="middle">オレンジまで ためると さいきょう！</text>
+
+            <text x="435" y="84" fill="#f97316" font-size="24" font-weight="bold" text-anchor="middle">▶</text>
+
+            <rect x="450" y="20" width="180" height="115" rx="14" fill="#fff7ed" stroke="#f97316" stroke-width="3" />
+            <text x="540" y="46" fill="#ea580c" font-size="14" font-weight="bold" text-anchor="middle">ステップ 3：はなす！</text>
+            <text x="540" y="78" fill="#0f172a" font-size="14" font-weight="bold" text-anchor="middle">Space を はなすと…</text>
+            <text x="540" y="106" fill="#ef4444" font-size="17" font-weight="bold" text-anchor="middle">🔥 ミニターボ発射！</text>
+          </svg>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>3. コースの 4つの オリジナルアイテム</h2>
+        <p>
+          コースの 2<ruby>色<rt>しょく</rt></ruby>に かがやく「<strong>パワーカプセル</strong>」に さわると、4つのうち どれか1つが もらえるよ！
+        </p>
+        <div class="item-grid">
+          <div class="item-card">
+            <div class="item-emoji">🚀</div>
+            <strong>ミニロケット</strong>
+            <p>
+              いっきに スピードアップ！<br />
+              ダート（<ruby>茶色<rt>ちゃいろ</rt></ruby>いみち）でも <ruby>遅<rt>おそ</rt></ruby>くならないよ。
+            </p>
+          </div>
+          <div class="item-card">
+            <div class="item-emoji">💥</div>
+            <strong>トゲボール</strong>
+            <p>
+              <ruby>前<rt>まえ</rt></ruby>に ビューンと とぶ <ruby>鉄球<rt>てっきゅう</rt></ruby>！<br />
+              カベに はねかえり、あたった相手を スピンさせる！
+            </p>
+          </div>
+          <div class="item-card">
+            <div class="item-emoji">🛢️</div>
+            <strong>ツルツルオイル</strong>
+            <p>
+              うしろに ポンと おくよ。<br />
+              ふんだ ライバルが クルクル スピンする！
+            </p>
+          </div>
+          <div class="item-card">
+            <div class="item-emoji">👑</div>
+            <strong>キングクラウン</strong>
+            <p>
+              6<ruby>秒間<rt>びょうかん</rt></ruby> 虹色に ひかって 無敵（むてき）！<br />
+              スピードアップ＆体あたりで ライバルを けちらせ！
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>4. コースの しかけ（ギミック）</h2>
+        <ul>
+          <li>
+            🌈 <strong><ruby>虹色<rt>にじいろ</rt></ruby>ダッシュボード：</strong> 上を とおると ぐんと 加速（かそく）するよ！
+          </li>
+          <li>
+            🛫 <strong>ジャンプ<ruby>台<rt>だい</rt></ruby>：</strong> オレンジの スロープから 大きく ジャンプ！ 着地（ちゃくち）でも ちょっと 加速するよ。
+          </li>
+          <li>
+            🌾 <strong>コースの そと（ダート）：</strong> アスファルトから 出ると スピードが おちるよ。ミニロケットか キングクラウンで つっきろう！
+          </li>
+          <li>
+            ⚠️ <strong><ruby>逆走<rt>ぎゃくそう</rt></ruby>アラート：</strong> 反対（はんたい）むきに 走ると 赤いサインが 出るよ。すぐに もどろう！
+          </li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>5. 動物キャラせんたく ＆ 2<ruby>画面<rt>がめん</rt></ruby>・<ruby>機能<rt>きのう</rt></ruby></h2>
+        <ul>
+          <li>
+            🐾 <strong>9<ruby>種類<rt>しゅるい</rt></ruby>の 動物レーサー ＆ マシン：</strong> ゲームスタート後に 3×3 パネルが <ruby>開<rt>ひら</rt></ruby>くよ！<span class="kbd">I</span> <span class="kbd">J</span> <span class="kbd">K</span> <span class="kbd">L</span>（または 矢印キー）で <ruby>動物<rt>どうぶつ</rt></ruby>をえらんで <span class="kbd">Enter</span>（またはクリック）すると ピカピカッと <strong>HUMAN</strong> 確定！ つづいて <strong>COM1〜COM3</strong> も ルーレットで 順番に 決まったあと、<strong>「レースへ出走！[<span class="kbd">Enter</span>]」</strong> で コース<ruby>紹介<rt>しょうかい</rt></ruby>ズーム演出＆BGMスタート！（<span class="kbd">Enter</span>/<span class="kbd">Space</span>でスキップ可）
+          </li>
+          <li>
+            🏎️ <strong><ruby>上<rt>うえ</rt></ruby>の<ruby>画面<rt>がめん</rt></ruby>（<ruby>走行<rt>そうこう</rt></ruby>ビュー）：</strong> じぶんの マシンの うしろから 見た 3D せんめん画面だよ。アイテム・スピード・ラップが でるよ。
+          </li>
+          <li>
+            🗺️ <strong><ruby>下<rt>した</rt></ruby>の<ruby>画面<rt>がめん</rt></ruby>（コース<ruby>全体<rt>ぜんたい</rt></ruby>マップ）：</strong> 車やバイクに乗った <strong>かわいい動物のちびキャラ</strong> たちが コース上を リアルタイムで 走るよ！ <span class="kbd">V</span> キーや ボタンで <strong>「<ruby>斜<rt>なな</rt></ruby>め<ruby>上<rt>うえ</rt></ruby>3D<ruby>全体<rt>ぜんたい</rt></ruby>」「<ruby>斜<rt>なな</rt></ruby>め<ruby>上<rt>うえ</rt></ruby>ちゅうけい」「<ruby>真上<rt>まうえ</rt></ruby>マップ」</strong>の 3つの モードを きりかえられるよ！
+          </li>
+          <li>
+            🕊️ <strong>レスキューバード<ruby>隊<rt>たい</rt></ruby>の <ruby>救出<rt>きゅうしゅつ</rt></ruby>（2<ruby>秒<rt>びょう</rt></ruby>）：</strong> コースの そとや <ruby>落<rt>お</rt></ruby>とし<ruby>穴<rt>あな</rt></ruby>に おちても、白い コウノトリ<ruby>隊長<rt>たいちょう</rt></ruby>と スズメたちの <ruby>小鳥<rt>ことり</rt></ruby>グループが みんなで ヒモを 引っ張って 穴の <ruby>手前<rt>てまえ</rt></ruby>などの 安全なコース上へ つれもどしてくれるよ（<span class="kbd">R</span> キーでも いつでも よべるよ）。
+          </li>
+          <li>
+            ⏸️ <strong><ruby>一時停止<rt>いちじていし</rt></ruby>メニュー：</strong> <span class="kbd">Esc</span> キーを おすと 画面が 暗くなって、「ゲームに戻る（<span class="kbd">Esc</span>）」「やり直す（<span class="kbd">Enter</span>）」「リタイア（タイトルへ）」が えらべるよ！
+          </li>
+          <li>
+            🔊 <strong>コミカルなサウンド<ruby>演出<rt>えんしゅつ</rt></ruby>：</strong> エンジン<ruby>音<rt>おん</rt></ruby>・アクセル・ブースト・アイテムのルーレット<ruby>音<rt>おん</rt></ruby>・ツルツルオイルやトゲボールでスピンしたときの ゆかいな 効果音が 鳴るよ！（<span class="kbd">M</span> キーや 右上のボタンで 音 ON/OFF が できるよ）
+          </li>
+          <li>
+            🔥 <strong>おいぬきランクアップ<ruby>演出<rt>えんしゅつ</rt></ruby>：</strong> ライバルをおいぬいて <ruby>順位<rt>じゅんい</rt></ruby>が あがると、うえの画面に <ruby>大<rt>おお</rt></ruby>きな <ruby>順位<rt>じゅんい</rt></ruby>ポップアップ（1st / 2nd / 3rd）が ドーンと 出るよ！
+          </li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>6. <ruby>全<rt>ぜん</rt></ruby>6カップ（24コース）と <ruby>表彰式<rt>ひょうしょうしき</rt></ruby></h2>
+        <ul>
+          <li>
+            🌿 <strong>ルーキー・カップ：</strong> グリーン・サーキット／マッド・スワンプ（<ruby>泥<rt>どろ</rt></ruby>＆<ruby>落<rt>お</rt></ruby>とし<ruby>穴<rt>あな</rt></ruby>）／マグマ・キャッスル（<ruby>石畳<rt>いしだたみ</rt></ruby>＆<ruby>落石<rt>らくせき</rt></ruby>）／クロスオーバー・ファイナル（<ruby>立体交差橋<rt>りったいこうさきょう</rt></ruby>）。
+          </li>
+          <li>
+            🌊 <strong>マリン・ウェーブ・カップ：</strong> サンセット・ビーチ（<ruby>砂穴<rt>すなあな</rt></ruby>＆<ruby>波<rt>なみ</rt></ruby>）／オーシャン・ブリッジ（<ruby>途切<rt>とぎ</rt></ruby>れた<ruby>登<rt>のぼ</rt></ruby>り<ruby>橋<rt>はし</rt></ruby>ジャンプ）／ディープシー・トンネル（<ruby>海底<rt>かいてい</rt></ruby>トンネル急降下）／ハーバー・タウン＆シップ（<ruby>港<rt>みなと</rt></ruby>＆<ruby>船内<rt>せんない</rt></ruby>）。
+          </li>
+          <li>
+            ⛰️ <strong>アルパイン・カップ：</strong> フォレスト・スラローム（<ruby>木々<rt>きぎ</rt></ruby>をかわせ！）／ワインディング・パス（ガイド無し<ruby>山道<rt>やまみち</rt></ruby>）／マグマ・マインシャフト（<ruby>坑道<rt>こうどう</rt></ruby>＆<ruby>細<rt>ほそ</rt></ruby>いレール）／スカイ・ピーク・リッジ（<ruby>山頂<rt>さんちょう</rt></ruby>スタート＆<ruby>稜線<rt>りょうせん</rt></ruby>）。
+          </li>
+          <li>
+            ❄️ <strong>アイシー・キングダム・カップ：</strong> フローズン・タウン／アイスリバー・フォレスト／ウィンター・アルパイン／ブリザード・サーキット（少し<ruby>光<rt>ひか</rt></ruby>る <ruby>隠<rt>かく</rt></ruby>しすべるゾーン＆🚀ミニロケットで1/2空転スピン注意！<span class="kbd">Space</span> ジャンプで避けよう！）。
+          </li>
+          <li>
+            🌃 <strong>ネオンナイト・カップ：</strong> サイバー・ハイウェイ（<ruby>レーザー<rt>れーざー</rt></ruby><ruby>障壁<rt>しょうへき</rt></ruby>）／レーザー・ブリッジ／メトロ・ループジャンクション／エレクトロ・アリーナ。
+          </li>
+          <li>
+            🎪 <strong>アミューズメント・カップ：</strong> トイブロック・レールウェイ（<span class="kbd">Space</span> で<ruby>積<rt>つ</rt></ruby>み<ruby>木<rt>き</rt></ruby>とびこえ！）／ゼリー＆バウンド・パーク（<ruby>大<rt>だい</rt></ruby>ジャンプゼリー<ruby>床<rt>ゆか</rt></ruby>）／スイート・ケーキ・キャッスル／レインボー・ローラーコースター。
+          </li>
+          <li>
+            🏆 <strong><ruby>ウィニングラン<rt>ういにんぐらん</rt></ruby>＆<ruby>表彰式<rt>ひょうしょうしき</rt></ruby>：</strong> ゴールすると じぶんのマシンが そのまま コースを <ruby>自動<rt>じどう</rt></ruby>で はしりつづけ、カメラが <ruby>前<rt>まえ</rt></ruby>に <ruby>回<rt>まわ</rt></ruby>りこんで とうめいな <ruby>結果<rt>けっか</rt></ruby>が でるよ！ <span class="kbd">Enter</span> で 次を えらぶと <ruby>走<rt>はし</rt></ruby>り<ruby>去<rt>さ</rt></ruby>る すがたを 見送って 次のステージや <ruby>表彰式<rt>ひょうしょうしき</rt></ruby>（1<ruby>位<rt>い</rt></ruby>=10pt / 2<ruby>位<rt>い</rt></ruby>=6pt / 3<ruby>位<rt>い</rt></ruby>=3pt / 4<ruby>位<rt>い</rt></ruby>=1pt）へ すすむよ！
+          </li>
+        </ul>
+      </section>
+    </div>
+  </body>
+</html>

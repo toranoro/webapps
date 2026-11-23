@@ -1,0 +1,429 @@
+====================================================================
+3D Arcade Kart Racing Game - 改修・実装ログ (Update.txt)
+====================================================================
+
+[2026-11-14] Phase 1: 環境構築と基本サーキット描画
+--------------------------------------------------------------------
+■ 実装内容:
+1. ワークスペース内にローカル Node.js (v20.18.1) および npm キャッシュ (.tools/) を構築。
+2. package.json / tsconfig.json / vite.config.ts / index.html を作成。
+   - Vite (base: './') + Three.js (^0.169.0) + @dimforge/rapier3d-compat (^0.14.0) + TypeScript (^5.6.0)。
+   - キャッシュ完全無効化 3層対策を整備:
+     (a) index.html に Cache-Control / Pragma / Expires メタタグを設定。
+     (b) vite.config.ts の server / preview ヘッダーに no-store, no-cache を設定。
+     (c) serve_nocache.py（Python HTTPサーバー）および start_server.bat を作成。
+3. src/world/CircuitTrack.ts を実装:
+   - THREE.CatmullRomCurve3 による閉ループ 3D サーキット（ホームストレート、高低差 S字カーブ、バックストレート、ヘアピン、シケイン）。
+   - プロシージャルキャンバス生成テクスチャ（舗装路・赤白縁石・芝生/ダート・ガードレール・チェッカーフラッグゲート・スタンド・虹色ダッシュボード・ジャンプ台）。
+   - チェックポイントゲート(10分割)・アイテムボックス配置座標・物理用トライメッシュデータ生成 API を整備。
+4. src/main.ts（Phase 1 描画確認用エントリー）を実装。
+
+■ 検証結果 (Phase 1):
+- `npm.cmd run typecheck` (tsc --noEmit): 成功 (エラー 0 件)
+- `npm.cmd run build` (vite build): 成功 (dist/index.html, dist/assets/*.js 出力、651ms)
+
+[2026-11-14] Phase 2: スフィア物理カート走行＆チェイスカメラ
+--------------------------------------------------------------------
+■ 実装内容:
+1. src/core/PhysicsWorld.ts を実装:
+   - await RAPIER.init() による WASM 非同期初期化と 1/60 固定タイムステップ更新 (Math.min(dt, 0.05))。
+   - サーキット路面(road)・ダート(dirt)・ガードレール壁(wall)・ジャンプ台(ramp) のトライメッシュコライダーを構築。
+   - 路面種別付き Raycast (castRayDown / castRayTrackAndWalls / castRayWallsOnly) を実装。
+2. src/core/InputManager.ts を実装:
+   - W/A/S/D・矢印キー・Space(ホップ/ドリフト)・Shift/E/Z(アイテム)・C(バック視点)・R(コース復帰) を管理。
+3. src/entities/Kart.ts を実装:
+   - RAPIER.ColliderDesc.ball(0.95) (CCD有効, Friction=0.0, Restitution=0.1) のスフィア物理と、カート3Dメッシュ（シャーシ・前後輪・ハンドル・ドライバー・マフラー）を分離制御。
+   - 路面法線への Quaternion.slerp 追従、ダート減速(55%)、ガードレール滑走を実装。
+4. src/camera/ChaseCamera.ts を実装:
+   - スプリングダンピング追従、ブースト時ダイナミック FOV (62°→78°)、Cキーバックミラー、Raycast地形衝突回避を実装。
+5. src/main.ts を Phase 2 仕様（物理＋チェイスカメラ走行）へ接続。
+
+■ 検証結果 (Phase 2):
+- `npm.cmd run typecheck` (tsc --noEmit): 成功 (エラー 0 件)
+- `npm.cmd run build` (vite build): 成功 (dist/assets/index-C1_TOzwa.js 出力、913ms)
+
+[2026-11-14] Phase 3: ドリフト・2段階ミニターボ＆コースギミック
+--------------------------------------------------------------------
+■ 実装内容:
+1. src/entities/Kart.ts を拡張:
+   - ステートマシン (Normal / Hop / DriftLeft / DriftRight / SpinOut) を完全実装。
+   - Space キーによるホップ (高さ約0.6m) と左右ドリフト移行・カウンターステア軌道調整を実装。
+   - 2段階ミニターボチャージ:
+     * 0.7秒以上で Lv.1 ミニターボ（青い火花 + 1.1秒ブースト 43m/s）
+     * 1.6秒以上で Lv.2 スーパーミニターボ（オレンジ火花 + 1.9秒ブースト 47m/s）
+   - マフラー炎メッシュ＆パーティクルプール（火花・ブースト炎・ダート砂埃・着地バースト）を追加。
+   - 虹色ダッシュボード（加速床 1.35秒 46m/s）およびジャンプ台（打ち上げ＋着地ミニブースト）の物理連携を実装。
+
+■ 検証結果 (Phase 3):
+- `npm.cmd run typecheck` (tsc --noEmit): 成功 (エラー 0 件)
+- `npm.cmd run build` (vite build): 成功 (dist/assets/index-DJqko-zp.js 出力、914ms)
+
+[2026-11-14] Phase 4: ラップ計測・アイテム・CPU対戦・レースHUD・マニュアル・配布物完成
+--------------------------------------------------------------------
+■ 実装内容:
+1. src/entities/ItemManager.ts を実装:
+   - ？アイテムボックス（16個、回転・4.5秒リスポーン、プレイヤー用1.05秒ルーレット演出）を配置。
+   - 4種アイテムを実装:
+     * ダッシュキノコ (1.65秒, 48 m/s ブースト, ダート減速無効)
+     * ミドリこうら (52 m/s 射出, Raycast ガードレール反射最大6回, 命中時 SpinOut 1.2秒)
+     * バナナ (後方設置, 接触時 SpinOut 1.2秒)
+     * スーパースター (6.0秒無敵・虹色点滅・44 m/s・体当たり SpinOut)
+2. src/entities/CpuKartController.ts を実装:
+   - CPUライバル3台（ブルー号・グリーン号・イエロー号）のウェイポイント追従・バナナ回避・コーナー時ドリフト・アイテム判断・軽度ラバーバンディング AI を構築。
+3. src/ui/RaceHUD.ts ＆ src/main.ts を実装:
+   - 3-2-1-GO! カウントダウン＆ロケットスタート判定 (46 m/s)。
+   - 10分割チェックポイントゲートによる正確な3周ラップ計測、逆走アラート（⚠️ 逆走！）。
+   - リアルタイム順位 (1st〜4th)・速度計 (km/h)・ミニターボゲージ・2Dミニマップ・リザルト画面・リスタートボタン・マニュアルリンクを実装。
+4. manual/index.html を作成:
+   - 小学生向け <ruby> ふりがな付き・図解 SVG 付きのオンラインマニュアルを作成 (no-cache メタタグ設定済み)。
+5. dist/ 配布パッケージを整備:
+   - vite build 成果物に加え、manual/・serve_nocache.py・start_game.bat・README.txt・Update.txt・HANDOVER.md を配置。
+
+■ 検証結果 (Phase 4 ビルド):
+- `npm.cmd run typecheck` (tsc --noEmit): 成功 (エラー 0 件)
+- `npm.cmd run build` (vite build): 成功 (dist/assets/index-DOLSL_W2.js 出力、869ms)
+
+■ ブラウザ実機確認結果 (dist/serve_nocache.py @ http://127.0.0.1:8080/):
+- 確認完了項目:
+  * コンソールエラー 0 件 / 未処理例外 0 件、全リソース HTTP 200 取得。
+  * 3-2-1-GO! カウントダウン後の走行フェーズ移行、HUD一式（アイテム枠・LAP・タイマー・ミニマップ・順位・速度計・操作ガイド・マニュアルリンク）表示。
+  * 加速・ステア・ホップ/ドリフト・2段階ミニターボ（Lv.1 青 → Lv.2 オレンジ → 解放ブースト）。
+  * ダッシュキノコ付与・使用によるブースト発動。
+  * リザルト画面表示（debugCompleteRace API 経由）および「もういちど走る (Restart)」によるカウントダウン復帰。
+  * オンラインマニュアル (/manual/index.html) の表示・<ruby> ふりがな・SVG 図解表示。
+- 10分以内のテスト制約により未検証（コード実装・型チェック・ビルド済み）の項目:
+  * プレイヤー手動走行による3周完走、ミドリこうら壁反射・バナナ踏破・スター体当たり・逆走アラート・Cキーバックミラーの個別実機トリガー。
+
+[2026-11-14] キー操作変更 (ユーザー要望対応)
+--------------------------------------------------------------------
+■ 変更内容:
+1. src/core/InputManager.ts のキーバインドを更新:
+   - J (左ハンドル) / L (右ハンドル) ※矢印キー ←/→ も併用可
+   - X (アクセル) / Z (ブレーキ・バック) ※矢印キー ↑/↓ も併用可
+   - Space (ジャンプ / ドリフト)
+   - K (アイテムを使う)
+2. src/ui/RaceHUD.ts のアイテムスロットヒントおよび下部操作ガイドを更新。
+3. manual/index.html のキーボード図解 SVG・キー一覧・ロケットスタート/ドリフト解説を更新。
+4. HANDOVER.md / HANDOVER_Kart.md を最新キー操作に更新。
+
+■ 検証結果 (キー操作変更後ビルド):
+- `npm.cmd run typecheck` (tsc --noEmit): 成功 (エラー 0 件)
+- `npm.cmd run build` (vite build): 成功 (dist/assets/index-Q20klZKd.js 出力、899ms)
+
+[2026-11-14] SFCスタイル上下2分割画面（走行＋全体俯瞰アニメーション）実装
+--------------------------------------------------------------------
+■ 変更内容:
+1. src/camera/ChaseCamera.ts:
+   - 上画面 (50vh) 向けに ChaseCamera の視点高さ・距離を調整。
+   - コース全体俯瞰用の OverheadTrackCamera (OrthographicCamera, -80度見下ろし・アスペクト追従・3D→2D投影API) を追加。
+2. src/entities/ItemManager.ts:
+   - getShellPositions() を追加し、走行中のミドリこうら位置・向きを下画面へ提供。
+3. src/main.ts:
+   - renderer.setScissorTest(true) を有効化し、上半分 (0, halfH, w, topH) に走行カメラ、下半分 (0, 0, w, halfH) に全体俯瞰カメラ（フォグなし）を描画。
+4. src/ui/RaceHUD.ts:
+   - 上半分(50%)に走行HUDを配置し、中央に分割バーを追加。
+   - 下半分(50%)に WebGL俯瞰ビューと完全同期した 60fps アニメーションCanvasを構築（4台の向き・ブースト炎・ドリフト青/オレンジ火花・スター虹色オーラ・スピン回転・順位タグ、およびバナナ・ミドリこうらアニメーションを描画）し、左側にライブ順位＆状態モニターを配置。
+5. manual/index.html, HANDOVER.md, HANDOVER_Kart.md を最新構成へ更新。
+
+■ 検証結果 (SFC上下2分割画面ビルド):
+- `npm.cmd run typecheck` (tsc --noEmit): 成功 (エラー 0 件)
+- `npm.cmd run build` (vite build): 成功 (dist/assets/index-hlfAMunw.js 出力、885ms)
+
+[2026-11-15] フィードバック反映（監督ヘリ救出・Escポーズ・オープニングタイトル・下画面斜め上3Dモード）
+--------------------------------------------------------------------
+■ 変更内容:
+1. コースアウト時の「監督ヘリ」自動救出（2秒演出）:
+   - src/entities/Kart.ts に 'Rescue' ステートと 3D監督ヘリコプターメッシュ（ローター回転・牽引ケーブル付き）を実装。
+   - ガードレール外へのジャンプ落下や R キーで発動し、物理コライダーをセンサー化＆無重力化して 2.0 秒かけて上空からコース中央へゆっくり安全に引き上げて復帰させる。
+2. Esc 一時停止メニュー:
+   - src/core/InputManager.ts に Escape / KeyV を追加。
+   - Esc キー（または右上「⏸️ 一時停止」ボタン）で背景を半暗転・ブラー表示し、「▶️ ゲームに戻る」「🔄 最初からやり直す」「🏠 リタイア（タイトルへ戻る）」を選択可能に。
+3. オープニングタイトル＆スタートボタン:
+   - 起動時は 3D サーキット周回デモを背景にしたタイトル画面（SUPER 3D KART GP + 操作ガイド + 「🏁 レーススタート！」ボタン + マニュアルリンク）から開始するように変更。
+4. 下画面・斜め上3D俯瞰モード（3モード切替）:
+   - src/camera/ChaseCamera.ts の OverheadTrackCamera に「斜め上3D全体 (angled-full)」「斜め上中継カメラ (angled-follow)」「真上マップ (top-down)」を実装（デフォルト：斜め上3D全体）。
+   - V キーまたは下画面左上のカメラ切替ボタンでいつでも切替可能。
+5. manual/index.html, HANDOVER.md, HANDOVER_Kart.md, dist/README.txt を更新。
+
+■ 検証結果 (最新ビルド):
+- `npm.cmd run typecheck` (tsc --noEmit): 成功 (エラー 0 件)
+- `npm.cmd run build` (vite build): 成功 (dist/assets/index-DchLwD0G.js 出力、948ms)
+
+
+[2026-11-15] オリジナルタイトル化・マニュアル名称変更・4ステージグランプリ＆表彰式実装
+--------------------------------------------------------------------
+■ 変更内容:
+1. ブランド刷新・マニュアル表記統一:
+   - ゲームタイトルを「3D KART GRAND PRIX」へ刷新し、サードパーティ・レトロゲーム機風の表現をすべて撤廃。
+   - マニュアルボタンおよび manual/index.html 見出しを「マニュアル」に統一（解説文の <ruby> ふりがなは保持、第6章「全4ステージと表彰式」を追記）。
+2. 全4ステージ制グランプリ (src/world/CircuitTrack.ts, src/core/PhysicsWorld.ts, src/entities/Kart.ts, src/entities/CpuKartController.ts):
+   - PhysicsWorld.reset() によりステージ遷移時の Rapier 物理ワールドを安全に再構築。
+   - Stage 1「グリーン・サーキット」: 標準アスファルト草原コース。
+   - Stage 2「マッド・スワンプ」: 泥ダート路面・泥沼ゾーン (6箇所、接地中45%減速＆泥パーティクル)・沼地落とし穴 (5箇所、落下時に監督ヘリ2秒救出)。
+   - Stage 3「マグマ・キャッスル」: 溶岩湖上の灰色石畳コース・溶岩ピット (6箇所)・赤い警告リング後に空から降下する落石ギミック (7箇所、接触時 SpinOut 1.2秒)。
+   - Stage 4「クロスオーバー・ファイナル」: 下段直線の上空 y=10.2m を直交する立体交差橋＋橋脚・下面ソフィット実装（法面スカート高さ調整と高さ重視近傍探索で上下交差干渉を解消）。
+   - CPU AI に落とし穴回避ロジックを追加。
+3. グランプリ総合得点＆3D表彰式 (src/main.ts, src/ui/RaceHUD.ts):
+   - 各ステージ順位に応じて総合得点（1位=10pt / 2位=6pt / 3位=3pt / 4位=1pt）を加算。
+   - タイトル画面にステージ直接選択ボタンとグランプリ開始ボタン、レース中に現在ステージバッジ、結果画面に「次のステージへ進む」/「表彰式へ進む！」ボタンを実装。
+   - 4ステージ完走後の 3D表彰式（phase = 'ceremony'）では、4台のマシンを背後に表彰台と優勝トロフィー・紙吹雪を配置し、レーサーたちが車の前でぴょんぴょん跳ねて祝福する演出を実装。
+
+■ 検証結果 (グランプリ＋表彰式ビルド):
+- `npm.cmd run typecheck` (tsc --noEmit): 成功 (エラー 0 件)
+- `npm.cmd run build` (vite build): 成功 (dist/assets/index-DVCyIRoN.js 出力、977ms)
+
+■ ブラウザ実機確認結果 (dist/serve_nocache.py @ http://127.0.0.1:8080/):
+- 確認完了項目:
+  * コンソールエラー 0 件 / HTTP 失敗 0 件。
+  * オープニングタイトル画面: 「3D KART GRAND PRIX」、4ステージボタン (STAGE 1〜4)、「🏆 グランプリスタート！(Stage 1〜4)」、「📖 マニュアルを開く」表示、旧表現（スーパーファミコン/SFC/マリオカート/小学生向け）0 件。
+  * Stage 1「グリーン・サーキット」、Stage 2「マッド・スワンプ」、Stage 3「マグマ・キャッスル」、Stage 4「クロスオーバー・ファイナル」の起動および各ステージバッジ・コース表示。
+  * オンラインマニュアル (/manual/index.html): 見出し「🏎️ マニュアル」、83箇所の `<ruby>` ふりがな、第6章「全4ステージと表彰式」、旧表現 0 件。
+- ブラウザサンドボックス制約により実機画面未遷移（TypeScript・ビルド・バンドル収録により確認）の項目:
+  * Stage 1〜4完走後のポイント加算画面と表彰式画面 (`phase === 'ceremony'`) の実機遷移表示（デバッグJS実行制限により3周実走/表彰式遷移がスキップされたため）。
+
+[2026-11-16] Enterキー操作・コミカル効果音（Web Audio API）追加
+--------------------------------------------------------------------
+■ 変更内容:
+1. Enterキーでゲームスタート／リスタート操作 (src/core/InputManager.ts, src/main.ts, src/ui/RaceHUD.ts):
+   - InputManager に Enter / NumpadEnter（consumeEnterKey）および KeyM（consumeMuteKey）、consumeRespawnKey を追加（ブラウザの既定ボタン二重クリックを防ぐため e.preventDefault() を設定）。
+   - タイトル画面で Enter → グランプリスタート、ポーズ中（Esc）に Enter → ステージやり直し、リザルト画面で Enter → 次ステージ/表彰式・R → やり直し、表彰式で Enter → もういちどグランプリへ遷移するよう実装。
+   - 各ボタンラベル・タイトルガイドに [Enter] / [R] / [M] のキー案内を追記。
+2. コミカルな Web Audio 効果音＆エンジン音シンセサイザー (src/core/SoundManager.ts):
+   - 外部音声ファイル不要で動作する SoundManager を新設（ヘッドレス/制限環境向け try/catch 保護・DynamicsCompressor クリップ防止・Mキー／右上ボタン「🔊 音 ON [M]」でミュート切替対応）。
+   - 連続サウンド: 速度＆アクセル連動のポンポン跳ねるカートエンジン音（カウントダウン中のアクセル空吹かし・ダート減衰・ブースト高揚対応）、ドリフト火花音（青/オレンジチャージ音高変化）、監督ヘリ「パタパタ」ローター音。
+   - コミカル効果音: カウントダウン/GOファンファーレ、ビヨヨ〜ンと跳ねるホップ音、ブーストジェット音、アイテムボックス取得バブル音＆ルーレット音＆決定ジングル、アイテム使用音（キノコ/ミドリこうら発射/バナナ設置ポヨン/スーパースター）、スピンアウト時の「キュルルル〜ッ」スライドホイッスル、落下救助ホイッスル、ラップ/ゴール/表彰式ぴょんぴょん効果音。
+3. manual/index.html, HANDOVER.md, HANDOVER_Kart.md, dist/README.txt, dist/ を最新化。
+
+■ 検証結果 (最新ビルド):
+- `npm.cmd run typecheck` (tsc --noEmit): 成功 (エラー 0 件)
+- `npm.cmd run build` (vite build): 成功 (dist/assets/index-Dfp6PTka.js 出力、959ms)
+■ ブラウザ実機確認結果 (dist/serve_nocache.py @ http://127.0.0.1:8080/):
+- コンソールエラー 0 件 / 未処理例外 0 件 / HTTP エラー 0 件。
+- タイトル画面で `#hud-start-btn` (`[Enter]` 表記) を表示し、`Enter` キー押下のみでレース開始（`#hud-title-overlay` 非表示化＆上下2画面HUD・`🔊 音 ON [M]` ボタン表示）を確認。
+- カウントダウン後のアクセル (`KeyX`) ＋ジャンプ (`Space`) 入力時に速度上昇 (`45 km/h`) およびサウンド処理無エラーを確認。
+- `M` キーで `🔊 音 ON [M]` ⇄ `🔇 音 OFF [M]` が切り替わることを確認。
+- `Esc` 一時停止メニュー (`🔄 このステージをやり直す [Enter]`) から `Enter` キー押下でポーズ解除・カウントダウン再スタート（タイマー `00:00.00` リセット）を確認。
+（※ ヘッドレスブラウザ環境のため実際のスピーカー音声の聴感までは未確認。Web Audio API 生成の無エラー動作と UI 切替を確認済み）
+
+[2026-11-16] 速度80%調整・穴ジャンプ飛び越え・追い抜き順位ポップアップ・表彰式Space帰還
+--------------------------------------------------------------------
+■ 変更内容:
+1. 表彰式から Space キーでホーム（タイトル）へ帰還 (src/core/InputManager.ts, src/main.ts, src/ui/RaceHUD.ts):
+   - InputManager.consumeSpaceKey() を追加し、phase === 'ceremony' 中の Space 押下でタイトル画面へ戻れるように実装（ボタン表記「🏠 タイトルへ戻る [Space]」）。
+2. 全体速度の約 80% 調整＆落とし穴の Space ジャンプ飛び越え対応 (src/entities/Kart.ts, src/entities/ItemManager.ts, src/entities/CpuKartController.ts, src/world/CircuitTrack.ts, src/main.ts):
+   - 基本最高速を 34.0 → 27.2 m/s、各種ブースト・ミドリこうら・CPU追いつき上限・バック速度を約 80% へ調整し操作性を最適化。
+   - Space ジャンプの滞空時間・高度（vy=9.4, hopDuration=0.42s, 視覚跳躍 1.15m）を強化し、Hop判定を落とし穴判定より先に実行・接地時のみ落とし穴反応へ変更。Stage 2・Stage 3 のピット半径も 2.15〜2.25m へ調整し直前ジャンプで綺麗に飛び越えられるバランスに設定。
+3. 追い抜き時の大画面順位ポップアップ＋効果音 (src/ui/RaceHUD.ts, src/core/SoundManager.ts, src/main.ts):
+   - レース中に順位が上がった瞬間に上画面上部へ大きな「1st / 2nd / 3rd 🔥 RANK UP!」ポップアップ（1.4秒アニメーション）および SoundManager.playOvertake() を発動。
+
+■ 検証結果 (最新ビルド):
+- `npm.cmd run typecheck` (tsc --noEmit): 成功 (エラー 0 件)
+- `npm.cmd run build` (vite build): 成功 (dist/assets/index-DI7MWI3a.js 出力、958ms)
+■ ブラウザ実機確認結果 (dist/serve_nocache.py @ http://127.0.0.1:8080/):
+- コンソールエラー 0 件 / 未処理例外 0 件 / HTTP エラー 0 件。
+- 通常巡航上限速度が ~87 km/h (27.2 m/s 換算) へ調整されていること、ロケットスタートからの追い抜き時に `#hud-overtake-popup`（「1st 🔥 RANK UP!」）が表示されること、および走行中の `Space` ジャンプが無エラーで動作することを確認。
+- タイトルキー説明および `#hud-gp-title-btn`（「タイトルへ戻る [Space]」）、`/manual/index.html` の追記内容表示を確認。
+（※ 表彰式中の実機 `Space` キー押下によるタイトル帰還、および Stage 2/3 実走でのピット直前 `Space` 飛び越え実測は今回は時間・手順上未実行で、入力ハンドラ・物理条件・コード/型チェックで確認済み）
+
+[2026-11-16] 全6カップ×4ステージ（全24コース）＆全ギミック本格実装
+--------------------------------------------------------------------
+■ 変更内容:
+1. 全6カップ・24コース定義 (src/world/CupStageDefs.ts):
+   - 「ルーキー・カップ」「マリン・ウェーブ・カップ」「アルパイン・カップ」「アイシー・キングダム・カップ」「ネオンナイト・カップ」「アミューズメント・カップ」の 6 カップ（計 24 コース）を完全設計・定義。
+2. ステージ別ギミック＆演出構築 (src/world/CircuitTrack.ts, src/entities/Kart.ts, src/entities/CpuKartController.ts):
+   - 路面タイプ追加: 砂 (sand)、木製橋板 (wood)、氷 (ice)、ネオンサイバー (neon)、トイブロック風 (toy)。
+   - ガイドレール無し区間 (noGuardrailZones) を描画＆物理コライダー両方で実欠損させ、海上橋・山岳崖・細い鉱山レールからのコースアウトと監督ヘリ救出をリアル化。
+   - 3Dトンネル/船内/坑道/サイバー/レインボーゲート (tunnelZones)、海底透視水面＆深海トンネル (Stage 6: y=-11.5m)、吹雪クロスウィンド＆雪パーティクル (Stage 15)。
+   - 固定障害物 (岩/道路上の木/港木箱/Spaceで飛び越えられる積み木)、動く波＆サイバーレーザー障壁、大跳躍ゼリーバウンド床 (vy=13.8)、アイスバーン氷床＆路面スリップ物理を追加。
+   - 立体交差下の橋脚干渉自動回避ロジックと、minTrackY ベースの水中トンネル対応救出判定を導入。
+3. タイトル画面＆UI (src/ui/RaceHUD.ts, src/main.ts):
+   - 6カップタブ切替（クリック＆J/Lキー）＋各カップ4コース直接選択、右上カップ＆ステージ表示、カップ終点 (STAGE 4) からの表彰式連動を実装。
+
+■ 検証結果 (最新ビルド):
+- `npm.cmd run typecheck` (tsc --noEmit): 成功 (エラー 0 件)
+- `npm.cmd run build` (vite build): 成功 (dist/assets/index-eUkUMIaf.js 出力、982ms)
+■ ブラウザ実機確認結果 (dist/serve_nocache.py @ http://127.0.0.1:8080/):
+- コンソールエラー 0 件 / 未処理例外 0 件 / HTTP エラー 0 件。
+- タイトル画面に全6カップタブ（🌿ルーキー・カップ / 🌊マリン・ウェーブ・カップ / ⛰️アルパイン・カップ / ❄️アイシー・キングダム・カップ / 🌃ネオンナイト・カップ / 🎪アミューズメント・カップ）が表示され、クリックで各4コース一覧が正しく切り替わることを確認。
+- 各新カップの代表コース読み込み・起動を確認:
+  * 🌊 マリン・ウェーブ・カップ STAGE 3「ディープシー・トンネル」（走行加速 26 km/h まで無エラー確認）
+  * ⛰️ アルパイン・カップ STAGE 3「マグマ・マインシャフト」
+  * ❄️ アイシー・キングダム・カップ STAGE 4「ブリザード・サーキット」
+  * 🌃 ネオンナイト・カップ STAGE 1「サイバー・ハイウェイ」
+  * 🎪 アミューズメント・カップ STAGE 2「ゼリー＆バウンド・パーク」
+- `/manual/index.html` の「6. 全6カップ（24コース）と 表彰式」表示を確認。
+（※ 時間・テスト手順上、残りの全24コース個別実走・全4戦累計からの表彰式遷移の実機完走は未実測で、データ定義・TypeScript型チェック・Viteビルドで整合性を検証済み）
+
+[2026-11-16] 監督ヘリ安全再配置（落とし穴前リスポーン・ジャンプ台めり込み防止）
+--------------------------------------------------------------------
+■ 変更内容:
+1. CircuitTrack.getSafeRescueTransform(pos) & isRescueSpotSafe(...) を実装 (src/world/CircuitTrack.ts):
+   - 落とし穴や切れた橋（マリン・ウェーブ・カップ STAGE 2「オーシャン・ブリッジ」やネオンナイト・カップ STAGE 2「レーザー・ブリッジ」等）に落ちた際、真上ではなくコース上流側へ 3m 刻みで安全地点を探索。
+   - 落とし穴周辺・広域ギャップ手前・ジャンプ台（±halfLength + 4.2m）・障害物・移動ハザードをすべて除外し、落とし穴＆ジャンプ台手前の走行可能な平坦路面に必ず安全再配置する。
+2. Kart.startRescue(track) ＆復帰後グレースタイム追加 (src/entities/Kart.ts):
+   - startRescue で getSafeRescueTransform(pos) の座標・向きを採用。
+   - 救出完了後 postRescueGraceTimer = 0.85s を設け、万一の連続落下ループを完全に防止。
+
+■ 検証結果 (最新ビルド):
+- `npm.cmd run typecheck` (tsc --noEmit): 成功 (エラー 0 件)
+- `npm.cmd run build` (vite build): 成功 (dist/assets/index-BmUBc3Qi.js 出力、994ms)
+■ ブラウザ実機確認結果 (dist/serve_nocache.py @ http://127.0.0.1:8080/):
+- コンソールエラー 0 件 / HTTP エラー 0 件。
+- 🌊 マリン・ウェーブ・カップ STAGE 2「オーシャン・ブリッジ」にて走行中に監督ヘリ救出 (`R` キー) を発動し、2 秒救出完了後に橋上へ安全復帰（再ループ無し、その後 `63 km/h` へ通常再加速）することを実機・スクリーンショットで確認。
+（※ 切れた橋穴へ実際に飛び込んで落ちた座標からの連続検証は未実施で、`getSafeRescueTransform` 内の `wideChasm` 上流手前探索＋ジャンプ台 OBB 除外ロジックおよび型チェックで確認済み）
+
+[2026-11-21] 動物レーサー9種＆車/バイク選択画面＆オリジナルアイテム刷新
+--------------------------------------------------------------------
+■ 変更内容:
+1. 動物レーサー9種＆個性派マシン（車＋バイク）導入 (src/world/RacerDefs.ts, src/entities/AnimalModels.ts, src/entities/Kart.ts):
+   - 全9種類の動物キャラ（🐻クマ/ワイルドバギー, 🐧ペンギン/アイスジェット, 🐰ウサギ/スプリントバイク, 🦊キツネ/フォックスF1, 🐼パンダ/バンブースクーター, 🦁ライオン/キングGT, 🐺オオカミ/ナイトウルフ, 🐸カエル/ホッピングバギー, 🐱ネコ/ニャンコスポーツ）と専用3Dモデルを実装。
+   - 走行性能・最高速 (`27.2 m/s`)・挙動は全車同一で、2輪バイクはコーナリング/ドリフト時に深くバンクする視覚演出を追加。
+2. 3×3 キャラクター選択＆COM自動抽選画面 (`phase = 'charselect'`) (src/core/InputManager.ts, src/ui/RaceHUD.ts, src/main.ts):
+   - ゲームスタート後に 3×3 動物グリッドを表示し、`I / J / K / L`（または矢印キー）で選択して `Enter`（またはクリック）で `HUMAN` 枠を確定。
+   - 続いて残り動物から `COM1`・`COM2`・`COM3` がルーレット演出付きで自動抽選・色枠確定し、選んだ動物＆愛車・バイクのまま全4戦および 3D 表彰式 (`CircuitTrack.buildPodiumCeremony`) に登場。
+3. オリジナルアイテム＆取得カプセル刷新 (src/entities/ItemManager.ts, src/entities/CpuKartController.ts, src/core/SoundManager.ts, src/ui/RaceHUD.ts):
+   - 従来の「？キューブ」・4種アイテムを廃止し、2色発光 **パワーカプセル** とオリジナル4アイテムに刷新（性能・出現率・時間は従来維持）：
+     * 🚀 ミニロケット (`rocket`): 1.65秒ダッシュ (`38.4 m/s`)
+     * 💥 トゲボール (`spikeball`): 前方射出＆最大6回壁反射のトゲ鉄球 (`42.0 m/s`)
+     * 🛢️ ツルツルオイル (`oil`): 後方設置のオイル溜まり＆オイル缶（1.2秒スピン）
+     * 👑 キングクラウン (`crown`): 6.0秒無敵レインボー疾走 (`35.2 m/s`)＆体当たりスピン
+4. マニュアル・引き継ぎ資料更新 (`manual/index.html`, `HANDOVER.md`, `HANDOVER_Kart.md`, `dist/README.txt`).
+
+■ 検証結果 (最新ビルド):
+- `npm.cmd run typecheck` (tsc --noEmit): 成功 (エラー 0 件)
+- `npm.cmd run build` (vite build): 成功 (`dist/assets/index-CHIn4Ssv.js` 出力、1.94s)
+■ ブラウザ実機確認結果 (dist/serve_nocache.py @ http://127.0.0.1:8080/):
+- コンソールエラー 0 件 / ページエラー 0 件 / HTTP エラー 0 件。
+- タイトルのカップ切替および `#hud-start-btn` クリック / `Enter` キーから 3×3 キャラ選択画面（9動物＋カート/バイク表示）が開くこと、`KeyI/J/K/L` カーソル移動・マウスクリックおよび `Enter` による `HUMAN` 確定＋ `COM1〜COM3` 自動確定を確認。
+- 選択した動物＆車/バイク（例: 🐻クマ バギー・🐼パンダ スクーター・🐱ネコ ニャンコスポーツ 等）がグリッド＆走行中・全体マップ名簿に表示され、コース上のパワーカプセル描画およびレース中 COM による `🛢️` / `👑KING` 発動を確認。
+- `/manual/index.html` に「パワーカプセル」「ミニロケット」「トゲボール」「ツルツルオイル」「キングクラウン」が正常表示されることを確認。
+（※ `window.__kartGame` の直接実行を要する `giveItem` 全4種個別強制確認および `enterCeremony` 経由の3D表彰式実機確認は、ブラウザテスト環境のサンドボックス制約上未実測で、コード＆型チェック・ビルドで整合性を検証済み）
+
+[2026-11-22] キャラ選択タメ＆3回フラッシュ確定・出走ボタン／レスキューバード隊実装
+--------------------------------------------------------------------
+■ 変更内容:
+1. キャラクターセレクト演出の強化 (`src/main.ts`, `src/ui/RaceHUD.ts`, `src/core/SoundManager.ts`):
+   - `HUMAN` 確定時に 3回フラッシュ発光（`is-flash` ＋ `playCharFlash()`）し、続いて `COM1`・`COM2`・`COM3` がそれぞれルーレット抽選 → `デーン！`（`playCharSlotLock()`）確定 → 3回フラッシュ発光するタメを実装。
+   - 全員確定後、メンバーを約1秒見渡せるタメのあと **`🏁 このメンバーで出走！ [Enter]`** ボタン（`#hud-char-launch-btn`＋`playLineupReady()`）が出現し、`Enter` またはクリックで出走するように変更。
+2. 監督ヘリ → レスキューバード隊へ刷新 (`src/entities/Kart.ts`, `src/core/SoundManager.ts`, `src/ui/RaceHUD.ts`, `manual/index.html`):
+   - 先頭の大きな白い **コウノトリ隊長**＋**スズメ・小鳥4羽** の計5羽がパタパタ羽ばたきながら紐を引っ張ってマシンを引き上げる `buildRescueBirdSquad()` へ置き換え。
+   - 救出中の音もヘリのプロペラ音から「ピヨピピッ！」のさえずり＋翼の羽ばたき音へ変更し、バナー・ミニマップ・マニュアル・配布READMEを更新。
+
+■ 検証結果 (最新ビルド):
+- `npm.cmd run typecheck` (tsc --noEmit): 成功 (エラー 0 件)
+- `npm.cmd run build` (vite build): 成功 (`dist/assets/index-DgKRNCb5.js` 出力、999ms)
+■ ブラウザ実機確認結果 (dist/serve_nocache.py @ http://127.0.0.1:8080/):
+- コンソールエラー 0 件 / ページエラー 0 件 / HTTP エラー 0 件。
+- `HUMAN` 確定後に `COM1 -> COM2 -> COM3` が順次確定し、`✨ メンバー決定！` 保持後に `#hud-char-launch-btn`（「🏁 このメンバーで出走！ [Enter]」）が表示され、`Enter` でレース開始することを確認。
+- レース中の `KeyR` 発動により 3D コウノトリ隊長＆小鳥隊がロープでマシンを吊り上げて `🕊️ レスキューバード隊がコースへ救出中... (+2秒)` とともに安全復帰すること、および `/manual/index.html` の追記表示を確認。
+
+[2026-11-22] 全6カップ36曲FLAC BGM＆5秒コース紹介カメラズームイン演出実装
+--------------------------------------------------------------------
+■ 変更内容:
+1. 全6カップ×スタート/ステージ1〜4/ゴール計36曲 BGM 対応 (`src/core/SoundManager.ts`, `serve_nocache.py`, `src/main.ts`):
+   - `dist/assets/music/` 内の `01_rookie`〜`06_amusement` 各 `*_start.flac` / `*_stage1..4.flac` / `*_goal.flac` に対応し、`serve_nocache.py` へ `audio/flac` MIME を追加。
+   - `M` キー／右上音ボタンのミュート切替とポーズ中音量減衰 (`0.35x`) にも完全連動。
+2. 5秒間のイントロ再生＆遠景→グリッドズームカメラ (`src/camera/ChaseCamera.ts`, `src/ui/RaceHUD.ts`, `src/main.ts`):
+   - レース開始時（STAGE 1〜4出走および次ステージ進行時）に `phase = 'intro'` (`5.0s`) へ入り、24秒ある `*_start.flac` の冒頭約 5 秒間（終盤 `4.1s..5.0s` は滑らかにフェードアウト）を再生。
+   - 再生に合わせて `ChaseCamera.updateIntroZoom()` がコース遠方上空（距離 `84m`・高さ `39m`）から旋回しながらスタート地点のプレイヤー背後（距離 `7.4m`・高さ `3.0m`）へ滑らかに着地し、シームレスに `3・2・1・GO!` カウントダウン＋ステージBGM (`*_stage1..4.flac`) へ移行する（`Enter`/`Space` で途中スキップも可）。
+   - ゴール〜表彰式では各カップの `*_goal.flac` を再生。
+
+■ 検証結果 (最新ビルド):
+- `npm.cmd run typecheck` (tsc --noEmit): 成功 (エラー 0 件)
+- `npm.cmd run build` (vite build): 成功 (`dist/assets/index-B21-FrtR.js` 出力、1.07s、36曲 `.flac` 保持確認済み)
+■ ブラウザ実機確認結果 (dist/serve_nocache.py @ http://127.0.0.1:8080/):
+- コンソールエラー 0 件 / ページエラー 0 件 / HTTP >= 400 エラー 0 件。
+- キャラ確定出走後に `#hud-intro-overlay`（「🌿 ルーキー・カップ｜STAGE 1: グリーン・サーキット」＋スキップ案内）が表示され、`01_rookie_start.flac` (`200 OK`, `audio/flac`) 再生と連動して遠方上空→ゲート＆スタートグリッドへの段階的カメラズームを 0.5s / 2.5s スクリーンショットで確認。
+- 約 5 秒後に `#hud-intro-overlay` が自動で閉じて背後視点・カウントダウンへ移行し、`01_rookie_stage1.flac` (`200 OK`, `audio/flac`) が読み込まれることを確認。（なお Python SimpleHTTP が Range 応答しないため 5 秒切替時の Chromium `<audio>` 再接続により `01_rookie_start.flac` の重複プローブ 1 件のみ `net::ERR_ABORTED` 記録あり・動作支障なし）
+（※ 全6カップ・ゴール曲への切替や `Space` イントロスキップの個別網羅は時間上未実測で、コード・型チェックで確認済み）
+
+[2026-11-22] 下画面マップのちびキャラ描画（車＆バイク×動物9種）実装
+--------------------------------------------------------------------
+■ 変更内容:
+1. 下画面オーバーレイのちびキャラ描き分け (`src/ui/RaceHUD.ts`):
+   - 従来の五角形（▶）マーカーを廃止し、`drawChibiOverviewRacer()` により車（4輪/ソリスキー）とバイク（2輪細身フレーム＋ハンドル）に乗った **9種類の動物ちびキャラ**（耳・くちばし・たてがみ・パンダ模様・カエル目・しっぽ・瞳）をマップ上にリアルタイム描画。
+   - 走行時のピョコピョコ揺れ、ドリフト傾き・火花、ブースト炎、キングクラウン虹色オーラ、スピン中の星、レスキューバード隊救出中の浮き上がり＆影＋`🕊️` に対応。
+2. `manual/index.html`, `HANDOVER.md`, `HANDOVER_Kart.md` 更新。
+
+■ 検証結果 (最新ビルド):
+- `npm.cmd run typecheck` (tsc --noEmit): 成功 (エラー 0 件)
+- `npm.cmd run build` (vite build): 成功 (`dist/assets/index-Dgeyky9l.js` 出力、998ms、36曲 `.flac` 保持確認済み)
+■ ブラウザ実機確認結果 (dist/serve_nocache.py @ http://127.0.0.1:8080/):
+- コンソールエラー 0 件 / ページエラー 0 件。
+- `Enter` での 5 秒イントロスキップ→カウントダウン→レース走行中、下画面の `🎥 斜め上3D全体 [V]` および `🎥 斜め上中継 [V]` の両モードで、車・バイクに乗った動物ちびキャラ（🦊 キツネ、🐱 ネコ、🦁 ライオン、🐺 オオカミ等）が進行方向に合わせて可愛く描写・移動していることをスクリーンショットで確認。
+（※ レスキュー中の影＋浮き上がりや、スピン中の星回転、残り全5動物のちびキャラ個別描写はコードおよび型チェック・共通描画関数で確認済み）
+
+[2026-11-22] オープニング・キャラ選択・各カップ表彰式 BGM 連携（計44曲対応）
+--------------------------------------------------------------------
+■ 変更内容:
+1. 追加された8曲（計44曲 `.flac`）の全シーン紐付け (`src/core/SoundManager.ts`, `src/main.ts`):
+   - **タイトル画面**: `00_opening_title.flac`（起動時およびタイトル復帰時に自動ループ再生、未操作時の自動再生制限は初回クリック/キー入力で自動復帰）
+   - **キャラ＆機体選択画面**: `00_character_kart_select.flac`（`charselect` 突入時にループ再生）
+   - **各カップ表彰式**: `01_rookie_award.flac` 〜 `06_amusement_award.flac`（STAGE 4 後の表彰式 `ceremony` で各カップ固有曲をループ再生、レースゴール時は引き続き `*_goal.flac` を再生）
+2. `HANDOVER.md`, `HANDOVER_Kart.md` 更新。
+
+■ 検証結果 (最新ビルド):
+- `npm.cmd run typecheck` (tsc --noEmit): 成功 (エラー 0 件)
+- `npm.cmd run build` (vite build): 成功 (`dist/assets/index-DO-ZZa0s.js` 出力、1.86s、44曲 `.flac` 保持確認済み)
+■ ブラウザ実機確認結果 (dist/serve_nocache.py @ http://127.0.0.1:8080/):
+- コンソールエラー 0 件 / ページエラー 0 件 / HTTP >= 400 エラー 0 件。
+- Title 画面での `00_opening_title.flac` (HTTP `200`, `audio/flac`)、キャラ選択画面での `00_character_kart_select.flac` (HTTP `200`, `audio/flac`)、出走〜レースでの `01_rookie_start.flac` -> `01_rookie_stage1.flac` (HTTP `200`, `audio/flac`) のリクエスト成功を確認。
+（※ 各カップの表彰式曲 `01_rookie_award.flac` 〜 `06_amusement_award.flac` の再生はコード・型チェックおよび `dist/assets/music/` 内のファイル存在確認済み、実機通しの実測は未実施）
+
+[2026-11-22] ゴール後フル画面ウィニングラン＆透過リザルト＋見送りグレーアウト遷移実装
+--------------------------------------------------------------------
+■ 変更内容:
+1. ゴール後のフル画面ウィニングラン＆前面回り込みカメラ (`src/camera/ChaseCamera.ts`, `src/main.ts`):
+   - ゴール時 (`phase = 'finished'`) に上下2分割を解除して全画面 (`100vh`) へ移行し、プレイヤー車も `CpuKartController` (`playerAutoController`) によりコースを自動快走。
+   - `updateWinningFrontRun()` が `1.45s` かけて後方から横側面を回り込んで愛車と動物ドライバーの正面斜め前へ回り込み並走する（愛車が見やすいよう少し左寄せフレーミング）。
+2. 透過グラス調リザルト＆決定後見送り＋グレーアウト遷移 (`src/ui/RaceHUD.ts`, `src/main.ts`, `src/camera/ChaseCamera.ts`):
+   - カメラが前面へ到達 (`1.45s` 経過) したタイミングで、背景ぼかし無しの透過リザルトカード (`hud-result-glass-card`) が右側にフェードイン。
+   - `Enter`（次ステージ / 表彰式）や「タイトルへ」決定後は `phase = 'winning_exit'` へ移行し、リザルト表示が消えて再び純粋な全画面で前面→横側→後方へとカメラが回り込み、後方に留まって愛車がコースの彼方へ走り去っていく姿を見送りながら、`2.25s〜3.40s` でグレーアウト (`hud-screen-fade`) → 次画面へ滑らかにフェードイン遷移（`Enter`/`Space` で途中スキップ可）。
+3. `manual/index.html`, `HANDOVER.md`, `HANDOVER_Kart.md` 更新。
+
+■ 検証結果 (最新ビルド):
+- `npm.cmd run typecheck` (tsc --noEmit): 成功 (エラー 0 件)
+- `npm.cmd run build` (vite build): 成功 (`dist/assets/index-B_qVurLP.js` 出力、996ms、44曲 `.flac` 保持確認済み)
+■ ブラウザ実機確認結果 (dist/serve_nocache.py @ http://127.0.0.1:8080/):
+- コンソールエラー 0 件 / ページエラー 0 件 / HTTP >= 400 エラー 0 件。
+- タイトル → キャラ選択 → イントロスキップ → 走行開始 (`87 km/h`) までのスモーク確認および `/manual/index.html` の「ウィニングラン＆表彰式」追記表示を確認。
+（※ 3周完走後のゴール時ウィニングラン全面カメラ・透過リザルト・走り去り見送り＆グレーアウト遷移の実機通し確認は、テスト時間の都合上未実測で、TypeScript 型チェック・ビルド・状態遷移ロジック検証で確認済み）
+
+[2026-11-22] アイシー・キングダム慣性調整・光る隠しスリップ・氷上ロケット1/2スピン＆壁スタック自動救済
+--------------------------------------------------------------------
+■ 変更内容:
+1. 壁めり込み防止＋不動スタック自動救済 (全24コース共通: `src/entities/Kart.ts`, `src/world/CircuitTrack.ts`):
+   - `isInNoGuardrailZone(t)` を追加し、ガードレール有りの区間で壁境界 (`SHOULDER_HALF_WIDTH - KART_RADIUS`) へ食い込んだ場合は内側へ滑らかに押し戻して壁沿い滑走させ、万一外側へ貫通した場合は即座にレスキューバード隊を起動。
+   - アクセル・ブレーキ入力中なのに実水平速度 `1.8 m/s` 未満の不動状態が `1.15秒` 続いた場合も、自動でレスキューバード隊が救出するスタックガードを追加。
+2. アイシー・キングダム・カップ（Stages 12..15）の走行性改善＆光る隠しアイスバーン (`src/world/CupStageDefs.ts`, `src/world/CircuitTrack.ts`, `src/entities/Kart.ts`):
+   - 基本 `gripMultiplier` を従来の `0.42〜0.72` から **`0.78〜0.88`（ほんのり慣性で曲がりやすい快適バランス）** へ改善し、STAGE 4 の `crosswind` も `4.8 → 1.5` へ緩和。
+   - 従来の目立つ水色円板を廃止し、路面になじみつつ光を浴びてうっすら光る **隠しすべるゾーン**（半透明クリア光沢＋外周グリンツリング、半径 `4.2〜4.6m`）へ刷新。接地通過すると `0.95秒` スピンアウト（`Space` ジャンプやキングクラウン無敵で回避可）。
+3. 氷上でのアイテム「🚀ミニロケット」1/2空転スピン (`src/entities/ItemManager.ts`, `src/main.ts`):
+   - アイシー・キングダム（`cupId === 3`）でアイテム「ミニロケット」を使用すると、`1/2` の確率で空転スピン (`❄️ 氷でロケット空転スピン！`) が発生（スタート時のロケットスタートは常に安全・スピン無し）。
+
+■ 検証結果 (最新ビルド):
+- `npm.cmd run typecheck` (tsc --noEmit): 成功 (エラー 0 件)
+- `npm.cmd run build` (vite build): 成功 (`dist/assets/index-BIp1zvPb.js` 出力、1.95s、44曲 `.flac` 保持確認済み)
+
+■ ブラウザ実機確認結果 (dist/serve_nocache.py @ http://127.0.0.1:8080/):
+- `❄️ アイシー・キングダム・カップ` → `STAGE 4: ブリザード・サーキット` の新規サブタイトル表示、およびロケットスタート (`GO! ロケットスタート！` で 88→113 km/h・空転なし・1st 表示) を確認
+- 右側外壁への接触時にもめり込みスタックせず、`76〜85 km/h` で滑らかに壁沿い走行できることを確認
+- `/manual/index.html` の HTTP 200 配信と `1/2空転スピン` 追記、ブラウザ console error 0 件 / page error 0 件を確認
+- なお、アイテム `🚀 ミニロケット` の氷上 1/2 空転、静止スタック 1.15s 自動救済、および隠しスリップパッチ踏破スピン自体はコード実装・型チェック・ビルドで検証済み（ブラウザ実機上での強制アイテム取得／踏破トリガーまでは未実測）
+
+[2026-11-22] 強風（crosswind）による外壁吹き飛ばし解消・空気抵抗減速化＆吹雪演出復元
+--------------------------------------------------------------------
+■ 原因・変更内容:
+1. 壁への強制押し付け解消 (`src/entities/Kart.ts`):
+   - 従来の `windPushX` が毎フレーム横方向速度へ加算・蓄積してしまい（Stage 15 で実質横滑り約 `6.2 m/s`）、プレイヤー・CPU とも外周壁へ張り付く状態になっていたため、横押し `windPushX` を廃止。
+   - 代わりに `crosswind > 0`（Stage 11 `スカイ・ピーク・リッジ`・Stage 15 `ブリザード・サーキット`）かつ非ブースト時に、最高速度を穏やかに抑える空気抵抗（`windSlowRatio = Math.min(0.15, crosswind * 0.065)`、Stage 15 で約 9.75% 減速）へ変更。ブーストやミニターボ・クラウン無敵時は風を突き抜けて加速可能。
+2. 吹雪雪パーティクルの復元 (`src/world/CircuitTrack.ts`):
+   - Stage 15 の `crosswind` 引き下げ後も雪ステージらしい吹雪の見た目が出るよう、`sceneryTheme === 'snow' && crosswind > 0` 条件で穏やかな降雪・横雪パーティクルを表示するよう調整。
+
+■ 検証結果 (最新ビルド):
+- `npm.cmd run typecheck` (tsc --noEmit): 成功 (エラー 0 件)
+- `npm.cmd run build -- --emptyOutDir false`: 成功 (`dist/assets/index-BtKmRVZy.js` 出力、2.00s、44曲 `.flac` 保持確認済み)
+
+■ ブラウザ実機確認結果 (dist/serve_nocache.py @ http://127.0.0.1:8080/):
+- `❄️ アイシー・キングダム・カップ` → `STAGE 4: ブリザード・サーキット` 第1左カーブ (`00:04.65〜00:07.24`) にて、プレイヤー (`🐱 ネコ`) と CPU 3台 (`🦁 ライオン`・`🦊 キツネ`・`🐸 カエル`) のいずれも右外壁に打ち付けられず、コース中央〜イン側を綺麗に走行できることを確認
+- 非ブースト巡航速度 `79〜83 km/h`（ロケットスタート時は `118〜119 km/h`）および画面上の白い吹雪パーティクル表示、隠し氷パッチでのコース内スピン (`💫 SPIN`)、コンソール/ページエラー 0 件を確認
