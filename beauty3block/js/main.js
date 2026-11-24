@@ -24,8 +24,16 @@
     const engine = new B3B.ColumnsEngine({ audio });
 
     const saved = loadSettings();
+    const defaultTrack =
+      (B3B.BGM_TRACKS && B3B.BGM_TRACKS[1] && B3B.BGM_TRACKS[1].file) ||
+      (B3B.BGM_TRACKS && B3B.BGM_TRACKS[0] && B3B.BGM_TRACKS[0].file) ||
+      '';
     const appSettings = {
       sound: saved && typeof saved.sound === 'boolean' ? saved.sound : true,
+      bgmEnabled: saved && typeof saved.bgmEnabled === 'boolean' ? saved.bgmEnabled : true,
+      bgmMode: saved && (saved.bgmMode === 'random' || saved.bgmMode === 'repeat') ? saved.bgmMode : 'random',
+      bgmTrack: saved && typeof saved.bgmTrack === 'string' ? saved.bgmTrack : defaultTrack,
+      bgmVolume: saved && typeof saved.bgmVolume === 'number' ? saved.bgmVolume : 0.55,
       ghost: saved && typeof saved.ghost === 'boolean' ? saved.ghost : true,
       magicEnabled: saved && typeof saved.magicEnabled === 'boolean' ? saved.magicEnabled : true,
       preset: saved && B3B.PRESETS[saved.preset] ? saved.preset : 'classic',
@@ -36,6 +44,28 @@
     engine.settings.ghost = appSettings.ghost;
     engine.settings.magicEnabled = appSettings.magicEnabled;
     engine.settings.preset = appSettings.preset;
+
+    const bgmNowEls = document.querySelectorAll('[data-bind="bgm-now"]');
+    const bgm = new B3B.BGMPlayer({
+      onTrackChange: (track, player) => {
+        const label = !player.enabled
+          ? '♪ BGM OFF'
+          : player.unsupported
+          ? '♪ OGG非対応ブラウザのためBGM無効'
+          : track
+          ? `♪ ${track.title}${player.mode === 'repeat' ? ' [リピート]' : ' [ランダム]'}`
+          : '♪ 曲が見つかりません';
+        bgmNowEls.forEach((el) => {
+          el.textContent = label;
+        });
+      }
+    });
+    bgm.configure({
+      enabled: appSettings.bgmEnabled,
+      mode: appSettings.bgmMode,
+      selectedFile: appSettings.bgmTrack,
+      volume: appSettings.bgmVolume
+    });
 
     // DOM Elements
     const boardStage = document.getElementById('board-stage');
@@ -61,11 +91,16 @@
     const overlayStats = document.getElementById('overlay-stats');
     const overlayFinalScore = document.getElementById('overlay-final-score');
     const overlayFinalChain = document.getElementById('overlay-final-chain');
+    const titleBgmBox = document.getElementById('title-bgm-box');
     const btnPrimaryPlay = document.getElementById('btn-primary-play');
     const btnOverlaySettings = document.getElementById('btn-overlay-settings');
 
     const btnPauseList = document.querySelectorAll('[data-action="pause"]');
     const btnSoundList = document.querySelectorAll('[data-action="sound"]');
+    const btnBgmList = document.querySelectorAll('[data-action="bgm"]');
+    const btnBgmNextList = document.querySelectorAll('[data-action="bgm-next"]');
+    const bgmModeButtons = document.querySelectorAll('[data-bgm-mode]');
+    const bgmSelects = document.querySelectorAll('[data-bgm-select]');
     const btnFullscreenList = document.querySelectorAll('[data-action="fullscreen"]');
     const btnInstallList = document.querySelectorAll('[data-action="install"]');
     const btnSettingsList = document.querySelectorAll('[data-action="settings"]');
@@ -74,11 +109,27 @@
     const iosModal = document.getElementById('ios-modal');
     const rotateGuard = document.getElementById('rotate-guard');
 
+    const toggleBgmInput = document.getElementById('opt-bgm');
+    const bgmVolumeInput = document.getElementById('opt-bgm-volume');
     const toggleSoundInput = document.getElementById('opt-sound');
     const toggleGhostInput = document.getElementById('opt-ghost');
     const toggleMagicInput = document.getElementById('opt-magic');
     const toggleLandPadInput = document.getElementById('opt-landpad');
     const presetButtons = document.querySelectorAll('[data-preset]');
+
+    // Populate BGM track dropdowns
+    bgmSelects.forEach((sel) => {
+      sel.innerHTML = '';
+      (B3B.BGM_TRACKS || []).forEach((t) => {
+        const opt = document.createElement('option');
+        opt.value = t.file;
+        opt.textContent = t.title;
+        sel.appendChild(opt);
+      });
+      if (appSettings.bgmTrack) {
+        sel.value = appSettings.bgmTrack;
+      }
+    });
 
     // Layout metrics
     let cellSize = 36;
@@ -125,9 +176,11 @@
     function checkRotateGuard() {
       if (!rotateGuard) return;
       const style = global.getComputedStyle(rotateGuard);
-      if (style.display !== 'none') {
+      const isRotatedBlocked = style.display !== 'none';
+      if (isRotatedBlocked) {
         engine.pauseIfPlaying();
       }
+      bgm.setRotateSuspended(isRotatedBlocked);
     }
 
     function drawNextPreviews() {
@@ -192,12 +245,14 @@
         overlayTitle.textContent = 'BEAUTY 3-BLOCK';
         overlaySubtitle.textContent = '宝石を揃えて連鎖する、至高のコラムス体験';
         overlayStats.hidden = true;
+        if (titleBgmBox) titleBgmBox.hidden = false;
         btnPrimaryPlay.textContent = 'GAME START';
       } else if (engine.state === 'PAUSED') {
         overlayEl.hidden = false;
         overlayTitle.textContent = 'PAUSED';
         overlaySubtitle.textContent = '一休み中 — 準備ができたら再開しましょう';
         overlayStats.hidden = true;
+        if (titleBgmBox) titleBgmBox.hidden = false;
         btnPrimaryPlay.textContent = 'RESUME';
       } else if (engine.state === 'GAMEOVER') {
         overlayEl.hidden = false;
@@ -207,6 +262,7 @@
             ? 'NEW RECORD! 素晴らしい輝きです！'
             : 'もう一度チャレンジしましょう';
         overlayStats.hidden = false;
+        if (titleBgmBox) titleBgmBox.hidden = false;
         overlayFinalScore.textContent = engine.score.toLocaleString();
         overlayFinalChain.textContent = `${engine.maxChain} CHAIN`;
         btnPrimaryPlay.textContent = 'PLAY AGAIN';
@@ -220,6 +276,8 @@
     engine.onStateChange = syncHUD;
 
     function syncSettingsUI() {
+      if (toggleBgmInput) toggleBgmInput.checked = appSettings.bgmEnabled;
+      if (bgmVolumeInput) bgmVolumeInput.value = String(Math.round(appSettings.bgmVolume * 100));
       if (toggleSoundInput) toggleSoundInput.checked = appSettings.sound;
       if (toggleGhostInput) toggleGhostInput.checked = appSettings.ghost;
       if (toggleMagicInput) toggleMagicInput.checked = appSettings.magicEnabled;
@@ -231,11 +289,28 @@
         btn.classList.toggle('is-active', btn.dataset.preset === appSettings.preset);
       });
 
+      bgmModeButtons.forEach((btn) => {
+        btn.classList.toggle('is-active', btn.dataset.bgmMode === appSettings.bgmMode);
+      });
+
+      bgmSelects.forEach((sel) => {
+        if (appSettings.bgmTrack && sel.value !== appSettings.bgmTrack) {
+          sel.value = appSettings.bgmTrack;
+        }
+      });
+
       btnSoundList.forEach((btn) => {
         btn.setAttribute('aria-pressed', String(!appSettings.sound));
         btn.classList.toggle('is-muted', !appSettings.sound);
         const icon = btn.querySelector('.sound-state');
         if (icon) icon.textContent = appSettings.sound ? 'ON' : 'OFF';
+      });
+
+      btnBgmList.forEach((btn) => {
+        btn.setAttribute('aria-pressed', String(!appSettings.bgmEnabled));
+        btn.classList.toggle('is-muted', !appSettings.bgmEnabled);
+        const stateEl = btn.querySelector('.bgm-state');
+        if (stateEl) stateEl.textContent = appSettings.bgmEnabled ? 'ON' : 'OFF';
       });
     }
 
@@ -272,6 +347,7 @@
     // Button actions
     btnPrimaryPlay.addEventListener('click', () => {
       audio.unlock();
+      bgm.startOrResume();
       if (engine.state === 'PAUSED') {
         engine.togglePause();
       } else {
@@ -289,6 +365,7 @@
     btnPauseList.forEach((btn) => {
       btn.addEventListener('click', () => {
         audio.unlock();
+        bgm.startOrResume();
         if (engine.state === 'IDLE' || engine.state === 'GAMEOVER') {
           engine.startNewGame();
         } else {
@@ -302,6 +379,67 @@
         appSettings.sound = !appSettings.sound;
         audio.setEnabled(appSettings.sound);
         if (appSettings.sound) audio.unlock();
+        saveSettings(appSettings);
+        syncSettingsUI();
+      });
+    });
+
+    btnBgmList.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        appSettings.bgmEnabled = !appSettings.bgmEnabled;
+        bgm.setEnabled(appSettings.bgmEnabled, true);
+        saveSettings(appSettings);
+        syncSettingsUI();
+      });
+    });
+
+    btnBgmNextList.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        if (!appSettings.bgmEnabled) {
+          appSettings.bgmEnabled = true;
+          bgm.setEnabled(true, false);
+        }
+        if (appSettings.bgmMode === 'repeat') {
+          const tracks = B3B.BGM_TRACKS || [];
+          const curIdx = tracks.findIndex((t) => t.file === appSettings.bgmTrack);
+          const nextIdx = tracks.length > 0 ? (curIdx + 1) % tracks.length : 0;
+          if (tracks[nextIdx]) {
+            appSettings.bgmTrack = tracks[nextIdx].file;
+            bgm.setSelectedTrack(appSettings.bgmTrack, true);
+          }
+        } else {
+          bgm.playNextRandom();
+        }
+        saveSettings(appSettings);
+        syncSettingsUI();
+      });
+    });
+
+    bgmModeButtons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const mode = btn.dataset.bgmMode;
+        if (mode !== 'random' && mode !== 'repeat') return;
+        appSettings.bgmMode = mode;
+        if (!appSettings.bgmEnabled) {
+          appSettings.bgmEnabled = true;
+          bgm.setEnabled(true, false);
+        }
+        bgm.setMode(mode, true);
+        saveSettings(appSettings);
+        syncSettingsUI();
+      });
+    });
+
+    bgmSelects.forEach((sel) => {
+      sel.addEventListener('change', () => {
+        appSettings.bgmTrack = sel.value;
+        appSettings.bgmMode = 'repeat';
+        if (!appSettings.bgmEnabled) {
+          appSettings.bgmEnabled = true;
+          bgm.setEnabled(true, false);
+        }
+        bgm.setMode('repeat', false);
+        bgm.setSelectedTrack(appSettings.bgmTrack, true);
         saveSettings(appSettings);
         syncSettingsUI();
       });
@@ -347,6 +485,22 @@
     });
 
     // Settings bindings
+    if (toggleBgmInput) {
+      toggleBgmInput.addEventListener('change', () => {
+        appSettings.bgmEnabled = toggleBgmInput.checked;
+        bgm.setEnabled(appSettings.bgmEnabled, true);
+        saveSettings(appSettings);
+        syncSettingsUI();
+      });
+    }
+    if (bgmVolumeInput) {
+      bgmVolumeInput.addEventListener('input', () => {
+        const vol = Math.max(0, Math.min(1, Number(bgmVolumeInput.value) / 100));
+        appSettings.bgmVolume = vol;
+        bgm.setVolume(vol);
+        saveSettings(appSettings);
+      });
+    }
     if (toggleSoundInput) {
       toggleSoundInput.addEventListener('change', () => {
         appSettings.sound = toggleSoundInput.checked;
@@ -396,6 +550,11 @@
     let dasTimer = 0;
     let arrTimer = 0;
 
+    const isLeftKey = (code) => code === 'ArrowLeft' || code === 'KeyA' || code === 'KeyJ';
+    const isRightKey = (code) => code === 'ArrowRight' || code === 'KeyD' || code === 'KeyL';
+    const isSoftDropKey = (code) => code === 'ArrowDown' || code === 'KeyS' || code === 'KeyK';
+    const isRotateKey = (code) => code === 'ArrowUp' || code === 'KeyW' || code === 'KeyX' || code === 'KeyI';
+
     document.addEventListener('keydown', (e) => {
       if (settingsModal && !settingsModal.hidden) {
         if (e.key === 'Escape') settingsModal.hidden = true;
@@ -410,19 +569,17 @@
       const handledCodes = [
         'ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp',
         'Space', 'KeyA', 'KeyD', 'KeyS', 'KeyW', 'KeyX', 'KeyZ',
-        'KeyP', 'Escape', 'KeyF', 'KeyM', 'Enter'
+        'KeyJ', 'KeyL', 'KeyK', 'KeyI', 'KeyF', 'KeyG',
+        'KeyP', 'Escape', 'KeyM', 'Enter'
       ];
       if (handledCodes.includes(code)) {
         e.preventDefault();
       }
       audio.unlock();
+      bgm.unlockAndMaybeStart();
 
       if (code === 'KeyP' || code === 'Escape') {
         engine.togglePause();
-        return;
-      }
-      if (code === 'KeyF') {
-        pwa.toggleFullscreen();
         return;
       }
       if (code === 'KeyM') {
@@ -433,10 +590,12 @@
         return;
       }
       if (code === 'Enter' && (engine.state === 'IDLE' || engine.state === 'GAMEOVER')) {
+        bgm.startOrResume();
         engine.startNewGame();
         return;
       }
-      if (engine.state === 'IDLE' && (code === 'Space')) {
+      if (engine.state === 'IDLE' && code === 'Space') {
+        bgm.startOrResume();
         engine.startNewGame();
         return;
       }
@@ -444,21 +603,21 @@
       if (e.repeat) return;
       keysHeld.add(code);
 
-      if (code === 'ArrowLeft' || code === 'KeyA') {
+      if (isLeftKey(code)) {
         dasDir = -1;
         dasTimer = 0;
         arrTimer = 0;
         engine.moveHorizontal(-1);
-      } else if (code === 'ArrowRight' || code === 'KeyD') {
+      } else if (isRightKey(code)) {
         dasDir = 1;
         dasTimer = 0;
         arrTimer = 0;
         engine.moveHorizontal(1);
-      } else if (code === 'ArrowUp' || code === 'KeyW' || code === 'KeyX') {
+      } else if (isRotateKey(code) || code === 'KeyG') {
         engine.rotate(false);
-      } else if (code === 'KeyZ') {
+      } else if (code === 'KeyF' || code === 'KeyZ') {
         engine.rotate(true);
-      } else if (code === 'ArrowDown' || code === 'KeyS') {
+      } else if (isSoftDropKey(code)) {
         engine.setSoftDrop(true);
       } else if (code === 'Space') {
         engine.hardDrop();
@@ -468,14 +627,14 @@
     document.addEventListener('keyup', (e) => {
       const code = e.code;
       keysHeld.delete(code);
-      if (code === 'ArrowDown' || code === 'KeyS') {
-        if (!keysHeld.has('ArrowDown') && !keysHeld.has('KeyS')) {
+      if (isSoftDropKey(code)) {
+        if (!keysHeld.has('ArrowDown') && !keysHeld.has('KeyS') && !keysHeld.has('KeyK')) {
           engine.setSoftDrop(false);
         }
       }
-      if (code === 'ArrowLeft' || code === 'KeyA' || code === 'ArrowRight' || code === 'KeyD') {
-        const leftHeld = keysHeld.has('ArrowLeft') || keysHeld.has('KeyA');
-        const rightHeld = keysHeld.has('ArrowRight') || keysHeld.has('KeyD');
+      if (isLeftKey(code) || isRightKey(code)) {
+        const leftHeld = keysHeld.has('ArrowLeft') || keysHeld.has('KeyA') || keysHeld.has('KeyJ');
+        const rightHeld = keysHeld.has('ArrowRight') || keysHeld.has('KeyD') || keysHeld.has('KeyL');
         if (leftHeld && !rightHeld) {
           dasDir = -1;
           dasTimer = 0;

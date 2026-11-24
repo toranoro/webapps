@@ -16,21 +16,23 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Beauty3Block">
-  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png?v=20261124-01">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png?v=20261124-02">
 
   <!-- Icons & PWA Manifest -->
-  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg?v=20261124-01">
-  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=20261124-01">
-  <link rel="manifest" href="./manifest.json?v=20261124-01">
+  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg?v=20261124-02">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=20261124-02">
+  <link rel="manifest" href="./manifest.json?v=20261124-02">
 
-  <link rel="stylesheet" href="./css/style.css?v=20261124-01">
+  <link rel="stylesheet" href="./css/style.css?v=20261124-02">
 
-  <script defer src="./js/version.js?v=20261124-01"></script>
-  <script defer src="./js/audio.js?v=20261124-01"></script>
-  <script defer src="./js/jewels.js?v=20261124-01"></script>
-  <script defer src="./js/engine.js?v=20261124-01"></script>
-  <script defer src="./js/pwa.js?v=20261124-01"></script>
-  <script defer src="./js/main.js?v=20261124-01"></script>
+  <script defer src="./js/version.js?v=20261124-02"></script>
+  <script defer src="./js/audio.js?v=20261124-02"></script>
+  <script defer src="./js/bgm-tracks.js?v=20261124-02"></script>
+  <script defer src="./js/bgm.js?v=20261124-02"></script>
+  <script defer src="./js/jewels.js?v=20261124-02"></script>
+  <script defer src="./js/engine.js?v=20261124-02"></script>
+  <script defer src="./js/pwa.js?v=20261124-02"></script>
+  <script defer src="./js/main.js?v=20261124-02"></script>
 </head>
 <body>
   <div class="bg-aurora" aria-hidden="true"></div>
@@ -59,11 +61,11 @@
       </div>
 
       <div class="portrait-hud-actions">
-        <button type="button" class="icon-btn" data-action="sound" aria-label="サウンド切替" title="サウンド">🔊</button>
+        <button type="button" class="icon-btn" data-action="bgm" aria-label="BGM切替" title="BGM">🎵</button>
+        <button type="button" class="icon-btn" data-action="sound" aria-label="効果音切替" title="効果音">🔊</button>
         <button type="button" class="icon-btn" data-action="pause" aria-label="一時停止または開始" title="ポーズ">⏯</button>
         <button type="button" class="icon-btn" data-action="fullscreen" aria-label="全画面表示" title="全画面">⛶</button>
         <button type="button" class="icon-btn" data-action="settings" aria-label="設定" title="設定">⚙</button>
-        <a class="icon-btn" href="./manual/index.html" target="_blank" rel="noopener" aria-label="オンラインマニュアル" title="マニュアル">📖</a>
       </div>
     </header>
 
@@ -93,11 +95,14 @@
           <button type="button" class="ui-btn" data-action="sound">
             <span>🔊</span><span class="sound-state">ON</span>
           </button>
+          <button type="button" class="ui-btn" data-action="bgm">
+            <span>🎵</span><span class="bgm-state">ON</span>
+          </button>
           <button type="button" class="ui-btn" data-action="fullscreen">
             <span>⛶</span><span>FULL</span>
           </button>
-          <button type="button" class="ui-btn" data-action="settings">
-            <span>⚙</span><span>OPT</span>
+          <button type="button" class="ui-btn full-span" data-action="settings">
+            <span>⚙</span><span>設定 / BGM / 難易度</span>
           </button>
           <a class="ui-btn full-span" href="./manual/index.html" target="_blank" rel="noopener">
             <span>📖</span><span>オンラインマニュアル</span>
@@ -114,7 +119,7 @@
       <div id="board-frame" class="board-frame">
         <canvas id="board-canvas"></canvas>
 
-        <div id="board-overlay" class="board-overlay">
+        <div id="board-overlay" class="board-overlay allow-scroll">
           <h2 id="overlay-title" class="overlay-title">BEAUTY 3-BLOCK</h2>
           <p id="overlay-subtitle" class="overlay-sub">宝石を揃えて連鎖する、至高のコラムス体験</p>
 
@@ -129,9 +134,28 @@
             </div>
           </div>
 
+          <!-- Title Screen BGM Config -->
+          <div id="title-bgm-box" class="title-bgm-box">
+            <div class="bgm-box-head">
+              <span>🎵 BGM設定</span>
+              <button type="button" class="bgm-mini-btn" data-action="bgm">
+                BGM: <span class="bgm-state">ON</span>
+              </button>
+            </div>
+            <div class="bgm-mode-row">
+              <button type="button" class="bgm-mode-btn" data-bgm-mode="random">🔀 ランダム再生</button>
+              <button type="button" class="bgm-mode-btn" data-bgm-mode="repeat">🔁 1曲リピート</button>
+            </div>
+            <div class="bgm-track-row">
+              <select class="bgm-select" data-bgm-select aria-label="BGM曲選択"></select>
+              <button type="button" class="bgm-mini-btn" data-action="bgm-next" title="次の曲 / 試聴">⏭</button>
+            </div>
+            <div class="bgm-now" data-bind="bgm-now">♪ 再生待機中</div>
+          </div>
+
           <div class="overlay-actions">
             <button type="button" id="btn-primary-play" class="ui-btn primary">GAME START</button>
-            <button type="button" id="btn-overlay-settings" class="ui-btn">⚙ 設定 / 難易度</button>
+            <button type="button" id="btn-overlay-settings" class="ui-btn">⚙ 詳細設定 / 難易度</button>
             <button type="button" class="ui-btn" data-action="install" hidden>📲 アプリをインストール</button>
             <a class="ui-btn" href="./manual/index.html" target="_blank" rel="noopener">📖 操作マニュアル</a>
           </div>
@@ -167,13 +191,14 @@
       </div>
 
       <div class="panel-section controls-guide">
-        <div class="section-label"><span>CONTROLS</span></div>
-        <div><kbd>←</kbd> <kbd>→</kbd> / <kbd>A</kbd> <kbd>D</kbd> 移動</div>
-        <div><kbd>↑</kbd> / <kbd>W</kbd> / <kbd>X</kbd> 宝石入替</div>
-        <div><kbd>↓</kbd> / <kbd>S</kbd> 高速落下</div>
-        <div><kbd>Space</kbd> ハードドロップ</div>
-        <div><kbd>P</kbd> ポーズ / <kbd>F</kbd> 全画面</div>
-        <div style="margin-top:6px; opacity:0.85;">タッチ: タップで入替 / スワイプで移動・下フリックで急降下</div>
+        <div class="section-label"><span>CONTROLS (PC)</span></div>
+        <div><kbd>←</kbd><kbd>→</kbd> / <kbd>A</kbd><kbd>D</kbd> / <kbd>J</kbd><kbd>L</kbd> 左右移動</div>
+        <div><kbd>↑</kbd> / <kbd>W</kbd> / <kbd>X</kbd> / <kbd>I</kbd> 回転</div>
+        <div><kbd>F</kbd> <kbd>G</kbd> / <kbd>Z</kbd> 宝石入れ替え</div>
+        <div><kbd>↓</kbd> / <kbd>S</kbd> / <kbd>K</kbd> 少し落ちる</div>
+        <div><kbd>Space</kbd> 一気に落下</div>
+        <div><kbd>P</kbd> ポーズ / <kbd>M</kbd> 消音</div>
+        <div style="margin-top:5px; opacity:0.85;">タッチ: タップで回転 / スワイプで移動</div>
       </div>
     </aside>
 
@@ -206,7 +231,7 @@
   <div id="settings-modal" class="modal-backdrop" hidden role="dialog" aria-modal="true" aria-labelledby="settings-title">
     <div class="modal-card glass-card">
       <div class="modal-header">
-        <h2 id="settings-title">設定 / モード</h2>
+        <h2 id="settings-title">設定 / モード / BGM</h2>
         <button type="button" class="icon-btn" data-close-modal="settings-modal" aria-label="閉じる">✕</button>
       </div>
       <div class="modal-body allow-scroll">
@@ -220,7 +245,35 @@
         </div>
 
         <label class="setting-row">
-          <span>サウンドエフェクト（効果音）</span>
+          <span>BGM（音楽再生）</span>
+          <span class="switch">
+            <input type="checkbox" id="opt-bgm" checked>
+            <span class="switch-slider"></span>
+          </span>
+        </label>
+
+        <div>
+          <div class="section-label">
+            <span>BGM 再生モード</span>
+            <span class="bgm-now" data-bind="bgm-now" style="max-width:170px;">♪ 待機中</span>
+          </div>
+          <div class="bgm-mode-row" style="margin-bottom:8px;">
+            <button type="button" class="bgm-mode-btn" data-bgm-mode="random">🔀 ランダム再生</button>
+            <button type="button" class="bgm-mode-btn" data-bgm-mode="repeat">🔁 1曲リピート</button>
+          </div>
+          <div class="bgm-track-row">
+            <select class="bgm-select" data-bgm-select aria-label="BGM曲選択"></select>
+            <button type="button" class="bgm-mini-btn" data-action="bgm-next" title="次の曲 / 試聴">⏭</button>
+          </div>
+        </div>
+
+        <label class="setting-row">
+          <span>BGM 音量</span>
+          <input type="range" id="opt-bgm-volume" class="bgm-range" min="0" max="100" value="55" style="max-width:160px;">
+        </label>
+
+        <label class="setting-row">
+          <span>効果音（SE）</span>
           <span class="switch">
             <input type="checkbox" id="opt-sound" checked>
             <span class="switch-slider"></span>

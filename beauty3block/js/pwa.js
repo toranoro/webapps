@@ -66,7 +66,10 @@
         (e) => {
           const now = Date.now();
           if (now - lastTouchEnd <= 280) {
-            const allowFastTap = e.target && e.target.closest && e.target.closest('.game-btn, canvas');
+            const allowFastTap =
+              e.target &&
+              e.target.closest &&
+              e.target.closest('.game-btn, canvas, button, select, input, label, a');
             if (!allowFastTap) {
               e.preventDefault();
             }

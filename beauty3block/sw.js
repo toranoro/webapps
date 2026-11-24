@@ -2,7 +2,7 @@
  * Chrome PWAインストール要件（fetchハンドラ）を満たしつつ、
  * ブラウザキャッシュによる古いファイルの残存を防ぐためキャッシュを使用しません。
  */
-const SW_VERSION = '20261124-01';
+const SW_VERSION = '20261124-02';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(self.skipWaiting());
