@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <!-- キャッシュ無効化（常に最新版を取得） -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
+    <!-- 画面崩れ・ピンチイン/アウト・スクロール完全抑止のビューポート -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
+    <title>BeautyBlock - Crystal Tetris</title>
+
+    <!-- PWA & 全画面メタタグ (Android / Chrome) -->
+    <meta name="theme-color" content="#0a0b14">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="manifest.json">
+
+    <!-- iOS Safari 全画面メタタグ -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="BeautyBlock">
+    <link rel="apple-touch-icon" href="icon.svg">
+
+    <!-- スタイルシート（キャッシュバスティング対応） -->
+    <link rel="stylesheet" href="css/style.css?v=20261124_02">
+</head>
+<body>
+    <div class="bg-glow"></div>
+
+    <div id="app-container">
+        <!-- 上部ヘッダーバー -->
+        <header class="header-bar">
+            <div id="btn-show-title" class="logo-area" title="タイトル画面を開く">
+                <span class="app-title">✨ BeautyBlock</span>
+                <span class="app-subtitle">Crystal</span>
+            </div>
+
+            <!-- Now Playing バー（クリックでBGM/PAUSE操作） -->
+            <div id="header-now-playing" class="now-playing-pill" title="クリックでBGM設定/一時停止">
+                <span class="music-icon-pulse">🎵</span>
+                <span id="header-track-name">Loading BGM...</span>
+            </div>
+
+            <div class="system-controls">
+                <button id="btn-install" class="icon-btn hidden" title="アプリをインストール">📥</button>
+                <button id="btn-bgm" class="icon-btn" title="BGM再生/停止">🎵 ON</button>
+                <button id="btn-mute" class="icon-btn" title="効果音切替">🔊</button>
+                <button id="btn-pause" class="icon-btn" title="ポーズ/再開 (ESC/P)">⏸</button>
+                <button id="btn-fullscreen" class="icon-btn" title="全画面表示">⛶</button>
+                <a href="./manual/index.html" class="icon-btn manual-link" title="操作マニュアル" target="_blank">📖</a>
+            </div>
+        </header>
+
+        <!-- メインゲームエリア -->
+        <main class="game-play-area">
+            <!-- 左パネル: HOLD & STATS -->
+            <aside class="side-panel left-panel">
+                <div class="glass-card">
+                    <div class="card-title">HOLD</div>
+                    <div class="preview-box">
+                        <canvas id="hold-canvas"></canvas>
+                    </div>
+                </div>
+
+                <div class="glass-card">
+                    <div class="card-title">SCORE</div>
+                    <div id="score-val" class="card-value">0</div>
+                </div>
+
+                <div class="glass-card">
+                    <div class="card-title">LEVEL</div>
+                    <div id="level-val" class="card-value">1</div>
+                </div>
+
+                <div class="glass-card">
+                    <div class="card-title">LINES</div>
+                    <div id="lines-val" class="card-value">0</div>
+                </div>
+            </aside>
+
+            <!-- 中央: メインプレイフィールド -->
+            <div class="board-wrapper">
+                <canvas id="tetris-canvas"></canvas>
+            </div>
+
+            <!-- 右パネル: NEXT QUEUE -->
+            <aside class="side-panel right-panel">
+                <div class="glass-card">
+                    <div class="card-title">NEXT</div>
+                    <div class="preview-box next-box">
+                        <canvas id="next-canvas"></canvas>
+                    </div>
+                </div>
+            </aside>
+        </main>
+
+        <!-- 下部オンスクリーンコントローラー（スマホ・タブレット・iPad操作用） -->
+        <nav id="touch-controls" class="controls-container">
+            <div class="dpad-group">
+                <button id="btn-left" class="ctrl-btn btn-md" aria-label="左移動">
+                    ◀<span class="btn-label">LEFT</span>
+                </button>
+                <button id="btn-down" class="ctrl-btn btn-md" aria-label="ソフトドロップ">
+                    ▼<span class="btn-label">DOWN</span>
+                </button>
+                <button id="btn-right" class="ctrl-btn btn-md" aria-label="右移動">
+                    ▶<span class="btn-label">RIGHT</span>
+                </button>
+            </div>
+
+            <div class="action-group">
+                <button id="btn-hold" class="ctrl-btn btn-md" aria-label="ホールド">
+                    ⚡<span class="btn-label">HOLD</span>
+                </button>
+                <button id="btn-rot-ccw" class="ctrl-btn btn-md" aria-label="左回転">
+                    ↺<span class="btn-label">L-ROT</span>
+                </button>
+                <button id="btn-rot-cw" class="ctrl-btn btn-md btn-accent" aria-label="右回転">
+                    ↻<span class="btn-label">R-ROT</span>
+                </button>
+                <button id="btn-hard-drop" class="ctrl-btn btn-lg" aria-label="ハードドロップ">
+                    ⏬<span class="btn-label">DROP</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- PC操作ガイド（JKLI派キー & 矢印キー） -->
+        <footer class="pc-key-hints">
+            <span class="key-badge key-badge-highlight">J / L</span> (← →) 移動 / 
+            <span class="key-badge key-badge-highlight">K</span> (↓) 少し落ち / 
+            <span class="key-badge key-badge-highlight">I</span> (↑) 時計回り回転 / 
+            <span class="key-badge">Space</span> ハードドロップ / 
+            <span class="key-badge">C / H</span> ホールド / 
+            <span class="key-badge">ESC / P</span> 一時停止
+        </footer>
+    </div>
+
+    <!-- =========================================================
+         ★ 美麗な PAUSE モーダル（ESC / P / ⏸ボタン）
+         ========================================================= -->
+    <div id="pause-modal" class="pause-overlay hidden">
+        <div class="pause-card">
+            <h2 class="pause-title">PAUSE</h2>
+            
+            <div class="pause-bgm-info">
+                <div style="font-size: 0.72rem; color: var(--neon-blue); letter-spacing: 1px;">NOW PLAYING</div>
+                <div id="pause-track-name" class="pause-track-name">Track Name</div>
+                <div style="display: flex; gap: 8px; justify-content: center; margin-top: 6px;">
+                    <button id="pause-btn-mode" class="modal-btn modal-btn-secondary" style="font-size: 0.8rem; padding: 6px 12px;">
+                        🔀 ランダム再生
+                    </button>
+                    <button id="pause-btn-next" class="modal-btn modal-btn-secondary" style="font-size: 0.8rem; padding: 6px 12px;">
+                        ⏭ 次の曲
+                    </button>
+                </div>
+            </div>
+
+            <div class="pause-btn-group">
+                <button id="pause-btn-resume" class="modal-btn">
+                    ▶ RESUME (再開)
+                </button>
+                <div class="btn-row">
+                    <button id="pause-btn-restart" class="modal-btn modal-btn-secondary">
+                        🔄 最初から
+                    </button>
+                    <button id="pause-btn-title" class="modal-btn modal-btn-secondary">
+                        🏠 タイトルへ
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================================
+         ★ 美麗なタイトル画面（起動時・設定画面）
+         ========================================================= -->
+    <div id="title-modal" class="title-overlay">
+        <div class="title-card">
+            <div class="title-logo-wrap">
+                <h1 class="title-main-text">✨ BeautyBlock</h1>
+                <p class="title-sub-text">CRYSTAL EDITION</p>
+            </div>
+
+            <!-- START GAME 巨大ボタン -->
+            <button id="title-btn-start" class="modal-btn btn-start-giant">
+                ▶ START GAME
+            </button>
+
+            <!-- BGMジュークボックス設定セクション -->
+            <div class="title-section-box">
+                <div class="section-box-title">
+                    <span>🎵</span> BGM JUKEBOX SETTINGS
+                </div>
+
+                <div class="bgm-select-row">
+                    <select id="bgm-select-dropdown" class="custom-select">
+                        <option value="-1">🎲 全曲からランダム選曲</option>
+                    </select>
+                </div>
+
+                <div class="btn-row">
+                    <button id="title-btn-mode-toggle" class="modal-btn modal-btn-secondary" style="font-size: 0.85rem; padding: 8px 12px;">
+                        🔀 再生: ランダム
+                    </button>
+                    <!-- 音楽フォルダ一括読み込みボタン -->
+                    <label class="modal-btn modal-btn-secondary" style="font-size: 0.85rem; padding: 8px 12px; cursor: pointer;">
+                        📂 音楽フォルダ読込
+                        <input type="file" id="bgm-folder-input" webkitdirectory directory multiple accept="audio/*" style="display: none;">
+                    </label>
+                </div>
+
+                <!-- 音量スライダー -->
+                <div class="volume-row">
+                    <span>BGM音量:</span>
+                    <input type="range" id="slider-bgm" class="volume-slider" min="0" max="1" step="0.05" value="0.5">
+                    <span id="slider-bgm-val">50%</span>
+                </div>
+                <div class="volume-row">
+                    <span>SE音量:</span>
+                    <input type="range" id="slider-sfx" class="volume-slider" min="0" max="1" step="0.05" value="0.7">
+                    <span id="slider-sfx-val">70%</span>
+                </div>
+            </div>
+
+            <!-- 操作キーガイド（jkli & 矢印） -->
+            <div class="title-section-box">
+                <div class="section-box-title">
+                    <span>⌨️</span> KEY CONTROLS (JKLI派 & 矢印キー)
+                </div>
+                <div class="key-guide-grid">
+                    <div class="key-guide-item">
+                        <strong>J / L</strong> (← →): 左右移動
+                    </div>
+                    <div class="key-guide-item">
+                        <strong>K</strong> (↓): 少し落ち
+                    </div>
+                    <div class="key-guide-item">
+                        <strong>I</strong> (↑): 時計回り回転
+                    </div>
+                    <div class="key-guide-item">
+                        <strong>Space</strong>: ハードドロップ
+                    </div>
+                    <div class="key-guide-item">
+                        <strong>C / H</strong>: ホールド
+                    </div>
+                    <div class="key-guide-item">
+                        <strong>ESC / P</strong>: 一時停止 (PAUSE)
+                    </div>
+                </div>
+            </div>
+
+            <!-- 下部リンク -->
+            <div style="display: flex; gap: 12px; width: 100%;">
+                <a href="./manual/index.html" class="modal-btn modal-btn-secondary" style="text-decoration: none;" target="_blank">
+                    📖 オンラインマニュアル
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ゲームオーバーモーダル -->
+    <div id="game-over-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <h2 class="modal-title">GAME OVER</h2>
+            <div class="modal-body">
+                <div class="final-score-label">FINAL SCORE</div>
+                <div id="final-score" class="final-score-val">0</div>
+            </div>
+            <button id="restart-btn" class="modal-btn">✨ TRY AGAIN</button>
+        </div>
+    </div>
+
+    <!-- スクリプト群（Vanilla JS・依存なし・キャッシュバスティング） -->
+    <script src="js/audio.js?v=20261124_02"></script>
+    <script src="js/particles.js?v=20261124_02"></script>
+    <script src="js/tetris.js?v=20261124_02"></script>
+    <script src="js/input.js?v=20261124_02"></script>
+    <script src="js/main.js?v=20261124_02"></script>
+
+    <!-- PWA Service Worker 登録 -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => {
+                        reg.update();
+                    })
+                    .catch(err => {
+                        console.warn('SW registration skipped:', err);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>

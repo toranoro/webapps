@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BeautyBlock - オンラインマニュアル (Crystal Edition)</title>
+    <link rel="stylesheet" href="manual.css?v=20261124_02">
+</head>
+<body>
+    <div class="manual-container">
+        <!-- ヘッダー -->
+        <header class="manual-header">
+            <h1 class="manual-title">✨ BeautyBlock オンラインマニュアル</h1>
+            <p class="manual-desc">美しいブロックと50曲BGMジュークボックスで楽しむクリスタル・テトリス操作ガイド</p>
+            <a href="../index.html" class="back-link">🎮 ゲームに戻る</a>
+        </header>
+
+        <!-- 1. ゲーム概要と特徴 -->
+        <section class="manual-section">
+            <h2 class="section-title">💎 1. ゲーム概要とこだわり</h2>
+            <p>
+                <strong>BeautyBlock</strong> は、「美しいブロックで気持ちよくテトリスがしたい」という想いから生まれた、Vanilla HTML5/JS製の独立型Webゲームです。
+            </p>
+            <div class="grid-2">
+                <div class="feature-box">
+                    <div class="feature-title">✨ クリスタルブロック & グロー</div>
+                    <div class="feature-desc">7種のテトロミノに宝石の質感（ファセット光沢、グラデーション、内部発光、ネオングロー）を採用。</div>
+                </div>
+                <div class="feature-box">
+                    <div class="feature-title">💥 チャッチャッチャッ！移動音 & パーティクル</div>
+                    <div class="feature-desc">小気味よいクリスタルクリック音、ライン消去時のクリスタル粉砕スパーク、画面振動（スクリーンシェイク）による抜群の手応え。</div>
+                </div>
+                <div class="feature-box">
+                    <div class="feature-title">🎵 50曲BGMジュークボックス</div>
+                    <div class="feature-desc">YUE作成BGMなどの外部音楽に対応。毎回ランダム選曲、選曲ドロップダウン、1曲ループ／ランダム切替、フォルダ一括読込に対応。</div>
+                </div>
+                <div class="feature-box">
+                    <div class="feature-title">⌨️ JKLI派キー操作 & 縦横両対応</div>
+                    <div class="feature-desc">ホームポジションを崩さない「J:左、L:右、I:回転、K:少し落ち」をフルサポート。iPadの横持ちゲームパッド操作にも対応。</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. 操作方法一覧 -->
+        <section class="manual-section">
+            <h2 class="section-title">🎮 2. 操作方法一覧（JKLI派 & 矢印キー）</h2>
+
+            <h3>2.1 PC（キーボード操作）</h3>
+            <div class="callout">
+                <strong>おすすめ: ホームポジションで快適操作できる「JKLI」バインドに対応！</strong><br>
+                右手をホームポジション（J K L I）に置いたまま、指をほとんど動かさずに最速のテトリスプレイが可能です。
+            </div>
+            <table class="manual-table">
+                <thead>
+                    <tr>
+                        <th>キー (JKLI派)</th>
+                        <th>キー (標準矢印/WASD)</th>
+                        <th>アクション</th>
+                        <th>詳細</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="kbd">J</span></td>
+                        <td><span class="kbd">←</span> / <span class="kbd">A</span></td>
+                        <td>左移動</td>
+                        <td>長押しで「チャッチャッチャッ」と高速DAS/ARRリピート移動</td>
+                    </tr>
+                    <tr>
+                        <td><span class="kbd">L</span></td>
+                        <td><span class="kbd">→</span> / <span class="kbd">D</span></td>
+                        <td>右移動</td>
+                        <td>長押しで高速リピート移動</td>
+                    </tr>
+                    <tr>
+                        <td><span class="kbd">K</span></td>
+                        <td><span class="kbd">↓</span> / <span class="kbd">S</span></td>
+                        <td>少し落ち（ソフトドロップ）</td>
+                        <td>落下ボーナススコア加算</td>
+                    </tr>
+                    <tr>
+                        <td><span class="kbd">I</span></td>
+                        <td><span class="kbd">↑</span> / <span class="kbd">W</span> / <span class="kbd">X</span></td>
+                        <td>時計回り回転（右回転）</td>
+                        <td>SRS（壁蹴り回転補正）対応</td>
+                    </tr>
+                    <tr>
+                        <td><span class="kbd">U</span></td>
+                        <td><span class="kbd">Z</span> / <span class="kbd">Ctrl</span></td>
+                        <td>反時計回り回転（左回転）</td>
+                        <td>SRS対応</td>
+                    </tr>
+                    <tr>
+                        <td><span class="kbd">Space</span></td>
+                        <td><span class="kbd">Space</span></td>
+                        <td>ハードドロップ</td>
+                        <td>即時着地＆固定（画面振動とスパーク演出）</td>
+                    </tr>
+                    <tr>
+                        <td><span class="kbd">H</span> / <span class="kbd">C</span></td>
+                        <td><span class="kbd">Shift</span></td>
+                        <td>ホールド（キープ・入替）</td>
+                        <td>1ターンに1回可能</td>
+                    </tr>
+                    <tr>
+                        <td><span class="kbd">ESC</span> / <span class="kbd">P</span></td>
+                        <td><span class="kbd">ESC</span> / <span class="kbd">P</span></td>
+                        <td>一時停止（美麗PAUSE画面）</td>
+                        <td>美しいPAUSE文字とBGM設定メニューが表示されます</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>2.2 モバイル / タブレット（タッチ操作）</h3>
+            <div class="grid-2">
+                <div class="feature-box">
+                    <div class="feature-title">オンスクリーンボタン</div>
+                    <ul class="step-list">
+                        <li><strong>◀ / ▶</strong>: 左右移動（長押しリピート可能）</li>
+                        <li><strong>▼</strong>: ソフトドロップ（長押しリピート可能）</li>
+                        <li><strong>⏬ DROP</strong>: ハードドロップ</li>
+                        <li><strong>↺ / ↻</strong>: 左回転 / 右回転</li>
+                        <li><strong>⚡ HOLD</strong>: ホールド</li>
+                    </ul>
+                </div>
+                <div class="feature-box">
+                    <div class="feature-title">盤面上スワイプジェスチャー</div>
+                    <ul class="step-list">
+                        <li><strong>左右フリック</strong>: ミノを瞬時に左右移動</li>
+                        <li><strong>下フリック</strong>: ソフトドロップ</li>
+                        <li><strong>上フリック</strong>: ハードドロップ</li>
+                        <li><strong>画面タップ</strong>: ミノの右回転</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. タイトル画面 & BGMジュークボックス設定 -->
+        <section class="manual-section">
+            <h2 class="section-title">🎵 3. タイトル画面 & BGMジュークボックス設定</h2>
+            <p>
+                本バージョンより、起動時に設定が行える<strong>「タイトル画面」</strong>を新設しました。
+            </p>
+            <div class="grid-2">
+                <div class="feature-box">
+                    <div class="feature-title">🎲 ランダム選曲 & 選曲ドロップダウン</div>
+                    <div class="feature-desc">
+                        「全曲からランダム選曲」を選んでおけば、起動時やプレイごとに曲が自動抽選されます。特定の曲を聴き込みたい場合はドロップダウンから自由に選択可能です。
+                    </div>
+                </div>
+                <div class="feature-box">
+                    <div class="feature-title">🔁 1曲ループ vs 🔀 ランダム再生</div>
+                    <div class="feature-desc">
+                        曲が終わった（約2分後）の挙動を選択できます。<br>
+                        ・<strong>🔀 ランダム再生</strong>: 曲が終わると自動で次の曲がランダムに流れます。<br>
+                        ・<strong>🔁 1曲ループ</strong>: お気に入りの1曲を繰り返し聴きながらプレイできます。
+                    </div>
+                </div>
+            </div>
+
+            <div class="callout" style="margin-top: 16px;">
+                <strong>📂 音楽フォルダ読込機能について:</strong><br>
+                タイトル画面の「📂 音楽フォルダ読込」ボタンを押して、PCや端末内の音楽フォルダ（mp3, wav, ogg等が入ったフォルダ）を選択すると、ブラウザ上で一瞬で全曲が読み込まれ、自分好みのプレイリストとして即座に遊ぶことができます。
+            </div>
+        </section>
+
+        <!-- 4. 美麗なPAUSE画面 -->
+        <section class="manual-section">
+            <h2 class="section-title">✨ 4. 美麗なPAUSE画面</h2>
+            <p>
+                プレイ中に <span class="kbd">ESC</span> キー、<span class="kbd">P</span> キー、または画面右上の <strong>⏸</strong> ボタンを押すと、画面中央にクリスタル・ネオンが輝く美麗な <strong>PAUSE</strong> 画面が表示されます。
+            </p>
+            <ul class="step-list">
+                <li><strong>現在再生中の曲名</strong> を確認可能</li>
+                <li><strong>「⏭ 次の曲」</strong> ボタンでBGMの即時スキップ</li>
+                <li><strong>「🔀 / 🔁」</strong> ボタンでループとランダムの即時切替</li>
+                <li><strong>「▶ RESUME」</strong> で中断した状態からスムーズに再開</li>
+                <li><strong>「🔄 最初から」</strong> または <strong>「🏠 タイトルへ」</strong> の選択</li>
+            </ul>
+        </section>
+
+        <!-- 5. 全画面表示とPWAアプリ化ガイド -->
+        <section class="manual-section">
+            <h2 class="section-title">📱 5. 全画面表示・PWAインストール手順</h2>
+
+            <h3>5.1 PC Chrome</h3>
+            <ul class="step-list">
+                <li><strong>全画面表示</strong>: 画面右上の <strong>⛶</strong> ボタンをクリック、または <span class="kbd">F11</span> キー。</li>
+                <li><strong>アプリ化</strong>: アドレスバー右の「インストール」アイコンをクリックすると、独立したデスクトップアプリとして起動できます。</li>
+            </ul>
+
+            <h3>5.2 iPad / iPhone Safari</h3>
+            <div class="callout">
+                <strong>おすすめ: ホーム画面追加による完全全画面プレイ</strong><br>
+                Safariの共有ボタン（四角に上矢印）→「ホーム画面に追加」を行うことで、ブラウザのアドレスバーやタブが非表示になり、完全なネイティブアプリ同様の全画面でプレイできます。
+            </div>
+        </section>
+
+        <footer style="text-align: center; color: var(--text-sub); font-size: 0.85rem; margin-top: 40px;">
+            BeautyBlock - Crystal Tetris Prototype (Crystal Edition) &copy; 2026.
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,0 +1,196 @@
+/* manual.css - オンラインマニュアル専用スタイル */
+:root {
+    --bg-dark: #0a0b14;
+    --card-bg: rgba(20, 24, 40, 0.75);
+    --border-color: rgba(255, 255, 255, 0.12);
+    --neon-blue: #38bdf8;
+    --neon-purple: #c084fc;
+    --neon-gold: #facc15;
+    --neon-pink: #f472b6;
+    --text-main: #f8fafc;
+    --text-sub: #94a3b8;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    line-height: 1.7;
+    padding: 24px 16px 60px;
+    background-image: 
+        radial-gradient(circle at 15% 10%, rgba(56, 189, 248, 0.1) 0%, transparent 40%),
+        radial-gradient(circle at 85% 90%, rgba(192, 132, 252, 0.12) 0%, transparent 45%);
+    background-attachment: fixed;
+}
+
+.manual-container {
+    max-width: 860px;
+    margin: 0 auto;
+}
+
+/* ヘッダー */
+.manual-header {
+    text-align: center;
+    margin-bottom: 36px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.manual-title {
+    font-size: 2.2rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #67e8f9, #c084fc, #f472b6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+}
+
+.manual-desc {
+    color: var(--text-sub);
+    font-size: 1rem;
+}
+
+.back-link {
+    display: inline-block;
+    margin-top: 16px;
+    color: var(--neon-blue);
+    text-decoration: none;
+    font-weight: 600;
+    padding: 8px 18px;
+    border: 1px solid var(--neon-blue);
+    border-radius: 20px;
+    background: rgba(56, 189, 248, 0.1);
+    transition: all 0.2s ease;
+}
+
+.back-link:hover {
+    background: rgba(56, 189, 248, 0.25);
+    box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+}
+
+/* セクション */
+.manual-section {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 28px;
+    backdrop-filter: blur(14px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.section-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--neon-blue);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 8px;
+}
+
+/* テーブルスタイル */
+.manual-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+}
+
+.manual-table th, .manual-table td {
+    padding: 12px 14px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.manual-table th {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--neon-gold);
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.manual-table td {
+    font-size: 0.95rem;
+}
+
+.kbd {
+    display: inline-block;
+    padding: 2px 7px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* 特徴カードグリッド */
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 14px;
+}
+
+@media (max-width: 640px) {
+    .grid-2 {
+        grid-template-columns: 1fr;
+    }
+}
+
+.feature-box {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.feature-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--neon-purple);
+    margin-bottom: 6px;
+}
+
+.feature-desc {
+    font-size: 0.9rem;
+    color: var(--text-sub);
+}
+
+/* デバイス手順ステップ */
+.step-list {
+    margin-left: 20px;
+    margin-top: 10px;
+}
+
+.step-list li {
+    margin-bottom: 8px;
+    color: var(--text-main);
+}
+
+.step-list strong {
+    color: var(--neon-gold);
+}
+
+.callout {
+    background: rgba(56, 189, 248, 0.08);
+    border-left: 4px solid var(--neon-blue);
+    padding: 12px 16px;
+    border-radius: 0 10px 10px 0;
+    margin: 14px 0;
+    font-size: 0.92rem;
+}
+
+.callout-warning {
+    background: rgba(244, 63, 94, 0.08);
+    border-left-color: #f43f5e;
+}
