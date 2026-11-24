@@ -134,12 +134,61 @@
       }
     });
 
-    // Layout metrics
+    // Layout metrics & cached static board background
     let cellSize = 36;
     let boardWidth = cellSize * B3B.COLS;
     let boardHeight = cellSize * B3B.VISIBLE_ROWS;
     let dpr = Math.min(2, global.devicePixelRatio || 1);
     let resizeRafPending = false;
+    let bgCacheCanvas = null;
+    let bgCacheKey = '';
+
+    function ensureBgCache() {
+      const key = `${boardWidth}x${boardHeight}x${dpr}`;
+      if (bgCacheCanvas && bgCacheKey === key) return bgCacheCanvas;
+      const cv = bgCacheCanvas || document.createElement('canvas');
+      cv.width = Math.max(1, Math.round(boardWidth * dpr));
+      cv.height = Math.max(1, Math.round(boardHeight * dpr));
+      const g = cv.getContext('2d');
+      g.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      const bgGrad = g.createLinearGradient(0, 0, 0, boardHeight);
+      bgGrad.addColorStop(0, '#0a0e24');
+      bgGrad.addColorStop(0.55, '#0e1330');
+      bgGrad.addColorStop(1, '#161133');
+      g.fillStyle = bgGrad;
+      g.fillRect(0, 0, boardWidth, boardHeight);
+
+      for (let r = 0; r < B3B.VISIBLE_ROWS; r++) {
+        for (let c = 0; c < B3B.COLS; c++) {
+          if ((r + c) % 2 === 0) {
+            g.fillStyle = 'rgba(255, 255, 255, 0.018)';
+            g.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
+          }
+        }
+      }
+
+      g.strokeStyle = 'rgba(160, 190, 255, 0.065)';
+      g.lineWidth = 1;
+      for (let c = 1; c < B3B.COLS; c++) {
+        const x = c * cellSize + 0.5;
+        g.beginPath();
+        g.moveTo(x, 0);
+        g.lineTo(x, boardHeight);
+        g.stroke();
+      }
+      for (let r = 1; r < B3B.VISIBLE_ROWS; r++) {
+        const y = r * cellSize + 0.5;
+        g.beginPath();
+        g.moveTo(0, y);
+        g.lineTo(boardWidth, y);
+        g.stroke();
+      }
+
+      bgCacheCanvas = cv;
+      bgCacheKey = key;
+      return cv;
+    }
 
     function resizeBoard() {
       resizeRafPending = false;
@@ -177,6 +226,7 @@
       if (boardFrame.style.width !== frameW) boardFrame.style.width = frameW;
       if (boardFrame.style.height !== frameH) boardFrame.style.height = frameH;
 
+      ensureBgCache();
       drawNextPreviews();
     }
 
@@ -270,7 +320,7 @@
       const isIdle = engine.state === 'IDLE';
       document.body.classList.toggle('state-idle', isIdle);
       if (wasIdle !== isIdle) {
-        scheduleResize();
+        resizeBoard();
       }
 
       // Overlay visibility & text
@@ -383,13 +433,14 @@
 
     // Button actions
     btnPrimaryPlay.addEventListener('click', () => {
-      audio.unlock();
-      bgm.startOrResume();
       if (engine.state === 'PAUSED') {
         engine.togglePause();
       } else {
         engine.startNewGame();
       }
+      renderBoard();
+      audio.unlock();
+      bgm.startOrResume();
     });
 
     if (btnOverlaySettings) {
@@ -708,11 +759,12 @@
       }
     });
 
-    // Virtual Touch Buttons (with repeat on Left/Right, hold on Soft Drop)
+    // Virtual Touch Buttons (clean touchstart/touchend + mouse fallback, no setPointerCapture stalls)
     function bindHoldButton(selector, onPress, onRepeat, onRelease) {
       document.querySelectorAll(selector).forEach((btn) => {
         let timer = null;
         let interval = null;
+        let activeTouch = false;
 
         const clearTimers = () => {
           if (timer) clearTimeout(timer);
@@ -722,27 +774,48 @@
           btn.classList.remove('is-pressed');
         };
 
-        btn.addEventListener('pointerdown', (e) => {
+        const press = (e) => {
           e.preventDefault();
+          e.stopPropagation();
           audio.unlock();
           btn.classList.add('is-pressed');
-          if (btn.setPointerCapture) {
-            try { btn.setPointerCapture(e.pointerId); } catch (_) {}
-          }
           onPress();
           if (onRepeat) {
+            clearTimers();
+            btn.classList.add('is-pressed');
             timer = setTimeout(() => {
               interval = setInterval(onRepeat, 62);
             }, 170);
           }
-        });
+        };
 
-        const endHandler = () => {
+        const release = (e) => {
+          if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
           clearTimers();
           if (onRelease) onRelease();
         };
-        btn.addEventListener('pointerup', endHandler);
-        btn.addEventListener('pointercancel', endHandler);
+
+        btn.addEventListener('touchstart', (e) => {
+          activeTouch = true;
+          press(e);
+        }, { passive: false });
+        btn.addEventListener('touchend', release, { passive: false });
+        btn.addEventListener('touchcancel', release, { passive: false });
+
+        btn.addEventListener('mousedown', (e) => {
+          if (activeTouch) {
+            activeTouch = false;
+            return;
+          }
+          press(e);
+        });
+        btn.addEventListener('mouseup', release);
+        btn.addEventListener('mouseleave', () => {
+          if (btn.classList.contains('is-pressed')) release();
+        });
       });
     }
 
@@ -758,34 +831,28 @@
       () => engine.setSoftDrop(false)
     );
 
-    // Direct Intuitive Touch / Pointer Gestures on Playfield Canvas
-    let pointerState = null;
-    boardCanvas.addEventListener('pointerdown', (e) => {
-      if (!e.isPrimary || engine.state !== 'FALLING') return;
-      e.preventDefault();
+    // Direct Intuitive Touch & Mouse Gestures on Playfield Canvas
+    let gestureState = null;
+
+    function beginGesture(clientX, clientY) {
+      if (engine.state !== 'FALLING') return;
       audio.unlock();
-      pointerState = {
-        id: e.pointerId,
-        startX: e.clientX,
-        startY: e.clientY,
-        lastStepX: e.clientX,
-        lastY: e.clientY,
+      gestureState = {
+        startX: clientX,
+        startY: clientY,
+        lastStepX: clientX,
         startTime: performance.now(),
         movedHoriz: false,
         movedDown: false,
         rotatedUp: false,
         softActive: false
       };
-      if (boardCanvas.setPointerCapture) {
-        try { boardCanvas.setPointerCapture(e.pointerId); } catch (_) {}
-      }
-    });
+    }
 
-    boardCanvas.addEventListener('pointermove', (e) => {
-      if (!pointerState || e.pointerId !== pointerState.id) return;
-      e.preventDefault();
-      const dxStep = e.clientX - pointerState.lastStepX;
-      const totalDy = e.clientY - pointerState.startY;
+    function moveGesture(clientX, clientY) {
+      if (!gestureState) return;
+      const dxStep = clientX - gestureState.lastStepX;
+      const totalDy = clientY - gestureState.startY;
       const stepThreshold = Math.max(18, cellSize * 0.72);
 
       if (Math.abs(dxStep) >= stepThreshold) {
@@ -794,46 +861,43 @@
         for (let i = 0; i < Math.abs(steps); i++) {
           engine.moveHorizontal(dir);
         }
-        pointerState.lastStepX += steps * stepThreshold;
-        pointerState.movedHoriz = true;
+        gestureState.lastStepX += steps * stepThreshold;
+        gestureState.movedHoriz = true;
       }
 
-      // Swipe up -> 90-degree clockwise block rotation
-      if (!pointerState.rotatedUp && !pointerState.movedHoriz && totalDy <= -Math.max(24, cellSize * 0.72)) {
-        pointerState.rotatedUp = true;
+      if (!gestureState.rotatedUp && !gestureState.movedHoriz && totalDy <= -Math.max(24, cellSize * 0.72)) {
+        gestureState.rotatedUp = true;
         engine.rotateBlock(true);
       }
 
-      // Drag down -> Soft drop
-      if (totalDy >= cellSize * 0.85 && !pointerState.movedHoriz && !pointerState.rotatedUp) {
-        pointerState.movedDown = true;
-        if (!pointerState.softActive) {
-          pointerState.softActive = true;
+      if (totalDy >= cellSize * 0.85 && !gestureState.movedHoriz && !gestureState.rotatedUp) {
+        gestureState.movedDown = true;
+        if (!gestureState.softActive) {
+          gestureState.softActive = true;
           engine.setSoftDrop(true);
         }
       }
-      pointerState.lastY = e.clientY;
-    });
+    }
 
-    const endCanvasPointer = (e) => {
-      if (!pointerState || e.pointerId !== pointerState.id) return;
-      const elapsed = performance.now() - pointerState.startTime;
-      const totalDx = e.clientX - pointerState.startX;
-      const totalDy = e.clientY - pointerState.startY;
+    function endGesture(clientX, clientY) {
+      if (!gestureState) return;
+      const elapsed = performance.now() - gestureState.startTime;
+      const totalDx = clientX - gestureState.startX;
+      const totalDy = clientY - gestureState.startY;
 
-      if (pointerState.softActive) {
+      if (gestureState.softActive) {
         engine.setSoftDrop(false);
       }
 
       const isQuickFlickDown =
-        !pointerState.rotatedUp &&
+        !gestureState.rotatedUp &&
         totalDy > Math.max(38, cellSize * 1.15) &&
         elapsed < 220 &&
         Math.abs(totalDx) < cellSize * 1.2;
       const isTap =
-        !pointerState.movedHoriz &&
-        !pointerState.movedDown &&
-        !pointerState.rotatedUp &&
+        !gestureState.movedHoriz &&
+        !gestureState.movedDown &&
+        !gestureState.rotatedUp &&
         Math.hypot(totalDx, totalDy) < 14 &&
         elapsed < 320;
 
@@ -843,16 +907,44 @@
         engine.cycleGems(false);
       }
 
-      pointerState = null;
-    };
+      gestureState = null;
+    }
 
-    boardCanvas.addEventListener('pointerup', endCanvasPointer);
-    boardCanvas.addEventListener('pointercancel', endCanvasPointer);
-    boardCanvas.addEventListener('lostpointercapture', () => {
-      if (pointerState && pointerState.softActive) {
+    boardCanvas.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1 || engine.state !== 'FALLING') return;
+      e.preventDefault();
+      beginGesture(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: false });
+
+    boardCanvas.addEventListener('touchmove', (e) => {
+      if (!gestureState || e.touches.length !== 1) return;
+      e.preventDefault();
+      moveGesture(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: false });
+
+    boardCanvas.addEventListener('touchend', (e) => {
+      if (!gestureState) return;
+      e.preventDefault();
+      const t = (e.changedTouches && e.changedTouches[0]) || null;
+      endGesture(t ? t.clientX : gestureState.startX, t ? t.clientY : gestureState.startY);
+    }, { passive: false });
+
+    boardCanvas.addEventListener('touchcancel', () => {
+      if (gestureState && gestureState.softActive) {
         engine.setSoftDrop(false);
       }
-      pointerState = null;
+      gestureState = null;
+    });
+
+    boardCanvas.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      beginGesture(e.clientX, e.clientY);
+    });
+    global.addEventListener('mousemove', (e) => {
+      if (gestureState) moveGesture(e.clientX, e.clientY);
+    });
+    global.addEventListener('mouseup', (e) => {
+      if (gestureState) endGesture(e.clientX, e.clientY);
     });
 
     // Board rendering
@@ -868,40 +960,9 @@
         boardCtx.translate(sx, sy);
       }
 
-      // Deep velvet background & subtle grid
-      const bgGrad = boardCtx.createLinearGradient(0, 0, 0, boardHeight);
-      bgGrad.addColorStop(0, '#0a0e24');
-      bgGrad.addColorStop(0.55, '#0e1330');
-      bgGrad.addColorStop(1, '#161133');
-      boardCtx.fillStyle = bgGrad;
-      boardCtx.fillRect(0, 0, boardWidth, boardHeight);
-
-      // Subtle checkerboard velvet tint + fine gridlines
-      for (let r = 0; r < B3B.VISIBLE_ROWS; r++) {
-        for (let c = 0; c < B3B.COLS; c++) {
-          if ((r + c) % 2 === 0) {
-            boardCtx.fillStyle = 'rgba(255, 255, 255, 0.018)';
-            boardCtx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
-          }
-        }
-      }
-
-      boardCtx.strokeStyle = 'rgba(160, 190, 255, 0.065)';
-      boardCtx.lineWidth = 1;
-      for (let c = 1; c < B3B.COLS; c++) {
-        const x = c * cellSize + 0.5;
-        boardCtx.beginPath();
-        boardCtx.moveTo(x, 0);
-        boardCtx.lineTo(x, boardHeight);
-        boardCtx.stroke();
-      }
-      for (let r = 1; r < B3B.VISIBLE_ROWS; r++) {
-        const y = r * cellSize + 0.5;
-        boardCtx.beginPath();
-        boardCtx.moveTo(0, y);
-        boardCtx.lineTo(boardWidth, y);
-        boardCtx.stroke();
-      }
+      // Cached velvet background & subtle grid (single drawImage per frame)
+      const bg = ensureBgCache();
+      boardCtx.drawImage(bg, 0, 0, boardWidth, boardHeight);
 
       // Spawn warning highlight at top row of spawn column (col 2)
       const dangerOccupied = engine.board[B3B.BUFFER_ROWS + 1][2] !== null;

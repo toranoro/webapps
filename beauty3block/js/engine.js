@@ -212,9 +212,11 @@
         return;
       }
 
+      const occupiedRowBelowTop = this.board[BUFFER_ROWS + 1][SPAWN_COL] !== null;
       this.active = {
         col: SPAWN_COL,
-        y: BUFFER_ROWS - 1.85, // pivot center row (bottom gem at BUFFER_ROWS - 0.85)
+        // Start immediately visible at the top of the playfield unless stacked near ceiling
+        y: occupiedRowBelowTop ? BUFFER_ROWS - 1.0 : BUFFER_ROWS - 0.15,
         ori: 0,
         gems: this.nextTriplet.slice(),
         isMagic: this.nextIsMagic,
@@ -234,6 +236,7 @@
       this.state = 'GAMEOVER';
       this.active = null;
       this.softDropping = false;
+      this._saveBestScore();
       if (this.audio) this.audio.playGameOver();
       this._emitChange();
     }
@@ -646,10 +649,12 @@
       }
     }
 
-    _updateBest() {
+    _updateBest(persist = true) {
       if (this.score > this.bestScore) {
         this.bestScore = this.score;
-        this._saveBestScore();
+        if (persist) {
+          this._saveBestScore();
+        }
       }
     }
 
@@ -679,12 +684,13 @@
           const rFloor = Math.floor(this.active.y);
           if (this.softDropping && rFloor > prevFloor) {
             this.score += 1;
-            this._updateBest();
+            this._updateBest(false);
           }
         } else {
           this.active.y = Math.floor(this.active.y);
           this.active.lockTimer += clampedDt * (this.softDropping ? 2.4 : 1);
           if (this.active.lockTimer >= 0.38) {
+            this._updateBest(true);
             this._lockActive();
           }
         }

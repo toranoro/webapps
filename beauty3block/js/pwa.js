@@ -106,14 +106,6 @@
       const swUrl = `./sw.js?v=${encodeURIComponent(B3B.BUILD_ID || '1')}`;
       global.navigator.serviceWorker
         .register(swUrl, { updateViaCache: 'none' })
-        .then((reg) => {
-          reg.update().catch(() => {});
-          document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') {
-              reg.update().catch(() => {});
-            }
-          });
-        })
         .catch(() => {
           // Registration failure shouldn't stop gameplay
         });

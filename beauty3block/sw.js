@@ -1,9 +1,8 @@
-/* Beauty 3-Block Service Worker (No-Cache / Network-First Strategy)
+/* Beauty 3-Block Service Worker (Network-First, Zero Stale Cache)
  * Chrome PWAインストール要件（fetchハンドラ）を満たしつつ、
- * ブラウザキャッシュによる古いファイルの残存を防ぐためキャッシュを使用しません。
- * 音声・Rangeリクエストはネイティブ再生パイプラインへ直接スルーします。
+ * 音声・Rangeリクエストを邪魔せず、通常のネットワーク優先で高速取得します。
  */
-const SW_VERSION = '20261124-04';
+const SW_VERSION = '20261124-05';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(self.skipWaiting());
@@ -21,7 +20,7 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
 
-  // Bypass audio/video & HTTP Range requests to prevent mobile media pipeline stalls
+  // Bypass audio/video & HTTP Range requests completely
   if (
     req.headers.has('range') ||
     req.destination === 'audio' ||
@@ -31,14 +30,6 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (req.mode === 'navigate') {
-    event.respondWith(
-      fetch(req.url, { cache: 'no-store' }).catch(() => fetch(req))
-    );
-    return;
-  }
-
-  event.respondWith(
-    fetch(req, { cache: 'no-store' }).catch(() => fetch(req))
-  );
+  // Always network-first; version query strings (?v=...) prevent stale assets
+  event.respondWith(fetch(req));
 });

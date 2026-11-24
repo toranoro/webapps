@@ -207,7 +207,6 @@
       const track = this.tracks[idx];
       this.audio.src = track.url;
       this.audio.loop = this.mode === 'repeat';
-      this.audio.load();
       this._emitTrackChange();
     }
 
