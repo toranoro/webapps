@@ -14,6 +14,14 @@
     master: { label: 'Master', baseSpeed: 2.8, speedStep: 0.44, jewelTypes: 6 }
   };
 
+  // 4-way orientation offsets [dc, dr] around the center gem (index 1)
+  const ORIENTATION_OFFSETS = [
+    [[0, -1], [0, 0], [0, 1]],  // 0: Vertical (top -> bottom)
+    [[1, 0], [0, 0], [-1, 0]],  // 1: Horizontal (90° CW: g0 right, g2 left)
+    [[0, 1], [0, 0], [0, -1]],  // 2: Vertical inverted (180°)
+    [[-1, 0], [0, 0], [1, 0]]   // 3: Horizontal inverted (270° CW / 90° CCW)
+  ];
+
   class ColumnsEngine {
     constructor({ audio } = {}) {
       this.audio = audio || null;
@@ -35,7 +43,7 @@
         magicEnabled: true
       };
 
-      this.active = null; // { col, y, gems: [top, mid, bot], lockTimer, lockResets, isMagic }
+      this.active = null; // { col, y, ori, gems: [g0, g1, g2], lockTimer, lockResets, isMagic, rotateAnim }
       this.nextTriplet = [0, 1, 2];
       this.nextIsMagic = false;
       this.nextMagicThreshold = 70;
@@ -77,9 +85,7 @@
     _saveBestScore() {
       try {
         global.localStorage.setItem('beauty3block_best_score', String(this.bestScore));
-      } catch (_) {
-        // Ignore storage restrictions
-      }
+      } catch (_) {}
     }
 
     _randomGemId() {
@@ -95,7 +101,6 @@
       const g0 = this._randomGemId();
       const g1 = this._randomGemId();
       let g2 = this._randomGemId();
-      // Avoid monotonous 3-same-gem triplets too frequently while keeping occasional lucky ones
       if (g0 === g1 && g1 === g2 && Math.random() < 0.72) {
         g2 = (g2 + 1 + Math.floor(Math.random() * 4)) % (PRESETS[this.settings.preset] || PRESETS.classic).jewelTypes;
       }
@@ -129,6 +134,25 @@
       this._emitChange();
     }
 
+    returnToTitle() {
+      this.board = this._createEmptyBoard();
+      this.active = null;
+      this.matchedCells = [];
+      this.fallingPieces = [];
+      this.particles = [];
+      this.popups = [];
+      this.trails = [];
+      this.boardShake = 0;
+      this.boardFlash = 0;
+      this.softDropping = false;
+      this.score = 0;
+      this.level = 1;
+      this.gemsCleared = 0;
+      this.currentChain = 0;
+      this.state = 'IDLE';
+      this._emitChange();
+    }
+
     togglePause() {
       if (this.state === 'IDLE' || this.state === 'GAMEOVER') return;
       if (this.state === 'PAUSED') {
@@ -156,8 +180,33 @@
       }
     }
 
+    getCellOffsets(ori = 0) {
+      return ORIENTATION_OFFSETS[((ori % 4) + 4) % 4];
+    }
+
+    getActiveCells(col = this.active?.col, baseY = this.active?.y, ori = this.active?.ori, gems = this.active?.gems) {
+      if (!gems) return [];
+      const offsets = this.getCellOffsets(ori);
+      return offsets.map(([dc, dr], idx) => ({
+        c: col + dc,
+        r: baseY + dr,
+        id: gems[idx]
+      }));
+    }
+
+    _canPlace(col, rowInt, ori) {
+      if (!Number.isFinite(col) || !Number.isFinite(rowInt)) return false;
+      const offsets = this.getCellOffsets(ori);
+      for (const [dc, dr] of offsets) {
+        const c = col + dc;
+        const r = rowInt + dr;
+        if (c < 0 || c >= COLS || r >= ROWS) return false;
+        if (r >= 0 && this.board[r] && this.board[r][c] !== null) return false;
+      }
+      return true;
+    }
+
     _spawnActive() {
-      // Check spawn column top visible cell
       if (this.board[BUFFER_ROWS][SPAWN_COL] !== null) {
         this._triggerGameOver();
         return;
@@ -165,7 +214,8 @@
 
       this.active = {
         col: SPAWN_COL,
-        y: BUFFER_ROWS - 0.85,
+        y: BUFFER_ROWS - 1.85, // pivot center row (bottom gem at BUFFER_ROWS - 0.85)
+        ori: 0,
         gems: this.nextTriplet.slice(),
         isMagic: this.nextIsMagic,
         lockTimer: 0,
@@ -193,28 +243,21 @@
       return Math.min(16, p.baseSpeed + (this.level - 1) * p.speedStep);
     }
 
-    _canOccupy(col, rowBottom) {
-      if (col < 0 || col >= COLS) return false;
-      if (rowBottom >= ROWS) return false;
-      for (let i = 0; i < 3; i++) {
-        const r = rowBottom - i;
-        if (r >= 0 && this.board[r][col] !== null) return false;
-      }
-      return true;
-    }
-
     _isGrounded() {
       if (!this.active) return false;
-      const rBottom = Math.floor(this.active.y);
-      if (rBottom + 1 >= ROWS) return true;
-      return this.board[rBottom + 1][this.active.col] !== null;
+      const rFloor = Math.floor(this.active.y);
+      if (!Number.isFinite(rFloor)) return true;
+      return !this._canPlace(this.active.col, rFloor + 1, this.active.ori);
     }
 
-    getGhostBottomRow() {
+    getGhostPivotRow() {
       if (!this.active) return null;
       let r = Math.floor(this.active.y);
-      while (r + 1 < ROWS && this.board[r + 1][this.active.col] === null) {
+      if (!Number.isFinite(r)) return null;
+      let steps = 0;
+      while (steps < ROWS && this._canPlace(this.active.col, r + 1, this.active.ori)) {
         r++;
+        steps++;
       }
       return r;
     }
@@ -222,9 +265,9 @@
     moveHorizontal(dx) {
       if (this.state !== 'FALLING' || !this.active) return false;
       const targetCol = this.active.col + dx;
-      const rCeil = Math.ceil(this.active.y - 0.08);
       const rFloor = Math.floor(this.active.y);
-      if (!this._canOccupy(targetCol, rCeil) || !this._canOccupy(targetCol, rFloor)) {
+      const rCeil = Math.ceil(this.active.y - 0.08);
+      if (!this._canPlace(targetCol, rFloor, this.active.ori) || !this._canPlace(targetCol, rCeil, this.active.ori)) {
         return false;
       }
       this.active.col = targetCol;
@@ -236,13 +279,50 @@
       return true;
     }
 
-    rotate(reverse = false) {
+    // 90-degree physical rotation of the 3-block bar (CW / CCW) with wall & floor kicks
+    rotateBlock(clockwise = true) {
+      if (this.state !== 'FALLING' || !this.active) return false;
+      const act = this.active;
+      const nextOri = (act.ori + (clockwise ? 1 : 3)) % 4;
+      const rFloor = Math.floor(act.y);
+      const rCeil = Math.ceil(act.y - 0.08);
+
+      const kicks = [
+        [0, 0],
+        [-1, 0],
+        [1, 0],
+        [0, -1],
+        [-1, -1],
+        [1, -1]
+      ];
+
+      for (const [kx, ky] of kicks) {
+        if (
+          this._canPlace(act.col + kx, rFloor + ky, nextOri) &&
+          this._canPlace(act.col + kx, rCeil + ky, nextOri)
+        ) {
+          act.col += kx;
+          act.y += ky;
+          act.ori = nextOri;
+          act.rotateAnim = 1;
+          if (this._isGrounded() && act.lockResets < 8) {
+            act.lockTimer = 0;
+            act.lockResets++;
+          }
+          if (this.audio) this.audio.playRotate();
+          return true;
+        }
+      }
+      return false;
+    }
+
+    // Cycle the 3 gems inside the bar (入れ替え)
+    cycleGems(reverse = false) {
       if (this.state !== 'FALLING' || !this.active) return false;
       const g = this.active.gems;
       if (reverse) {
         this.active.gems = [g[1], g[2], g[0]];
       } else {
-        // Classic Columns downward cycle: top->mid, mid->bot, bot->top
         this.active.gems = [g[2], g[0], g[1]];
       }
       this.active.rotateAnim = 1;
@@ -254,6 +334,10 @@
       return true;
     }
 
+    rotate(reverse = false) {
+      return this.cycleGems(reverse);
+    }
+
     setSoftDrop(enabled) {
       this.softDropping = Boolean(enabled);
     }
@@ -261,24 +345,30 @@
     hardDrop() {
       if (this.state !== 'FALLING' || !this.active) return;
       const startY = this.active.y;
-      const targetRow = this.getGhostBottomRow();
-      if (targetRow === null) return;
+      const targetPivotRow = this.getGhostPivotRow();
+      if (targetPivotRow === null) return;
 
-      const dist = Math.max(0, Math.round(targetRow - startY));
+      const dist = Math.max(0, Math.round(targetPivotRow - startY));
       this.score += dist * 2;
+      this._updateBest();
 
-      // Add vertical light trail for satisfying visual impact
       if (dist > 0.5) {
+        const cells = this.getActiveCells(this.active.col, targetPivotRow, this.active.ori, this.active.gems);
+        const minC = Math.min(...cells.map((x) => x.c));
+        const maxC = Math.max(...cells.map((x) => x.c));
+        const maxR = Math.max(...cells.map((x) => x.r));
+        const minOffsetR = Math.min(...this.getCellOffsets(this.active.ori).map((o) => o[1]));
         this.trails.push({
-          col: this.active.col,
-          fromY: startY - 2,
-          toY: targetRow,
+          col: minC,
+          colSpan: maxC - minC + 1,
+          fromY: startY + minOffsetR,
+          toY: maxR,
           life: 1,
           isMagic: this.active.isMagic
         });
       }
 
-      this.active.y = targetRow;
+      this.active.y = targetPivotRow;
       this.boardShake = Math.min(1, this.boardShake + 0.45);
       if (this.audio) this.audio.playHardDrop();
       this._lockActive();
@@ -286,16 +376,15 @@
 
     _lockActive() {
       if (!this.active) return;
-      const col = this.active.col;
-      const rBottom = Math.min(ROWS - 1, Math.floor(this.active.y));
-      const gems = this.active.gems;
+      const pivotRow = Math.floor(this.active.y);
+      const cells = this.getActiveCells(this.active.col, pivotRow, this.active.ori, this.active.gems);
       const isMagic = this.active.isMagic;
 
-      // Place top (rBottom - 2), mid (rBottom - 1), bottom (rBottom)
-      for (let i = 0; i < 3; i++) {
-        const r = rBottom - (2 - i);
-        if (r >= 0 && r < ROWS) {
-          this.board[r][col] = gems[i];
+      const placed = [];
+      for (const cell of cells) {
+        if (cell.r >= 0 && cell.r < ROWS && cell.c >= 0 && cell.c < COLS) {
+          this.board[cell.r][cell.c] = cell.id;
+          placed.push(cell);
         }
       }
 
@@ -303,41 +392,54 @@
       this.softDropping = false;
 
       if (isMagic) {
-        this._resolveMagicJewel(col, rBottom);
+        this._resolveMagicJewel(placed);
         return;
       }
 
       if (this.audio) this.audio.playLock();
+
+      // If horizontal bar overhung empty space, let unsupported gems drop smoothly first
+      const drops = this._collectGravityDrops();
+      if (drops.length > 0) {
+        this.fallingPieces = drops;
+        this.gravityProgress = 0;
+        this.state = 'GRAVITY';
+        this._emitChange();
+        return;
+      }
+
       this._checkMatches(false);
     }
 
-    _resolveMagicJewel(col, rBottom) {
-      const belowRow = rBottom + 1;
+    _resolveMagicJewel(placedCells) {
       const matches = [];
       const seen = new Set();
 
       const addCell = (r, c) => {
         const key = `${r},${c}`;
-        if (!seen.has(key) && r >= 0 && r < ROWS && this.board[r][c] !== null) {
+        if (!seen.has(key) && r >= 0 && r < ROWS && c >= 0 && c < COLS && this.board[r][c] !== null) {
           seen.add(key);
           matches.push({ r, c, id: this.board[r][c] });
         }
       };
 
-      // Clear the 3 magic jewels themselves
-      for (let i = 0; i < 3; i++) {
-        addCell(rBottom - i, col);
+      const targetColors = new Set();
+      let sumC = 0;
+      let sumR = 0;
+      for (const cell of placedCells) {
+        addCell(cell.r, cell.c);
+        sumC += cell.c;
+        sumR += cell.r;
+        const below = cell.r + 1;
+        if (below < ROWS && this.board[below][cell.c] !== null && this.board[below][cell.c] !== B3B.MAGIC_ID) {
+          targetColors.add(this.board[below][cell.c]);
+        }
       }
 
-      let targetColor = null;
-      if (belowRow < ROWS && this.board[belowRow][col] !== null) {
-        targetColor = this.board[belowRow][col];
-      }
-
-      if (targetColor !== null && targetColor !== B3B.MAGIC_ID) {
+      if (targetColors.size > 0) {
         for (let r = 0; r < ROWS; r++) {
           for (let c = 0; c < COLS; c++) {
-            if (this.board[r][c] === targetColor) {
+            if (targetColors.has(this.board[r][c])) {
               addCell(r, c);
             }
           }
@@ -352,14 +454,16 @@
       this.boardShake = 0.8;
 
       const count = matches.length;
-      const bonus = targetColor === null ? 500 : count * 60 * this.level;
+      const bonus = targetColors.size === 0 ? 500 : count * 60 * this.level;
       this.score += bonus;
       this._updateBest();
 
-      const popupText = targetColor === null ? 'MAGIC +500' : `PRISM CLEAR! +${bonus}`;
+      const avgC = placedCells.length > 0 ? sumC / placedCells.length + 0.5 : COLS / 2;
+      const avgR = placedCells.length > 0 ? sumR / placedCells.length : BUFFER_ROWS + 2;
+      const popupText = targetColors.size === 0 ? 'MAGIC +500' : `PRISM CLEAR! +${bonus}`;
       this.popups.push({
-        x: col + 0.5,
-        y: Math.max(BUFFER_ROWS + 1, rBottom - 1),
+        x: avgC,
+        y: Math.max(BUFFER_ROWS + 1, avgR),
         text: popupText,
         sub: `${count} GEMS`,
         life: 1,
@@ -368,6 +472,25 @@
 
       if (this.audio) this.audio.playMagic();
       this._emitChange();
+    }
+
+    _collectGravityDrops() {
+      const drops = [];
+      for (let c = 0; c < COLS; c++) {
+        let writeRow = ROWS - 1;
+        for (let r = ROWS - 1; r >= 0; r--) {
+          const id = this.board[r][c];
+          if (id !== null) {
+            if (r !== writeRow) {
+              drops.push({ c, fromR: r, toR: writeRow, id });
+              this.board[writeRow][c] = id;
+              this.board[r][c] = null;
+            }
+            writeRow--;
+          }
+        }
+      }
+      return drops;
     }
 
     _checkMatches(isCascade) {
@@ -449,13 +572,11 @@
         return;
       }
 
-      // No more matches — check top overflow (above visible area)
       if (this._hasOverflowAboveVisible()) {
         this._triggerGameOver();
         return;
       }
 
-      // Advance to next triplet
       this.state = 'FALLING';
       this._spawnActive();
     }
@@ -492,23 +613,7 @@
         });
       }
 
-      // Compute gravity drops per column
-      const drops = [];
-      for (let c = 0; c < COLS; c++) {
-        let writeRow = ROWS - 1;
-        for (let r = ROWS - 1; r >= 0; r--) {
-          const id = this.board[r][c];
-          if (id !== null) {
-            if (r !== writeRow) {
-              drops.push({ c, fromR: r, toR: writeRow, id });
-              this.board[writeRow][c] = id;
-              this.board[r][c] = null;
-            }
-            writeRow--;
-          }
-        }
-      }
-
+      const drops = this._collectGravityDrops();
       if (drops.length > 0) {
         this.fallingPieces = drops;
         this.gravityProgress = 0;
@@ -548,10 +653,9 @@
     }
 
     update(dt) {
-      const clampedDt = Math.min(0.05, Math.max(0, dt));
+      const clampedDt = Number.isFinite(dt) ? Math.min(0.05, Math.max(0, dt)) : 0.016;
       this.timeSec += clampedDt;
 
-      // Update visual juice particles regardless of paused/active transitions
       if (this.state !== 'PAUSED') {
         this._updateJuice(clampedDt);
       }
@@ -565,20 +669,13 @@
         if (!this._isGrounded()) {
           const prevFloor = Math.floor(this.active.y);
           const nextY = this.active.y + speed * clampedDt;
-          const rFloor = Math.floor(nextY);
-          // Clamp cleanly if we touch floor or occupied cell
-          let maxValidY = ROWS - 1;
-          for (let r = prevFloor + 1; r < ROWS; r++) {
-            if (this.board[r][this.active.col] !== null) {
-              maxValidY = r - 1;
-              break;
-            }
-          }
-          if (nextY >= maxValidY) {
+          const maxValidY = this.getGhostPivotRow();
+          if (maxValidY !== null && nextY >= maxValidY) {
             this.active.y = maxValidY;
           } else {
             this.active.y = nextY;
           }
+          const rFloor = Math.floor(this.active.y);
           if (this.softDropping && rFloor > prevFloor) {
             this.score += 1;
             this._updateBest();
@@ -617,7 +714,7 @@
         const p = this.particles[i];
         p.x += p.vx * dt;
         p.y += p.vy * dt;
-        p.vy += 8.5 * dt; // crystal shard gravity
+        p.vy += 8.5 * dt;
         p.rot += p.vrot * dt;
         p.life -= dt * 1.9;
         if (p.life <= 0) this.particles.splice(i, 1);

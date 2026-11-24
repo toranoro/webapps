@@ -93,12 +93,15 @@
     const overlayFinalChain = document.getElementById('overlay-final-chain');
     const titleBgmBox = document.getElementById('title-bgm-box');
     const btnPrimaryPlay = document.getElementById('btn-primary-play');
+    const btnReturnTitle = document.getElementById('btn-return-title');
     const btnOverlaySettings = document.getElementById('btn-overlay-settings');
 
     const btnPauseList = document.querySelectorAll('[data-action="pause"]');
     const btnSoundList = document.querySelectorAll('[data-action="sound"]');
     const btnBgmList = document.querySelectorAll('[data-action="bgm"]');
     const btnBgmNextList = document.querySelectorAll('[data-action="bgm-next"]');
+    const btnBgmStopList = document.querySelectorAll('[data-action="bgm-stop"]');
+    const btnReturnTitleList = document.querySelectorAll('[data-action="return-title"]');
     const bgmModeButtons = document.querySelectorAll('[data-bgm-mode]');
     const bgmSelects = document.querySelectorAll('[data-bgm-select]');
     const btnFullscreenList = document.querySelectorAll('[data-action="fullscreen"]');
@@ -189,8 +192,12 @@
         const boxW = cv.clientWidth || parseInt(cv.getAttribute('width'), 10) || 56;
         const boxH = cv.clientHeight || parseInt(cv.getAttribute('height'), 10) || 132;
         const localDpr = Math.min(2.5, global.devicePixelRatio || 1);
-        cv.width = Math.round(boxW * localDpr);
-        cv.height = Math.round(boxH * localDpr);
+        const targetW = Math.round(boxW * localDpr);
+        const targetH = Math.round(boxH * localDpr);
+        if (cv.width !== targetW || cv.height !== targetH) {
+          cv.width = targetW;
+          cv.height = targetH;
+        }
         ctx.setTransform(localDpr, 0, 0, localDpr, 0, 0);
         ctx.clearRect(0, 0, boxW, boxH);
 
@@ -246,6 +253,7 @@
         overlaySubtitle.textContent = '宝石を揃えて連鎖する、至高のコラムス体験';
         overlayStats.hidden = true;
         if (titleBgmBox) titleBgmBox.hidden = false;
+        if (btnReturnTitle) btnReturnTitle.hidden = true;
         btnPrimaryPlay.textContent = 'GAME START';
       } else if (engine.state === 'PAUSED') {
         overlayEl.hidden = false;
@@ -253,6 +261,7 @@
         overlaySubtitle.textContent = '一休み中 — 準備ができたら再開しましょう';
         overlayStats.hidden = true;
         if (titleBgmBox) titleBgmBox.hidden = false;
+        if (btnReturnTitle) btnReturnTitle.hidden = false;
         btnPrimaryPlay.textContent = 'RESUME';
       } else if (engine.state === 'GAMEOVER') {
         overlayEl.hidden = false;
@@ -263,6 +272,7 @@
             : 'もう一度チャレンジしましょう';
         overlayStats.hidden = false;
         if (titleBgmBox) titleBgmBox.hidden = false;
+        if (btnReturnTitle) btnReturnTitle.hidden = false;
         overlayFinalScore.textContent = engine.score.toLocaleString();
         overlayFinalChain.textContent = `${engine.maxChain} CHAIN`;
         btnPrimaryPlay.textContent = 'PLAY AGAIN';
@@ -445,6 +455,26 @@
       });
     });
 
+    function handleReturnToTitle() {
+      bgm.stop();
+      engine.returnToTitle();
+      if (settingsModal) settingsModal.hidden = true;
+      syncSettingsUI();
+    }
+
+    if (btnReturnTitle) {
+      btnReturnTitle.addEventListener('click', handleReturnToTitle);
+    }
+    btnReturnTitleList.forEach((btn) => {
+      btn.addEventListener('click', handleReturnToTitle);
+    });
+
+    btnBgmStopList.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        bgm.stop();
+      });
+    });
+
     btnFullscreenList.forEach((btn) => {
       btn.addEventListener('click', () => {
         audio.unlock();
@@ -613,10 +643,14 @@
         dasTimer = 0;
         arrTimer = 0;
         engine.moveHorizontal(1);
-      } else if (isRotateKey(code) || code === 'KeyG') {
-        engine.rotate(false);
-      } else if (code === 'KeyF' || code === 'KeyZ') {
-        engine.rotate(true);
+      } else if (isRotateKey(code)) {
+        engine.cycleGems(false);
+      } else if (code === 'KeyZ') {
+        engine.cycleGems(true);
+      } else if (code === 'KeyG') {
+        engine.rotateBlock(true);
+      } else if (code === 'KeyF') {
+        engine.rotateBlock(false);
       } else if (isSoftDropKey(code)) {
         engine.setSoftDrop(true);
       } else if (code === 'Space') {
@@ -687,7 +721,8 @@
 
     bindHoldButton('[data-pad="left"]', () => engine.moveHorizontal(-1), () => engine.moveHorizontal(-1));
     bindHoldButton('[data-pad="right"]', () => engine.moveHorizontal(1), () => engine.moveHorizontal(1));
-    bindHoldButton('[data-pad="rotate"]', () => engine.rotate(false));
+    bindHoldButton('[data-pad="swap"]', () => engine.cycleGems(false));
+    bindHoldButton('[data-pad="rotate-cw"]', () => engine.rotateBlock(true));
     bindHoldButton('[data-pad="harddrop"]', () => engine.hardDrop());
     bindHoldButton(
       '[data-pad="down"]',
@@ -699,7 +734,7 @@
     // Direct Intuitive Touch / Pointer Gestures on Playfield Canvas
     let pointerState = null;
     boardCanvas.addEventListener('pointerdown', (e) => {
-      if (engine.state !== 'FALLING') return;
+      if (!e.isPrimary || engine.state !== 'FALLING') return;
       e.preventDefault();
       audio.unlock();
       pointerState = {
@@ -711,6 +746,7 @@
         startTime: performance.now(),
         movedHoriz: false,
         movedDown: false,
+        rotatedUp: false,
         softActive: false
       };
       if (boardCanvas.setPointerCapture) {
@@ -735,7 +771,14 @@
         pointerState.movedHoriz = true;
       }
 
-      if (totalDy >= cellSize * 0.85 && !pointerState.movedHoriz) {
+      // Swipe up -> 90-degree clockwise block rotation
+      if (!pointerState.rotatedUp && !pointerState.movedHoriz && totalDy <= -Math.max(24, cellSize * 0.72)) {
+        pointerState.rotatedUp = true;
+        engine.rotateBlock(true);
+      }
+
+      // Drag down -> Soft drop
+      if (totalDy >= cellSize * 0.85 && !pointerState.movedHoriz && !pointerState.rotatedUp) {
         pointerState.movedDown = true;
         if (!pointerState.softActive) {
           pointerState.softActive = true;
@@ -755,13 +798,22 @@
         engine.setSoftDrop(false);
       }
 
-      const isQuickFlickDown = totalDy > Math.max(38, cellSize * 1.15) && elapsed < 220 && Math.abs(totalDx) < cellSize * 1.2;
-      const isTap = !pointerState.movedHoriz && !pointerState.movedDown && Math.hypot(totalDx, totalDy) < 14 && elapsed < 280;
+      const isQuickFlickDown =
+        !pointerState.rotatedUp &&
+        totalDy > Math.max(38, cellSize * 1.15) &&
+        elapsed < 220 &&
+        Math.abs(totalDx) < cellSize * 1.2;
+      const isTap =
+        !pointerState.movedHoriz &&
+        !pointerState.movedDown &&
+        !pointerState.rotatedUp &&
+        Math.hypot(totalDx, totalDy) < 14 &&
+        elapsed < 320;
 
       if (isQuickFlickDown) {
         engine.hardDrop();
       } else if (isTap) {
-        engine.rotate(false);
+        engine.cycleGems(false);
       }
 
       pointerState = null;
@@ -769,6 +821,12 @@
 
     boardCanvas.addEventListener('pointerup', endCanvasPointer);
     boardCanvas.addEventListener('pointercancel', endCanvasPointer);
+    boardCanvas.addEventListener('lostpointercapture', () => {
+      if (pointerState && pointerState.softActive) {
+        engine.setSoftDrop(false);
+      }
+      pointerState = null;
+    });
 
     // Board rendering
     function renderBoard() {
@@ -829,13 +887,14 @@
       // Hard drop light trails
       for (const tr of engine.trails) {
         const x = tr.col * cellSize;
+        const w = (tr.colSpan || 1) * cellSize;
         const y1 = Math.max(0, (tr.fromY - B3B.BUFFER_ROWS) * cellSize);
         const y2 = (tr.toY - B3B.BUFFER_ROWS + 1) * cellSize;
         const grad = boardCtx.createLinearGradient(x, y1, x, y2);
         grad.addColorStop(0, 'rgba(255, 255, 255, 0)');
         grad.addColorStop(1, tr.isMagic ? `rgba(255, 230, 140, ${0.45 * tr.life})` : `rgba(140, 220, 255, ${0.35 * tr.life})`);
         boardCtx.fillStyle = grad;
-        boardCtx.fillRect(x + 2, y1, cellSize - 4, Math.max(0, y2 - y1));
+        boardCtx.fillRect(x + 2, y1, Math.max(2, w - 4), Math.max(0, y2 - y1));
       }
 
       // Build map of falling gravity pieces & matched cells
@@ -895,16 +954,16 @@
       // Ghost preview & Active triplet
       if (engine.active && (engine.state === 'FALLING' || engine.state === 'PAUSED')) {
         const act = engine.active;
-        const ghostRow = engine.getGhostBottomRow();
-        if (engine.settings.ghost && ghostRow !== null && ghostRow > act.y + 0.3) {
-          for (let i = 0; i < 3; i++) {
-            const gr = ghostRow - (2 - i);
-            if (gr >= B3B.BUFFER_ROWS) {
+        const ghostPivot = engine.getGhostPivotRow();
+        if (engine.settings.ghost && ghostPivot !== null && ghostPivot > act.y + 0.3) {
+          const ghostCells = engine.getActiveCells(act.col, ghostPivot, act.ori, act.gems);
+          for (const gc of ghostCells) {
+            if (gc.r >= B3B.BUFFER_ROWS && gc.c >= 0 && gc.c < B3B.COLS) {
               renderer.drawJewel(
                 boardCtx,
-                act.gems[i],
-                act.col * cellSize,
-                (gr - B3B.BUFFER_ROWS) * cellSize,
+                gc.id,
+                gc.c * cellSize,
+                (gc.r - B3B.BUFFER_ROWS) * cellSize,
                 cellSize,
                 engine.timeSec,
                 { ghost: true }
@@ -913,23 +972,28 @@
           }
         }
 
-        // Active 3-gem column
-        for (let i = 0; i < 3; i++) {
-          const rowPos = act.y - (2 - i);
-          if (rowPos > B3B.BUFFER_ROWS - 1.2) {
-            const x = act.col * cellSize;
-            const y = (rowPos - B3B.BUFFER_ROWS) * cellSize;
+        // Active 3-gem bar (supports vertical and horizontal orientations)
+        const activeCells = engine.getActiveCells(act.col, act.y, act.ori, act.gems);
+        let minCol = B3B.COLS - 1;
+        let maxCol = 0;
+        for (const ac of activeCells) {
+          minCol = Math.min(minCol, ac.c);
+          maxCol = Math.max(maxCol, ac.c);
+          if (ac.r > B3B.BUFFER_ROWS - 1.2) {
+            const x = ac.c * cellSize;
+            const y = (ac.r - B3B.BUFFER_ROWS) * cellSize;
             const rotScale = act.rotateAnim > 0 ? 1 + 0.08 * Math.sin(act.rotateAnim * Math.PI) : 1;
-            renderer.drawJewel(boardCtx, act.gems[i], x, y, cellSize, engine.timeSec, {
+            renderer.drawJewel(boardCtx, ac.id, x, y, cellSize, engine.timeSec, {
               scale: rotScale
             });
           }
         }
 
-        // Subtle focus column bracket on active column
+        // Subtle focus column bracket on active span
+        const spanCols = Math.max(1, maxCol - minCol + 1);
         boardCtx.strokeStyle = 'rgba(255, 255, 255, 0.14)';
         boardCtx.lineWidth = 1;
-        boardCtx.strokeRect(act.col * cellSize + 1, 1, cellSize - 2, boardHeight - 2);
+        boardCtx.strokeRect(minCol * cellSize + 1, 1, spanCols * cellSize - 2, boardHeight - 2);
       }
 
       // Crystal shard particles
@@ -992,40 +1056,44 @@
     let hudScoreCache = -1;
 
     function tick(now) {
-      const dt = (now - lastTime) / 1000;
-      lastTime = now;
+      try {
+        const rawDt = (now - lastTime) / 1000;
+        lastTime = now;
+        const dt = Number.isFinite(rawDt) ? Math.min(0.05, Math.max(0, rawDt)) : 0.016;
 
-      // Keyboard DAS/ARR horizontal repeat
-      if (dasDir !== 0 && engine.state === 'FALLING') {
-        dasTimer += dt;
-        if (dasTimer >= 0.15) {
-          arrTimer += dt;
-          while (arrTimer >= 0.05) {
-            engine.moveHorizontal(dasDir);
-            arrTimer -= 0.05;
+        // Keyboard DAS/ARR horizontal repeat
+        if (dasDir !== 0 && engine.state === 'FALLING') {
+          dasTimer += dt;
+          if (dasTimer >= 0.15) {
+            arrTimer += dt;
+            while (arrTimer >= 0.05) {
+              engine.moveHorizontal(dasDir);
+              arrTimer -= 0.05;
+            }
           }
         }
+
+        engine.update(dt);
+
+        if (engine.score !== hudScoreCache) {
+          hudScoreCache = engine.score;
+          scoreEls.forEach((el) => {
+            el.textContent = engine.score.toLocaleString();
+          });
+          bestEls.forEach((el) => {
+            el.textContent = engine.bestScore.toLocaleString();
+          });
+        }
+
+        renderBoard();
+        if (engine.nextIsMagic) {
+          drawNextPreviews();
+        }
+      } catch (_) {
+        // Guard against transient device/canvas errors so loop never freezes
+      } finally {
+        global.requestAnimationFrame(tick);
       }
-
-      engine.update(dt);
-
-      if (engine.score !== hudScoreCache) {
-        hudScoreCache = engine.score;
-        scoreEls.forEach((el) => {
-          el.textContent = engine.score.toLocaleString();
-        });
-        bestEls.forEach((el) => {
-          el.textContent = engine.bestScore.toLocaleString();
-        });
-      }
-
-      renderBoard();
-      // Gently animate magic jewel in Next preview if present
-      if (engine.nextIsMagic) {
-        drawNextPreviews();
-      }
-
-      global.requestAnimationFrame(tick);
     }
 
     syncSettingsUI();

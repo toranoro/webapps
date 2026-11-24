@@ -410,6 +410,8 @@
         } else {
             sound.playRandomBgm();
         }
+        bgmBtn.textContent = '🎵';
+        bgmBtn.classList.add('active');
 
         game.init();
         resizeCanvas();
@@ -418,6 +420,17 @@
 
     function showTitleScreen() {
         window.isTitleScreenActive = true;
+        game.paused = false;
+        pauseBtn.textContent = '⏸';
+
+        // タイトルに戻るときはBGMを確実に停止
+        sound.stopBgm();
+        if (sound.bgmAudio) {
+            sound.bgmAudio.currentTime = 0;
+        }
+        bgmBtn.textContent = '♪✕';
+        bgmBtn.classList.remove('active');
+
         titleModal.classList.remove('hidden');
         pauseModal.classList.add('hidden');
         gameOverModal.classList.add('hidden');
@@ -582,11 +595,11 @@
     bgmBtn.addEventListener('click', () => {
         if (sound.isBgmPlaying) {
             sound.stopBgm();
-            bgmBtn.textContent = '🎵 OFF';
+            bgmBtn.textContent = '♪✕';
             bgmBtn.classList.remove('active');
         } else {
             sound.resumeBgm();
-            bgmBtn.textContent = '🎵 ON';
+            bgmBtn.textContent = '🎵';
             bgmBtn.classList.add('active');
         }
     });

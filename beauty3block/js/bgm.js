@@ -105,6 +105,18 @@
       }
     }
 
+    stop() {
+      this.pendingStart = false;
+      this.suspendedByVisibility = false;
+      try {
+        this.audio.pause();
+        if (this.audio.readyState > 0) {
+          this.audio.currentTime = 0;
+        }
+      } catch (_) {}
+      this._emitTrackChange();
+    }
+
     setMode(mode, autoplayNow = false) {
       if (mode !== 'random' && mode !== 'repeat') return;
       this.mode = mode;

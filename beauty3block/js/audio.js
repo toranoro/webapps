@@ -43,25 +43,29 @@
 
     _tone({ freq = 440, endFreq = null, type = 'sine', duration = 0.08, volume = 0.08, delay = 0 }) {
       if (!this.enabled) return;
-      if (!this.ctx) this.unlock();
-      if (!this.ctx || this.ctx.state !== 'running') return;
+      try {
+        if (!this.ctx) this.unlock();
+        if (!this.ctx || this.ctx.state !== 'running') return;
 
-      const t0 = this.ctx.currentTime + delay;
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type = type;
-      osc.frequency.setValueAtTime(freq, t0);
-      if (endFreq && endFreq !== freq) {
-        osc.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq), t0 + duration);
+        const t0 = this.ctx.currentTime + delay;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, t0);
+        if (endFreq && endFreq !== freq) {
+          osc.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq), t0 + duration);
+        }
+        gain.gain.setValueAtTime(0.0001, t0);
+        gain.gain.linearRampToValueAtTime(volume, t0 + 0.008);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(t0);
+        osc.stop(t0 + duration + 0.01);
+      } catch (_) {
+        // Ignore transient mobile WebAudio errors
       }
-      gain.gain.setValueAtTime(0.0001, t0);
-      gain.gain.linearRampToValueAtTime(volume, t0 + 0.008);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
-
-      osc.connect(gain);
-      gain.connect(this.ctx.destination);
-      osc.start(t0);
-      osc.stop(t0 + duration + 0.01);
     }
 
     playMove() {

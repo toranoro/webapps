@@ -16,23 +16,23 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Beauty3Block">
-  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png?v=20261124-02">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png?v=20261124-03">
 
   <!-- Icons & PWA Manifest -->
-  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg?v=20261124-02">
-  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=20261124-02">
-  <link rel="manifest" href="./manifest.json?v=20261124-02">
+  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg?v=20261124-03">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=20261124-03">
+  <link rel="manifest" href="./manifest.json?v=20261124-03">
 
-  <link rel="stylesheet" href="./css/style.css?v=20261124-02">
+  <link rel="stylesheet" href="./css/style.css?v=20261124-03">
 
-  <script defer src="./js/version.js?v=20261124-02"></script>
-  <script defer src="./js/audio.js?v=20261124-02"></script>
-  <script defer src="./js/bgm-tracks.js?v=20261124-02"></script>
-  <script defer src="./js/bgm.js?v=20261124-02"></script>
-  <script defer src="./js/jewels.js?v=20261124-02"></script>
-  <script defer src="./js/engine.js?v=20261124-02"></script>
-  <script defer src="./js/pwa.js?v=20261124-02"></script>
-  <script defer src="./js/main.js?v=20261124-02"></script>
+  <script defer src="./js/version.js?v=20261124-03"></script>
+  <script defer src="./js/audio.js?v=20261124-03"></script>
+  <script defer src="./js/bgm-tracks.js?v=20261124-03"></script>
+  <script defer src="./js/bgm.js?v=20261124-03"></script>
+  <script defer src="./js/jewels.js?v=20261124-03"></script>
+  <script defer src="./js/engine.js?v=20261124-03"></script>
+  <script defer src="./js/pwa.js?v=20261124-03"></script>
+  <script defer src="./js/main.js?v=20261124-03"></script>
 </head>
 <body>
   <div class="bg-aurora" aria-hidden="true"></div>
@@ -149,12 +149,14 @@
             <div class="bgm-track-row">
               <select class="bgm-select" data-bgm-select aria-label="BGM曲選択"></select>
               <button type="button" class="bgm-mini-btn" data-action="bgm-next" title="次の曲 / 試聴">⏭</button>
+              <button type="button" class="bgm-mini-btn" data-action="bgm-stop" title="BGM停止">⏹</button>
             </div>
             <div class="bgm-now" data-bind="bgm-now">♪ 再生待機中</div>
           </div>
 
           <div class="overlay-actions">
             <button type="button" id="btn-primary-play" class="ui-btn primary">GAME START</button>
+            <button type="button" id="btn-return-title" class="ui-btn" hidden>🏠 タイトルに戻る（BGM停止）</button>
             <button type="button" id="btn-overlay-settings" class="ui-btn">⚙ 詳細設定 / 難易度</button>
             <button type="button" class="ui-btn" data-action="install" hidden>📲 アプリをインストール</button>
             <a class="ui-btn" href="./manual/index.html" target="_blank" rel="noopener">📖 操作マニュアル</a>
@@ -193,12 +195,12 @@
       <div class="panel-section controls-guide">
         <div class="section-label"><span>CONTROLS (PC)</span></div>
         <div><kbd>←</kbd><kbd>→</kbd> / <kbd>A</kbd><kbd>D</kbd> / <kbd>J</kbd><kbd>L</kbd> 左右移動</div>
-        <div><kbd>↑</kbd> / <kbd>W</kbd> / <kbd>X</kbd> / <kbd>I</kbd> 回転</div>
-        <div><kbd>F</kbd> <kbd>G</kbd> / <kbd>Z</kbd> 宝石入れ替え</div>
+        <div><kbd>↑</kbd> / <kbd>W</kbd> / <kbd>X</kbd> / <kbd>I</kbd> 宝石入替</div>
+        <div><kbd>F</kbd> 反時計 / <kbd>G</kbd> 時計回転</div>
         <div><kbd>↓</kbd> / <kbd>S</kbd> / <kbd>K</kbd> 少し落ちる</div>
         <div><kbd>Space</kbd> 一気に落下</div>
         <div><kbd>P</kbd> ポーズ / <kbd>M</kbd> 消音</div>
-        <div style="margin-top:5px; opacity:0.85;">タッチ: タップで回転 / スワイプで移動</div>
+        <div style="margin-top:5px; opacity:0.85;">タッチ: 上フリックで回転 / タップで入替 / 左右・下スワイプ</div>
       </div>
     </aside>
 
@@ -220,8 +222,11 @@
         <button type="button" class="game-btn drop-btn" data-pad="harddrop" aria-label="ハードドロップ">
           <span>⤓</span><small>DROP</small>
         </button>
-        <button type="button" class="game-btn rotate-btn" data-pad="rotate" aria-label="宝石を入れ替え">
-          <span>↻</span><small>SWAP</small>
+        <button type="button" class="game-btn swap-btn" data-pad="swap" aria-label="宝石を入れ替え">
+          <span>⇄</span><small>SWAP</small>
+        </button>
+        <button type="button" class="game-btn rotate-btn" data-pad="rotate-cw" aria-label="ブロックを時計回りに回転">
+          <span>↷</span><small>ROT</small>
         </button>
       </div>
     </nav>
@@ -304,6 +309,7 @@
           </span>
         </label>
 
+        <button type="button" class="ui-btn" data-action="return-title">🏠 タイトルに戻る（BGM停止）</button>
         <a class="ui-btn" href="./manual/index.html" target="_blank" rel="noopener">📖 オンラインマニュアルを開く</a>
       </div>
     </div>
