@@ -138,41 +138,61 @@
     let cellSize = 36;
     let boardWidth = cellSize * B3B.COLS;
     let boardHeight = cellSize * B3B.VISIBLE_ROWS;
-    let dpr = Math.min(2.5, global.devicePixelRatio || 1);
+    let dpr = Math.min(2, global.devicePixelRatio || 1);
+    let resizeRafPending = false;
 
     function resizeBoard() {
+      resizeRafPending = false;
       if (!boardStage || !boardCanvas || !boardFrame) return;
       const rect = boardStage.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return;
+
       const pad = 10;
       const availW = Math.max(120, rect.width - pad * 2);
-      const availH = Math.max(240, rect.height - pad * 2);
+      const availH = Math.max(220, rect.height - pad * 2);
 
       const maxCellW = Math.floor(availW / B3B.COLS);
       const maxCellH = Math.floor(availH / B3B.VISIBLE_ROWS);
-      cellSize = Math.max(16, Math.min(maxCellW, maxCellH, 54));
+      const nextCell = Math.max(16, Math.min(maxCellW, maxCellH, 54));
+      const nextW = nextCell * B3B.COLS;
+      const nextH = nextCell * B3B.VISIBLE_ROWS;
+      const nextDpr = Math.min(2, global.devicePixelRatio || 1);
+      const pxW = Math.round(nextW * nextDpr);
+      const pxH = Math.round(nextH * nextDpr);
 
-      boardWidth = cellSize * B3B.COLS;
-      boardHeight = cellSize * B3B.VISIBLE_ROWS;
-      dpr = Math.min(2.5, global.devicePixelRatio || 1);
+      cellSize = nextCell;
+      boardWidth = nextW;
+      boardHeight = nextH;
+      dpr = nextDpr;
 
-      boardCanvas.style.width = `${boardWidth}px`;
-      boardCanvas.style.height = `${boardHeight}px`;
-      boardCanvas.width = Math.round(boardWidth * dpr);
-      boardCanvas.height = Math.round(boardHeight * dpr);
+      if (boardCanvas.width !== pxW || boardCanvas.height !== pxH) {
+        boardCanvas.style.width = `${boardWidth}px`;
+        boardCanvas.style.height = `${boardHeight}px`;
+        boardCanvas.width = pxW;
+        boardCanvas.height = pxH;
+      }
 
-      boardFrame.style.width = `${boardWidth + 12}px`;
-      boardFrame.style.height = `${boardHeight + 12}px`;
+      const frameW = `${boardWidth + 12}px`;
+      const frameH = `${boardHeight + 12}px`;
+      if (boardFrame.style.width !== frameW) boardFrame.style.width = frameW;
+      if (boardFrame.style.height !== frameH) boardFrame.style.height = frameH;
 
       drawNextPreviews();
     }
 
+    function scheduleResize() {
+      if (resizeRafPending) return;
+      resizeRafPending = true;
+      global.requestAnimationFrame(resizeBoard);
+    }
+
     if (typeof ResizeObserver !== 'undefined') {
-      const ro = new ResizeObserver(() => resizeBoard());
+      const ro = new ResizeObserver(() => scheduleResize());
       ro.observe(boardStage);
     }
-    global.addEventListener('resize', resizeBoard);
+    global.addEventListener('resize', scheduleResize);
     global.addEventListener('orientationchange', () => {
-      setTimeout(resizeBoard, 120);
+      setTimeout(scheduleResize, 120);
       checkRotateGuard();
     });
 
@@ -191,7 +211,7 @@
         const ctx = cv.getContext('2d');
         const boxW = cv.clientWidth || parseInt(cv.getAttribute('width'), 10) || 56;
         const boxH = cv.clientHeight || parseInt(cv.getAttribute('height'), 10) || 132;
-        const localDpr = Math.min(2.5, global.devicePixelRatio || 1);
+        const localDpr = Math.min(2, global.devicePixelRatio || 1);
         const targetW = Math.round(boxW * localDpr);
         const targetH = Math.round(boxH * localDpr);
         if (cv.width !== targetW || cv.height !== targetH) {
@@ -245,6 +265,13 @@
         const label = btn.querySelector('.btn-label');
         if (label) label.textContent = paused ? 'RESUME' : 'PAUSE';
       });
+
+      const wasIdle = document.body.classList.contains('state-idle');
+      const isIdle = engine.state === 'IDLE';
+      document.body.classList.toggle('state-idle', isIdle);
+      if (wasIdle !== isIdle) {
+        scheduleResize();
+      }
 
       // Overlay visibility & text
       if (engine.state === 'IDLE') {

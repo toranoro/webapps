@@ -19,7 +19,7 @@
       this.consecutiveErrors = 0;
 
       this.audio = new global.Audio();
-      this.audio.preload = 'auto';
+      this.audio.preload = 'none';
       this.audio.volume = this.volume;
 
       this.audio.addEventListener('ended', () => {
@@ -110,10 +110,10 @@
       this.suspendedByVisibility = false;
       try {
         this.audio.pause();
-        if (this.audio.readyState > 0) {
-          this.audio.currentTime = 0;
-        }
+        this.audio.removeAttribute('src');
+        this.audio.load();
       } catch (_) {}
+      this.currentIndex = -1;
       this._emitTrackChange();
     }
 

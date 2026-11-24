@@ -625,9 +625,10 @@
     }
 
     _spawnShards(col, row, jewelId) {
+      if (this.particles.length >= 100) return;
       const def = B3B.JEWEL_DEFS[jewelId];
       const color = def ? def.shard : '#ffffff';
-      const count = 8;
+      const count = 7;
       for (let i = 0; i < count; i++) {
         const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
         const speed = 1.6 + Math.random() * 3.4;

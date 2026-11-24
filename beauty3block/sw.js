@@ -3,7 +3,7 @@
  * ブラウザキャッシュによる古いファイルの残存を防ぐためキャッシュを使用しません。
  * 音声・Rangeリクエストはネイティブ再生パイプラインへ直接スルーします。
  */
-const SW_VERSION = '20261124-03';
+const SW_VERSION = '20261124-04';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(self.skipWaiting());

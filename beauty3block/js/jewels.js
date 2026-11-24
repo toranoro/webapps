@@ -155,7 +155,7 @@
     }
 
     _ensureCache(cellPx) {
-      const rounded = Math.max(16, Math.round(cellPx));
+      const rounded = Math.max(16, Math.min(128, Math.round(cellPx) || 32));
       const key = String(rounded);
       if (this.cachedKey === key && this.cache.size === JEWEL_DEFS.length) return;
       this.cache.clear();
