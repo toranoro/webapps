@@ -1,14 +1,202 @@
 ﻿[
     {
-        "name":  "YUE Ambient Track 01",
-        "url":  "asset/music/track01.mp3"
+        "name":  "Track 01: puzzle_ru_01",
+        "url":  "asset/music/puzzle_ru_01.ogg"
     },
     {
-        "name":  "YUE Crystal Groove 02",
-        "url":  "asset/music/track02.mp3"
+        "name":  "Track 02: puzzle_ru_02",
+        "url":  "asset/music/puzzle_ru_02.ogg"
     },
     {
-        "name":  "YUE Neon Pulse 03",
-        "url":  "asset/music/track03.mp3"
+        "name":  "Track 03: puzzle_ru_03",
+        "url":  "asset/music/puzzle_ru_03.ogg"
+    },
+    {
+        "name":  "Track 04: puzzle_ru_04",
+        "url":  "asset/music/puzzle_ru_04.ogg"
+    },
+    {
+        "name":  "Track 05: puzzle_ru_05",
+        "url":  "asset/music/puzzle_ru_05.ogg"
+    },
+    {
+        "name":  "Track 06: puzzle_ru_06",
+        "url":  "asset/music/puzzle_ru_06.ogg"
+    },
+    {
+        "name":  "Track 07: puzzle_ru_07",
+        "url":  "asset/music/puzzle_ru_07.ogg"
+    },
+    {
+        "name":  "Track 08: puzzle_ru_08",
+        "url":  "asset/music/puzzle_ru_08.ogg"
+    },
+    {
+        "name":  "Track 09: puzzle_ru_09",
+        "url":  "asset/music/puzzle_ru_09.ogg"
+    },
+    {
+        "name":  "Track 10: puzzle_ru_10",
+        "url":  "asset/music/puzzle_ru_10.ogg"
+    },
+    {
+        "name":  "Track 11: puzzle_ru_11",
+        "url":  "asset/music/puzzle_ru_11.ogg"
+    },
+    {
+        "name":  "Track 12: puzzle_ru_12",
+        "url":  "asset/music/puzzle_ru_12.ogg"
+    },
+    {
+        "name":  "Track 13: puzzle_ru_13",
+        "url":  "asset/music/puzzle_ru_13.ogg"
+    },
+    {
+        "name":  "Track 14: puzzle_ru_14",
+        "url":  "asset/music/puzzle_ru_14.ogg"
+    },
+    {
+        "name":  "Track 15: puzzle_ru_15",
+        "url":  "asset/music/puzzle_ru_15.ogg"
+    },
+    {
+        "name":  "Track 16: puzzle_ru_16",
+        "url":  "asset/music/puzzle_ru_16.ogg"
+    },
+    {
+        "name":  "Track 17: puzzle_ru_17",
+        "url":  "asset/music/puzzle_ru_17.ogg"
+    },
+    {
+        "name":  "Track 18: puzzle_ru_18",
+        "url":  "asset/music/puzzle_ru_18.ogg"
+    },
+    {
+        "name":  "Track 19: puzzle_ru_19",
+        "url":  "asset/music/puzzle_ru_19.ogg"
+    },
+    {
+        "name":  "Track 20: puzzle_ru_20",
+        "url":  "asset/music/puzzle_ru_20.ogg"
+    },
+    {
+        "name":  "Track 21: puzzle_ru_21",
+        "url":  "asset/music/puzzle_ru_21.ogg"
+    },
+    {
+        "name":  "Track 22: puzzle_ru_22",
+        "url":  "asset/music/puzzle_ru_22.ogg"
+    },
+    {
+        "name":  "Track 23: puzzle_ru_23",
+        "url":  "asset/music/puzzle_ru_23.ogg"
+    },
+    {
+        "name":  "Track 24: puzzle_ru_24",
+        "url":  "asset/music/puzzle_ru_24.ogg"
+    },
+    {
+        "name":  "Track 25: puzzle_ru_25",
+        "url":  "asset/music/puzzle_ru_25.ogg"
+    },
+    {
+        "name":  "Track 26: puzzle_ru_26",
+        "url":  "asset/music/puzzle_ru_26.ogg"
+    },
+    {
+        "name":  "Track 27: puzzle_ru_27",
+        "url":  "asset/music/puzzle_ru_27.ogg"
+    },
+    {
+        "name":  "Track 28: puzzle_ru_28",
+        "url":  "asset/music/puzzle_ru_28.ogg"
+    },
+    {
+        "name":  "Track 29: puzzle_ru_29",
+        "url":  "asset/music/puzzle_ru_29.ogg"
+    },
+    {
+        "name":  "Track 30: puzzle_ru_30",
+        "url":  "asset/music/puzzle_ru_30.ogg"
+    },
+    {
+        "name":  "Track 31: puzzle_ru_31",
+        "url":  "asset/music/puzzle_ru_31.ogg"
+    },
+    {
+        "name":  "Track 32: puzzle_ru_32",
+        "url":  "asset/music/puzzle_ru_32.ogg"
+    },
+    {
+        "name":  "Track 33: puzzle_ru_33",
+        "url":  "asset/music/puzzle_ru_33.ogg"
+    },
+    {
+        "name":  "Track 34: puzzle_ru_34",
+        "url":  "asset/music/puzzle_ru_34.ogg"
+    },
+    {
+        "name":  "Track 35: puzzle_ru_35",
+        "url":  "asset/music/puzzle_ru_35.ogg"
+    },
+    {
+        "name":  "Track 36: puzzle_ru_36",
+        "url":  "asset/music/puzzle_ru_36.ogg"
+    },
+    {
+        "name":  "Track 37: puzzle_ru_37",
+        "url":  "asset/music/puzzle_ru_37.ogg"
+    },
+    {
+        "name":  "Track 38: puzzle_ru_38",
+        "url":  "asset/music/puzzle_ru_38.ogg"
+    },
+    {
+        "name":  "Track 39: puzzle_ru_39",
+        "url":  "asset/music/puzzle_ru_39.ogg"
+    },
+    {
+        "name":  "Track 40: puzzle_ru_40",
+        "url":  "asset/music/puzzle_ru_40.ogg"
+    },
+    {
+        "name":  "Track 41: puzzle_ru_41",
+        "url":  "asset/music/puzzle_ru_41.ogg"
+    },
+    {
+        "name":  "Track 42: puzzle_ru_42",
+        "url":  "asset/music/puzzle_ru_42.ogg"
+    },
+    {
+        "name":  "Track 43: puzzle_ru_43",
+        "url":  "asset/music/puzzle_ru_43.ogg"
+    },
+    {
+        "name":  "Track 44: puzzle_ru_44",
+        "url":  "asset/music/puzzle_ru_44.ogg"
+    },
+    {
+        "name":  "Track 45: puzzle_ru_45",
+        "url":  "asset/music/puzzle_ru_45.ogg"
+    },
+    {
+        "name":  "Track 46: puzzle_ru_46",
+        "url":  "asset/music/puzzle_ru_46.ogg"
+    },
+    {
+        "name":  "Track 47: puzzle_ru_47",
+        "url":  "asset/music/puzzle_ru_47.ogg"
+    },
+    {
+        "name":  "Track 48: puzzle_ru_48",
+        "url":  "asset/music/puzzle_ru_48.ogg"
+    },
+    {
+        "name":  "Track 49: puzzle_ru_49",
+        "url":  "asset/music/puzzle_ru_49.ogg"
+    },
+    {
+        "name":  "Track 50: puzzle_ru_50",
+        "url":  "asset/music/puzzle_ru_50.ogg"
     }
 ]
