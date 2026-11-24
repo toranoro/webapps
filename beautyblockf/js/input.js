@@ -160,6 +160,12 @@ class InputHandler {
             const handlePress = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                if (window.soundEngine) {
+                    window.soundEngine.init();
+                    window.soundEngine.resume();
+                }
+                const ow = document.getElementById('orientation-warning');
+                if (ow && getComputedStyle(ow).display !== 'none') return;
                 if (this.game.gameOver || this.game.paused || window.isTitleScreenActive) return;
 
                 onTrigger();
@@ -268,7 +274,7 @@ class InputHandler {
         let lastTouchEnd = 0;
         document.addEventListener('touchend', (e) => {
             const now = Date.now();
-            if (now - lastTouchEnd <= 300) {
+            if (now - lastTouchEnd <= 300 && !e.target.closest('select, input, button, a, label')) {
                 e.preventDefault();
             }
             lastTouchEnd = now;

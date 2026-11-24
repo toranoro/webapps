@@ -64,26 +64,31 @@
     function resizeCanvas() {
         const dpr = window.devicePixelRatio || 1;
         const rect = canvas.getBoundingClientRect();
-        if (rect.width === 0 || rect.height === 0) return;
-
-        canvas.width = rect.width * dpr;
-        canvas.height = rect.height * dpr;
-        ctx.scale(dpr, dpr);
+        if (rect.width > 0 && rect.height > 0) {
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
 
         const holdRect = holdCanvas.getBoundingClientRect();
-        holdCanvas.width = holdRect.width * dpr;
-        holdCanvas.height = holdRect.height * dpr;
-        holdCtx.scale(dpr, dpr);
+        if (holdRect.width > 0 && holdRect.height > 0) {
+            holdCanvas.width = holdRect.width * dpr;
+            holdCanvas.height = holdRect.height * dpr;
+            holdCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
 
         const nextRect = nextCanvas.getBoundingClientRect();
-        nextCanvas.width = nextRect.width * dpr;
-        nextCanvas.height = nextRect.height * dpr;
-        nextCtx.scale(dpr, dpr);
+        if (nextRect.width > 0 && nextRect.height > 0) {
+            nextCanvas.width = nextRect.width * dpr;
+            nextCanvas.height = nextRect.height * dpr;
+            nextCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
     }
 
     window.addEventListener('resize', resizeCanvas);
     window.addEventListener('orientationchange', () => {
         setTimeout(resizeCanvas, 200);
+        setTimeout(resizeCanvas, 500);
     });
 
     // 角丸矩形描画ヘルパー
@@ -252,15 +257,16 @@
     function renderPreview(cCtx, pieceType, isGrayed = false) {
         const cRect = cCtx.canvas.getBoundingClientRect();
         cCtx.clearRect(0, 0, cRect.width, cRect.height);
-        if (!pieceType) return;
+        if (!pieceType || cRect.width === 0 || cRect.height === 0) return;
 
         const shape = PIECE_SHAPES[pieceType];
         const theme = PIECE_THEMES[pieceType];
         const rows = shape.length;
         const cols = shape[0].length;
 
+        const pad = Math.min(8, Math.min(cRect.width, cRect.height) * 0.12);
         const maxDim = Math.max(rows, cols);
-        const blockSize = Math.min((cRect.width - 16) / maxDim, (cRect.height - 16) / maxDim);
+        const blockSize = Math.min((cRect.width - pad * 2) / maxDim, (cRect.height - pad * 2) / maxDim);
 
         const totalW = cols * blockSize;
         const totalH = rows * blockSize;
@@ -287,9 +293,12 @@
     function renderNextQueue() {
         const rect = nextCanvas.getBoundingClientRect();
         nextCtx.clearRect(0, 0, rect.width, rect.height);
+        if (rect.width === 0 || rect.height === 0) return;
 
         const count = 3;
-        const slotHeight = rect.height / count;
+        const isHorizontal = rect.width > rect.height; // スマホ縦向き時は横並び3つ表示
+        const slotWidth = isHorizontal ? rect.width / count : rect.width;
+        const slotHeight = isHorizontal ? rect.height : rect.height / count;
 
         for (let i = 0; i < count; i++) {
             const pType = game.nextPieces[i];
@@ -300,13 +309,14 @@
             const rows = shape.length;
             const cols = shape[0].length;
 
+            const pad = Math.min(6, Math.min(slotWidth, slotHeight) * 0.12);
             const maxDim = Math.max(rows, cols);
-            const blockSize = Math.min((rect.width - 14) / maxDim, (slotHeight - 14) / maxDim);
+            const blockSize = Math.min((slotWidth - pad * 2) / maxDim, (slotHeight - pad * 2) / maxDim);
 
             const totalW = cols * blockSize;
             const totalH = rows * blockSize;
-            const startX = (rect.width - totalW) / 2;
-            const startY = i * slotHeight + (slotHeight - totalH) / 2;
+            const startX = (isHorizontal ? i * slotWidth : 0) + (slotWidth - totalW) / 2;
+            const startY = (isHorizontal ? 0 : i * slotHeight) + (slotHeight - totalH) / 2;
 
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
@@ -581,13 +591,21 @@
         }
     });
 
-    // フルスクリーン対応
+    // フルスクリーン対応（iOS Safari向け案内フォールバック付き）
     fullscreenBtn.addEventListener('click', () => {
+        if (!document.fullscreenEnabled && !document.webkitFullscreenEnabled) {
+            alert('📱 iPhone / iPad Safariで全画面表示するには:\nブラウザの共有ボタン（□↑）→「ホーム画面に追加」をタップして、ホーム画面から起動してください！');
+            return;
+        }
         if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch(() => {});
+            const req = document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen;
+            if (req) {
+                req.call(document.documentElement).catch(() => {});
+            }
         } else {
-            if (document.exitFullscreen) {
-                document.exitFullscreen().catch(() => {});
+            const exit = document.exitFullscreen || document.webkitExitFullscreen;
+            if (exit) {
+                exit.call(document).catch(() => {});
             }
         }
     });
@@ -619,13 +637,18 @@
         deferredPrompt = null;
     });
 
+    const orientationWarningEl = document.getElementById('orientation-warning');
+
     // メインループ
     function gameLoop(currentTime) {
         const deltaTime = currentTime - lastTime;
         lastTime = currentTime;
 
-        // タイトル画面またはポーズ中でなければゲームロジック進行
-        if (!window.isTitleScreenActive && !game.paused) {
+        // スマホ横向き警告が表示されている間は自動停止
+        const isOrientationBlocked = orientationWarningEl && getComputedStyle(orientationWarningEl).display !== 'none';
+
+        // タイトル画面、ポーズ中、または横向きブロック中でなければゲームロジック進行
+        if (!window.isTitleScreenActive && !game.paused && !isOrientationBlocked) {
             game.update(deltaTime);
         }
         effect.update();

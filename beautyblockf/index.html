@@ -24,7 +24,7 @@
     <link rel="apple-touch-icon" href="icon.svg">
 
     <!-- スタイルシート（キャッシュバスティング対応） -->
-    <link rel="stylesheet" href="css/style.css?v=20261124_02">
+    <link rel="stylesheet" href="css/style.css?v=20261124_03">
 </head>
 <body>
     <div class="bg-glow"></div>
@@ -45,7 +45,7 @@
 
             <div class="system-controls">
                 <button id="btn-install" class="icon-btn hidden" title="アプリをインストール">📥</button>
-                <button id="btn-bgm" class="icon-btn" title="BGM再生/停止">🎵 ON</button>
+                <button id="btn-bgm" class="icon-btn" title="BGM再生/停止">🎵</button>
                 <button id="btn-mute" class="icon-btn" title="効果音切替">🔊</button>
                 <button id="btn-pause" class="icon-btn" title="ポーズ/再開 (ESC/P)">⏸</button>
                 <button id="btn-fullscreen" class="icon-btn" title="全画面表示">⛶</button>
@@ -57,26 +57,28 @@
         <main class="game-play-area">
             <!-- 左パネル: HOLD & STATS -->
             <aside class="side-panel left-panel">
-                <div class="glass-card">
+                <div class="glass-card hold-card">
                     <div class="card-title">HOLD</div>
                     <div class="preview-box">
                         <canvas id="hold-canvas"></canvas>
                     </div>
                 </div>
 
-                <div class="glass-card">
-                    <div class="card-title">SCORE</div>
-                    <div id="score-val" class="card-value">0</div>
-                </div>
+                <div class="stats-group">
+                    <div class="glass-card stat-card">
+                        <div class="card-title">SCORE</div>
+                        <div id="score-val" class="card-value">0</div>
+                    </div>
 
-                <div class="glass-card">
-                    <div class="card-title">LEVEL</div>
-                    <div id="level-val" class="card-value">1</div>
-                </div>
+                    <div class="glass-card stat-card">
+                        <div class="card-title">LEVEL</div>
+                        <div id="level-val" class="card-value">1</div>
+                    </div>
 
-                <div class="glass-card">
-                    <div class="card-title">LINES</div>
-                    <div id="lines-val" class="card-value">0</div>
+                    <div class="glass-card stat-card">
+                        <div class="card-title">LINES</div>
+                        <div id="lines-val" class="card-value">0</div>
+                    </div>
                 </div>
             </aside>
 
@@ -87,7 +89,7 @@
 
             <!-- 右パネル: NEXT QUEUE -->
             <aside class="side-panel right-panel">
-                <div class="glass-card">
+                <div class="glass-card next-card">
                     <div class="card-title">NEXT</div>
                     <div class="preview-box next-box">
                         <canvas id="next-canvas"></canvas>
@@ -111,16 +113,16 @@
             </div>
 
             <div class="action-group">
-                <button id="btn-hold" class="ctrl-btn btn-md" aria-label="ホールド">
+                <button id="btn-hold" class="ctrl-btn btn-md btn-hold" aria-label="ホールド">
                     ⚡<span class="btn-label">HOLD</span>
                 </button>
-                <button id="btn-rot-ccw" class="ctrl-btn btn-md" aria-label="左回転">
+                <button id="btn-rot-ccw" class="ctrl-btn btn-md btn-rot-l" aria-label="左回転">
                     ↺<span class="btn-label">L-ROT</span>
                 </button>
-                <button id="btn-rot-cw" class="ctrl-btn btn-md btn-accent" aria-label="右回転">
+                <button id="btn-rot-cw" class="ctrl-btn btn-md btn-accent btn-rot-r" aria-label="右回転">
                     ↻<span class="btn-label">R-ROT</span>
                 </button>
-                <button id="btn-hard-drop" class="ctrl-btn btn-lg" aria-label="ハードドロップ">
+                <button id="btn-hard-drop" class="ctrl-btn btn-lg btn-drop" aria-label="ハードドロップ">
                     ⏬<span class="btn-label">DROP</span>
                 </button>
             </div>
@@ -138,10 +140,23 @@
     </div>
 
     <!-- =========================================================
+         ★ スマホ横向き時の縦向き推奨オーバーレイ
+         ========================================================= -->
+    <div id="orientation-warning" class="orientation-overlay">
+        <div class="orientation-card">
+            <div class="rotate-phone-icon">📱</div>
+            <h2 class="orientation-title">縦向きでプレイしてください</h2>
+            <p class="orientation-desc">
+                スマートフォンでは画面を縦向きにすると<br>最も美しく快適にプレイできます。
+            </p>
+        </div>
+    </div>
+
+    <!-- =========================================================
          ★ 美麗な PAUSE モーダル（ESC / P / ⏸ボタン）
          ========================================================= -->
     <div id="pause-modal" class="pause-overlay hidden">
-        <div class="pause-card">
+        <div class="pause-card scrollable-area">
             <h2 class="pause-title">PAUSE</h2>
             
             <div class="pause-bgm-info">
@@ -177,7 +192,7 @@
          ★ 美麗なタイトル画面（起動時・設定画面）
          ========================================================= -->
     <div id="title-modal" class="title-overlay">
-        <div class="title-card">
+        <div class="title-card scrollable-area">
             <div class="title-logo-wrap">
                 <h1 class="title-main-text">✨ BeautyBlock</h1>
                 <p class="title-sub-text">CRYSTAL EDITION</p>
@@ -201,31 +216,31 @@
                 </div>
 
                 <div class="btn-row">
-                    <button id="title-btn-mode-toggle" class="modal-btn modal-btn-secondary" style="font-size: 0.85rem; padding: 8px 12px;">
+                    <button id="title-btn-mode-toggle" class="modal-btn modal-btn-secondary" style="font-size: 0.82rem; padding: 8px 10px;">
                         🔀 再生: ランダム
                     </button>
                     <!-- 音楽フォルダ一括読み込みボタン -->
-                    <label class="modal-btn modal-btn-secondary" style="font-size: 0.85rem; padding: 8px 12px; cursor: pointer;">
-                        📂 音楽フォルダ読込
+                    <label class="modal-btn modal-btn-secondary" style="font-size: 0.82rem; padding: 8px 10px; cursor: pointer;">
+                        📂 フォルダ読込
                         <input type="file" id="bgm-folder-input" webkitdirectory directory multiple accept="audio/*" style="display: none;">
                     </label>
                 </div>
 
                 <!-- 音量スライダー -->
                 <div class="volume-row">
-                    <span>BGM音量:</span>
+                    <span>BGM:</span>
                     <input type="range" id="slider-bgm" class="volume-slider" min="0" max="1" step="0.05" value="0.5">
                     <span id="slider-bgm-val">50%</span>
                 </div>
                 <div class="volume-row">
-                    <span>SE音量:</span>
+                    <span>効果音:</span>
                     <input type="range" id="slider-sfx" class="volume-slider" min="0" max="1" step="0.05" value="0.7">
                     <span id="slider-sfx-val">70%</span>
                 </div>
             </div>
 
             <!-- 操作キーガイド（jkli & 矢印） -->
-            <div class="title-section-box">
+            <div class="title-section-box pc-only-guide">
                 <div class="section-box-title">
                     <span>⌨️</span> KEY CONTROLS (JKLI派 & 矢印キー)
                 </div>
@@ -252,8 +267,8 @@
             </div>
 
             <!-- 下部リンク -->
-            <div style="display: flex; gap: 12px; width: 100%;">
-                <a href="./manual/index.html" class="modal-btn modal-btn-secondary" style="text-decoration: none;" target="_blank">
+            <div style="display: flex; gap: 10px; width: 100%;">
+                <a href="./manual/index.html" class="modal-btn modal-btn-secondary" style="text-decoration: none; font-size: 0.9rem;" target="_blank">
                     📖 オンラインマニュアル
                 </a>
             </div>
@@ -273,11 +288,11 @@
     </div>
 
     <!-- スクリプト群（Vanilla JS・依存なし・キャッシュバスティング） -->
-    <script src="js/audio.js?v=20261124_02"></script>
-    <script src="js/particles.js?v=20261124_02"></script>
-    <script src="js/tetris.js?v=20261124_02"></script>
-    <script src="js/input.js?v=20261124_02"></script>
-    <script src="js/main.js?v=20261124_02"></script>
+    <script src="js/audio.js?v=20261124_03"></script>
+    <script src="js/particles.js?v=20261124_03"></script>
+    <script src="js/tetris.js?v=20261124_03"></script>
+    <script src="js/input.js?v=20261124_03"></script>
+    <script src="js/main.js?v=20261124_03"></script>
 
     <!-- PWA Service Worker 登録 -->
     <script>

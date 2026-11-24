@@ -1,7 +1,7 @@
 /* ========================================================
    beautyblockf - Style Sheet
    ガラスモーフィズム、ネオングロー、縦横両対応レスポンシブ
-   タイトル画面、美麗PAUSE、BGMジュークボックス統合版
+   スマホ/iPhone縦向き最適化・スマホ横向き案内対応版
    ======================================================== */
 
 :root {
@@ -29,6 +29,7 @@
 html, body {
     width: 100%;
     height: 100%;
+    height: 100dvh;
     overflow: hidden;
     position: fixed;
     touch-action: none;
@@ -38,6 +39,11 @@ html, body {
     color: var(--text-main);
 }
 
+.scrollable-area {
+    touch-action: pan-y !important;
+    -webkit-overflow-scrolling: touch;
+}
+
 /* 背景ネオンオーラグラデーション */
 .bg-glow {
     position: fixed;
@@ -45,6 +51,7 @@ html, body {
     left: 0;
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
     pointer-events: none;
     z-index: 0;
     background: 
@@ -59,11 +66,13 @@ html, body {
     z-index: 1;
     width: 100%;
     height: 100%;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     align-items: center;
-    padding: 6px 12px;
+    padding: max(6px, env(safe-area-inset-top)) 10px max(8px, env(safe-area-inset-bottom));
+    gap: 6px;
 }
 
 /* 上部ヘッダー */
@@ -73,21 +82,23 @@ html, body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 4px 8px;
-    gap: 8px;
+    padding: 2px 4px;
+    gap: 6px;
+    flex-shrink: 0;
 }
 
 .logo-area {
     display: flex;
     align-items: baseline;
-    gap: 8px;
+    gap: 6px;
     cursor: pointer;
+    flex-shrink: 0;
 }
 
 .app-title {
-    font-size: 1.25rem;
+    font-size: 1.15rem;
     font-weight: 800;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
     background: linear-gradient(135deg, #67e8f9, #c084fc, #f472b6);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -95,23 +106,24 @@ html, body {
 }
 
 .app-subtitle {
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     color: var(--text-sub);
     font-weight: 500;
 }
 
-/* Now Playing 表示バー（ヘッダー内） */
+/* Now Playing 表示バー */
 .now-playing-pill {
     display: flex;
     align-items: center;
-    gap: 6px;
-    background: rgba(30, 41, 59, 0.6);
+    gap: 5px;
+    background: rgba(30, 41, 59, 0.65);
     border: 1px solid rgba(56, 189, 248, 0.25);
     padding: 4px 10px;
     border-radius: 20px;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     color: #e2e8f0;
-    max-width: 280px;
+    max-width: 260px;
+    min-width: 0;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
@@ -119,13 +131,15 @@ html, body {
     cursor: pointer;
 }
 
-.now-playing-pill:hover {
-    border-color: var(--neon-blue);
-    box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+.now-playing-pill span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .music-icon-pulse {
     animation: musicPulse 1.2s infinite alternate ease-in-out;
+    flex-shrink: 0;
 }
 
 @keyframes musicPulse {
@@ -135,14 +149,15 @@ html, body {
 
 .system-controls {
     display: flex;
-    gap: 6px;
+    gap: 4px;
+    flex-shrink: 0;
 }
 
 .icon-btn {
     background: var(--panel-bg);
     border: 1px solid var(--panel-border);
     color: var(--text-main);
-    padding: 6px 10px;
+    padding: 5px 8px;
     border-radius: 8px;
     font-size: 0.85rem;
     font-weight: 600;
@@ -204,12 +219,18 @@ html, body {
     display: block;
 }
 
-/* サイド情報パネル */
+/* サイド情報パネル（PC / iPad等） */
 .side-panel {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    width: 110px;
+    width: 115px;
+}
+
+.stats-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .glass-card {
@@ -260,11 +281,12 @@ html, body {
 .controls-container {
     width: 100%;
     max-width: 600px;
-    padding: 4px 0;
+    padding: 2px 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 10px;
+    flex-shrink: 0;
 }
 
 .dpad-group, .action-group {
@@ -274,8 +296,8 @@ html, body {
 }
 
 .ctrl-btn {
-    background: rgba(30, 41, 59, 0.7);
-    border: 1.5px solid rgba(255, 255, 255, 0.15);
+    background: rgba(30, 41, 59, 0.75);
+    border: 1.5px solid rgba(255, 255, 255, 0.16);
     color: #ffffff;
     font-size: 1.1rem;
     font-weight: 700;
@@ -299,9 +321,9 @@ html, body {
 }
 
 .btn-label {
-    font-size: 0.55rem;
+    font-size: 0.52rem;
     color: var(--text-sub);
-    margin-top: 2px;
+    margin-top: 1px;
 }
 
 .btn-md {
@@ -312,12 +334,12 @@ html, body {
 .btn-lg {
     width: 62px;
     height: 62px;
-    background: rgba(14, 116, 144, 0.6);
-    border-color: rgba(56, 189, 248, 0.3);
+    background: rgba(14, 116, 144, 0.65);
+    border-color: rgba(56, 189, 248, 0.35);
 }
 
 .btn-accent {
-    background: rgba(126, 34, 206, 0.6);
+    background: rgba(126, 34, 206, 0.65);
     border-color: rgba(192, 132, 252, 0.35);
 }
 
@@ -327,7 +349,7 @@ html, body {
     box-shadow: 0 0 16px rgba(192, 132, 252, 0.6);
 }
 
-/* PCキーガイド（jkli & 矢印） */
+/* PCキーガイド */
 .pc-key-hints {
     display: none;
     font-size: 0.72rem;
@@ -353,7 +375,62 @@ html, body {
 }
 
 /* ========================================================
-   ★ 美麗な PAUSE モーダル（ESC / Pキー / ⏸ボタン）
+   ★ スマホ横向き時の縦向き推奨オーバーレイ
+   ======================================================== */
+.orientation-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(7, 9, 20, 0.96);
+    backdrop-filter: blur(20px);
+    display: none; /* デフォルト非表示・メディアクエリで表示 */
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+    padding: 20px;
+}
+
+.orientation-card {
+    text-align: center;
+    max-width: 340px;
+    background: var(--panel-bg);
+    border: 1.5px solid rgba(56, 189, 248, 0.35);
+    border-radius: 20px;
+    padding: 24px 28px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 30px rgba(56, 189, 248, 0.2);
+}
+
+.rotate-phone-icon {
+    font-size: 3.2rem;
+    margin-bottom: 12px;
+    display: inline-block;
+    animation: rotateToPortrait 2s infinite ease-in-out;
+}
+
+@keyframes rotateToPortrait {
+    0% { transform: rotate(90deg); }
+    45% { transform: rotate(0deg); }
+    80% { transform: rotate(0deg); }
+    100% { transform: rotate(90deg); }
+}
+
+.orientation-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--neon-blue);
+    margin-bottom: 8px;
+}
+
+.orientation-desc {
+    font-size: 0.88rem;
+    color: var(--text-sub);
+    line-height: 1.5;
+}
+
+/* ========================================================
+   ★ 美麗な PAUSE モーダル
    ======================================================== */
 .pause-overlay {
     position: fixed;
@@ -368,26 +445,28 @@ html, body {
     align-items: center;
     z-index: 120;
     animation: fadeIn 0.25s ease;
+    padding: 16px;
 }
 
 .pause-card {
     background: linear-gradient(145deg, rgba(30, 41, 59, 0.92), rgba(15, 23, 42, 0.98));
     border: 2px solid rgba(56, 189, 248, 0.4);
     border-radius: 24px;
-    padding: 32px 36px;
+    padding: 28px 30px;
     text-align: center;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 40px rgba(56, 189, 248, 0.25);
     max-width: 440px;
-    width: 92%;
+    width: 100%;
+    max-height: 90dvh;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 18px;
+    gap: 16px;
 }
 
-/* 美麗なPAUSE文字 */
 .pause-title {
-    font-size: 3.2rem;
+    font-size: clamp(2.4rem, 10vw, 3.2rem);
     font-weight: 900;
     letter-spacing: 6px;
     background: linear-gradient(135deg, #67e8f9 0%, #c084fc 50%, #f472b6 100%);
@@ -398,18 +477,11 @@ html, body {
         0 0 35px rgba(192, 132, 252, 0.5),
         0 0 60px rgba(244, 114, 182, 0.4);
     animation: neonGlowPulse 2s infinite alternate ease-in-out;
-    margin-bottom: 2px;
 }
 
 @keyframes neonGlowPulse {
-    from {
-        transform: scale(0.98);
-        filter: brightness(1.0);
-    }
-    to {
-        transform: scale(1.02);
-        filter: brightness(1.25);
-    }
+    from { transform: scale(0.98); filter: brightness(1.0); }
+    to { transform: scale(1.02); filter: brightness(1.25); }
 }
 
 .pause-bgm-info {
@@ -428,7 +500,8 @@ html, body {
 .pause-track-name {
     color: #ffffff;
     font-weight: 700;
-    font-size: 0.95rem;
+    font-size: 0.92rem;
+    word-break: break-word;
 }
 
 .pause-btn-group {
@@ -448,9 +521,9 @@ html, body {
     background: linear-gradient(135deg, #06b6d4, #3b82f6);
     border: none;
     color: #ffffff;
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 700;
-    padding: 12px 20px;
+    padding: 12px 16px;
     border-radius: 12px;
     cursor: pointer;
     box-shadow: 0 4px 18px rgba(6, 182, 212, 0.4);
@@ -472,18 +545,8 @@ html, body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-.modal-btn-secondary:hover {
-    border-color: var(--neon-blue);
-    background: rgba(56, 189, 248, 0.2);
-}
-
-.modal-btn-accent {
-    background: linear-gradient(135deg, #a855f7, #ec4899);
-    box-shadow: 0 4px 18px rgba(168, 85, 247, 0.4);
-}
-
 /* ========================================================
-   ★ タイトル画面（起動時・設定画面）
+   ★ タイトル画面
    ======================================================== */
 .title-overlay {
     position: fixed;
@@ -491,29 +554,30 @@ html, body {
     left: 0;
     width: 100%;
     height: 100%;
+    height: 100dvh;
     background: rgba(7, 9, 20, 0.92);
     backdrop-filter: blur(20px);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 150;
-    padding: 16px;
+    padding: 12px;
 }
 
 .title-card {
     background: linear-gradient(160deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98));
     border: 2px solid rgba(192, 132, 252, 0.35);
-    border-radius: 28px;
-    padding: 28px 32px;
-    max-width: 540px;
+    border-radius: 24px;
+    padding: 22px 24px;
+    max-width: 520px;
     width: 100%;
-    max-height: 94vh;
+    max-height: 92dvh;
     overflow-y: auto;
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8), 0 0 50px rgba(192, 132, 252, 0.25);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 16px;
+    gap: 14px;
 }
 
 .title-logo-wrap {
@@ -521,9 +585,9 @@ html, body {
 }
 
 .title-main-text {
-    font-size: 2.5rem;
+    font-size: clamp(1.9rem, 7vw, 2.5rem);
     font-weight: 900;
-    letter-spacing: 2px;
+    letter-spacing: 1.5px;
     background: linear-gradient(135deg, #67e8f9 0%, #c084fc 40%, #f472b6 80%, #facc15 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -531,65 +595,57 @@ html, body {
 }
 
 .title-sub-text {
-    font-size: 0.85rem;
+    font-size: 0.78rem;
     font-weight: 600;
     letter-spacing: 3px;
     color: var(--neon-blue);
-    margin-top: -4px;
+    margin-top: -2px;
 }
 
-/* タイトル設定セクション */
 .title-section-box {
     width: 100%;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 14px;
-    padding: 14px 16px;
+    padding: 12px 14px;
     display: flex;
     flex-direction: column;
     gap: 10px;
 }
 
 .section-box-title {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 700;
     color: var(--neon-purple);
     display: flex;
     align-items: center;
     gap: 6px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
 }
 
 .bgm-select-row {
     display: flex;
     gap: 8px;
     width: 100%;
-    align-items: center;
 }
 
 .custom-select {
     flex: 1;
+    width: 100%;
     background: rgba(15, 23, 42, 0.9);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 8px;
     color: #ffffff;
-    padding: 8px 12px;
-    font-size: 0.88rem;
+    padding: 8px 10px;
+    font-size: 0.85rem;
     outline: none;
-    cursor: pointer;
-}
-
-.custom-select:focus {
-    border-color: var(--neon-blue);
-    box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
 }
 
 .volume-row {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 0.8rem;
+    gap: 8px;
+    font-size: 0.78rem;
     color: var(--text-sub);
 }
 
@@ -598,35 +654,31 @@ html, body {
     height: 6px;
     accent-color: var(--neon-blue);
     border-radius: 3px;
-    cursor: pointer;
 }
 
 .key-guide-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    font-size: 0.78rem;
+    gap: 6px;
+    font-size: 0.74rem;
 }
 
 .key-guide-item {
     background: rgba(0, 0, 0, 0.25);
-    padding: 6px 8px;
+    padding: 5px 7px;
     border-radius: 6px;
     border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .btn-start-giant {
     width: 100%;
-    padding: 16px;
-    font-size: 1.25rem;
+    padding: 14px;
+    font-size: 1.15rem;
     letter-spacing: 1px;
-    border-radius: 16px;
+    border-radius: 14px;
     background: linear-gradient(135deg, #06b6d4, #3b82f6, #9333ea);
     box-shadow: 0 6px 24px rgba(6, 182, 212, 0.5);
-}
-
-.btn-start-giant:hover {
-    box-shadow: 0 8px 30px rgba(6, 182, 212, 0.7);
+    flex: none;
 }
 
 /* ゲームオーバーモーダル */
@@ -642,7 +694,6 @@ html, body {
     justify-content: center;
     align-items: center;
     z-index: 100;
-    transition: opacity 0.3s ease;
 }
 
 .modal-card {
@@ -664,26 +715,10 @@ html, body {
     margin-bottom: 16px;
 }
 
-.modal-body {
-    margin-bottom: 24px;
-}
-
-.final-score-label {
-    font-size: 0.85rem;
-    color: var(--text-sub);
-    margin-bottom: 4px;
-}
-
-.final-score-val {
-    font-size: 2.2rem;
-    font-weight: 800;
-    color: #ffffff;
-    text-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
-}
-
-.hidden {
-    display: none !important;
-}
+.modal-body { margin-bottom: 24px; }
+.final-score-label { font-size: 0.85rem; color: var(--text-sub); margin-bottom: 4px; }
+.final-score-val { font-size: 2.2rem; font-weight: 800; color: #fff; }
+.hidden { display: none !important; }
 
 @keyframes fadeIn {
     from { opacity: 0; }
@@ -691,54 +726,179 @@ html, body {
 }
 
 /* ========================================================
-   レスポンシブ：縦画面（Portrait）と横画面（Landscape）
+   ★ スマホ縦向き専用最適化 (max-width: 640px, portrait)
+   iPhone Safari & Android Chrome 縦向き向け特化レイアウト
    ======================================================== */
+@media (orientation: portrait) and (max-width: 640px) {
+    #app-container {
+        padding: max(4px, env(safe-area-inset-top)) 8px max(6px, env(safe-area-inset-bottom));
+        gap: 4px;
+    }
 
-@media (orientation: portrait) {
+    /* ヘッダーをコンパクトに整列 */
+    .header-bar {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .app-subtitle {
+        display: none;
+    }
+
+    .app-title {
+        font-size: 1.05rem;
+    }
+
+    .now-playing-pill {
+        order: 3;
+        width: 100%;
+        max-width: 100%;
+        justify-content: center;
+        padding: 3px 10px;
+        font-size: 0.7rem;
+    }
+
+    .icon-btn {
+        padding: 4px 7px;
+        font-size: 0.8rem;
+    }
+
+    /* ゲームエリア：上部にHOLD/SCORE/NEXT、下部に巨大な盤面！ */
+    .game-play-area {
+        display: grid;
+        grid-template-columns: 64px 1fr 118px;
+        grid-template-rows: 62px 1fr;
+        gap: 6px;
+        align-items: stretch;
+        justify-items: stretch;
+    }
+
+    .side-panel {
+        display: contents; /* 子要素を直接Gridに配置 */
+    }
+
+    .hold-card {
+        grid-row: 1;
+        grid-column: 1;
+        padding: 4px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .hold-card .preview-box {
+        height: 38px;
+    }
+
+    .stats-group {
+        grid-row: 1;
+        grid-column: 2;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 4px;
+    }
+
+    .stat-card {
+        padding: 4px 2px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .stat-card .card-title {
+        font-size: 0.55rem;
+        margin-bottom: 2px;
+    }
+
+    .stat-card .card-value {
+        font-size: 0.85rem;
+    }
+
+    .next-card {
+        grid-row: 1;
+        grid-column: 3;
+        padding: 4px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .next-card .preview-box.next-box {
+        height: 38px;
+    }
+
+    .card-title {
+        font-size: 0.58rem;
+        margin-bottom: 1px;
+    }
+
+    /* 中央盤面を最大サイズで配置 */
+    .board-wrapper {
+        grid-row: 2;
+        grid-column: 1 / -1;
+        justify-self: center;
+        height: 100%;
+        width: auto;
+        max-width: 100%;
+    }
+
+    /* 下部コントローラー：はみ出し防止の2段・ゲームパッド配置 */
+    .controls-container {
+        gap: 8px;
+        padding: 2px 0;
+        align-items: center;
+    }
+
+    .dpad-group {
+        gap: 6px;
+    }
+
+    .dpad-group .ctrl-btn.btn-md {
+        width: 48px;
+        height: 54px;
+        font-size: 1.05rem;
+    }
+
+    /* 右側のアクションボタンを2x2のグリッド配置にして狭い画面でも余裕確保 */
+    .action-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 5px;
+    }
+
+    .action-group .ctrl-btn {
+        width: 56px;
+        height: 44px;
+        font-size: 0.95rem;
+        border-radius: 10px;
+    }
+
+    .btn-label {
+        font-size: 0.48rem;
+    }
+
+    /* タッチ端末ではPCキーガイドをタイトル画面で少し控えめに */
+    .pc-only-guide {
+        display: none;
+    }
+}
+
+/* タブレット縦向き（iPad縦: min-width 641px） */
+@media (orientation: portrait) and (min-width: 641px) {
     .game-play-area {
         flex-direction: row;
         align-items: stretch;
     }
 
     .side-panel {
-        width: 82px;
-        gap: 6px;
+        width: 105px;
     }
 
-    .preview-box {
-        height: 60px;
-    }
-
-    .preview-box.next-box {
-        height: 140px;
-    }
-
-    .card-title {
-        font-size: 0.62rem;
-    }
-
-    .card-value {
-        font-size: 0.95rem;
-    }
-
-    .ctrl-btn.btn-md {
-        width: 48px;
-        height: 48px;
-        font-size: 1rem;
-    }
-
-    .ctrl-btn.btn-lg {
-        width: 56px;
-        height: 56px;
-        font-size: 1rem;
-    }
-
-    .now-playing-pill {
-        max-width: 140px;
-        font-size: 0.7rem;
-    }
+    .ctrl-btn.btn-md { width: 58px; height: 58px; }
+    .ctrl-btn.btn-lg { width: 68px; height: 68px; }
 }
 
+/* 横画面（iPad横向き / PC） */
 @media (orientation: landscape) {
     #app-container {
         padding: 4px 16px;
@@ -749,7 +909,7 @@ html, body {
     }
 
     .game-play-area {
-        height: calc(100vh - 86px);
+        height: calc(100dvh - 96px);
         max-width: 1040px;
         gap: 20px;
     }
@@ -759,30 +919,23 @@ html, body {
         gap: 12px;
     }
 
-    .preview-box {
-        height: 85px;
-    }
-
-    .preview-box.next-box {
-        height: 190px;
-    }
+    .preview-box { height: 85px; }
+    .preview-box.next-box { height: 190px; }
 
     .controls-container {
         max-width: 860px;
         padding: 2px 0;
     }
+}
 
-    .ctrl-btn.btn-md {
-        width: 54px;
-        height: 54px;
-    }
-
-    .ctrl-btn.btn-lg {
-        width: 64px;
-        height: 64px;
+/* ★ スマホ横向き（高さが小さいタッチ端末の横向き）では縦向き案内を強制表示 */
+@media (orientation: landscape) and (max-height: 540px) and (pointer: coarse) {
+    .orientation-overlay {
+        display: flex !important;
     }
 }
 
+/* PC環境（マウス/キーボード環境） */
 @media (hover: hover) and (pointer: fine) {
     .pc-key-hints {
         display: block;
