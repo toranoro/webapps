@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0d1024"/>
+      <stop offset="100%" stop-color="#22123a"/>
+    </linearGradient>
+    <linearGradient id="ruby" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ff789e"/>
+      <stop offset="50%" stop-color="#eb2355"/>
+      <stop offset="100%" stop-color="#820a2d"/>
+    </linearGradient>
+    <linearGradient id="emerald" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#76ffc6"/>
+      <stop offset="50%" stop-color="#12c87d"/>
+      <stop offset="100%" stop-color="#055f37"/>
+    </linearGradient>
+    <linearGradient id="sapphire" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#82d7ff"/>
+      <stop offset="50%" stop-color="#267dff"/>
+      <stop offset="100%" stop-color="#0f2d91"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="url(#bg)"/>
+  <g stroke="#ffffff" stroke-opacity="0.72" stroke-width="1.8">
+    <polygon points="56,14 72,14 80,22 80,36 72,44 56,44 48,36 48,22" fill="url(#ruby)"/>
+    <polygon points="56,49 72,49 80,57 80,71 72,79 56,79 48,71 48,57" fill="url(#emerald)"/>
+    <polygon points="56,84 72,84 80,92 80,106 72,114 56,114 48,106 48,92" fill="url(#sapphire)"/>
+  </g>
+</svg>

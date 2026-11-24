@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <title>Beauty 3-Block | Jewel Columns</title>
+  <meta name="description" content="宝石のような美しいパネルで気持ちよく遊べるWebアプリ版コラムス（Columns）">
+  <meta name="theme-color" content="#0d1024">
+
+  <!-- iOS / iPadOS Safari Fullscreen & Home Screen App Meta -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Beauty3Block">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png?v=20261124-01">
+
+  <!-- Icons & PWA Manifest -->
+  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg?v=20261124-01">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=20261124-01">
+  <link rel="manifest" href="./manifest.json?v=20261124-01">
+
+  <link rel="stylesheet" href="./css/style.css?v=20261124-01">
+
+  <script defer src="./js/version.js?v=20261124-01"></script>
+  <script defer src="./js/audio.js?v=20261124-01"></script>
+  <script defer src="./js/jewels.js?v=20261124-01"></script>
+  <script defer src="./js/engine.js?v=20261124-01"></script>
+  <script defer src="./js/pwa.js?v=20261124-01"></script>
+  <script defer src="./js/main.js?v=20261124-01"></script>
+</head>
+<body>
+  <div class="bg-aurora" aria-hidden="true"></div>
+
+  <main class="app-shell">
+    <!-- Portrait Top HUD (iPad Portrait / Android Portrait / Smartphone Portrait) -->
+    <header class="portrait-top-hud glass-card" aria-label="ステータスバー">
+      <div class="portrait-hud-metrics">
+        <div class="mini-metric">
+          <small>SCORE</small>
+          <strong data-bind="score">0</strong>
+        </div>
+        <div class="mini-metric">
+          <small>LV</small>
+          <strong data-bind="level">1</strong>
+        </div>
+        <div class="mini-metric">
+          <small>BEST</small>
+          <strong data-bind="best">0</strong>
+        </div>
+      </div>
+
+      <div class="portrait-next-wrap" aria-label="次の宝石">
+        <span>NEXT</span>
+        <canvas id="next-canvas-top" width="26" height="60"></canvas>
+      </div>
+
+      <div class="portrait-hud-actions">
+        <button type="button" class="icon-btn" data-action="sound" aria-label="サウンド切替" title="サウンド">🔊</button>
+        <button type="button" class="icon-btn" data-action="pause" aria-label="一時停止または開始" title="ポーズ">⏯</button>
+        <button type="button" class="icon-btn" data-action="fullscreen" aria-label="全画面表示" title="全画面">⛶</button>
+        <button type="button" class="icon-btn" data-action="settings" aria-label="設定" title="設定">⚙</button>
+        <a class="icon-btn" href="./manual/index.html" target="_blank" rel="noopener" aria-label="オンラインマニュアル" title="マニュアル">📖</a>
+      </div>
+    </header>
+
+    <!-- Landscape Left Panel -->
+    <aside class="side-panel glass-card" aria-label="ゲーム情報パネル">
+      <div class="brand-block">
+        <h1 class="brand-title">BEAUTY 3-BLOCK</h1>
+        <div class="brand-sub">Jewel Columns Prototype</div>
+      </div>
+
+      <div class="panel-section">
+        <div class="section-label">
+          <span>NEXT</span>
+          <span class="preset-pill" data-bind="preset">Classic</span>
+        </div>
+        <div class="next-box">
+          <canvas id="next-canvas-side" width="68" height="150"></canvas>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <div class="section-label"><span>ACTIONS</span></div>
+        <div class="action-grid">
+          <button type="button" class="ui-btn" data-action="pause">
+            <span>⏯</span><span class="btn-label">PAUSE</span>
+          </button>
+          <button type="button" class="ui-btn" data-action="sound">
+            <span>🔊</span><span class="sound-state">ON</span>
+          </button>
+          <button type="button" class="ui-btn" data-action="fullscreen">
+            <span>⛶</span><span>FULL</span>
+          </button>
+          <button type="button" class="ui-btn" data-action="settings">
+            <span>⚙</span><span>OPT</span>
+          </button>
+          <a class="ui-btn full-span" href="./manual/index.html" target="_blank" rel="noopener">
+            <span>📖</span><span>オンラインマニュアル</span>
+          </a>
+          <button type="button" class="ui-btn full-span" data-action="install" hidden>
+            <span>📲</span><span>アプリをインストール</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Center Playfield -->
+    <section id="board-stage" class="board-stage" aria-label="ゲームボード">
+      <div id="board-frame" class="board-frame">
+        <canvas id="board-canvas"></canvas>
+
+        <div id="board-overlay" class="board-overlay">
+          <h2 id="overlay-title" class="overlay-title">BEAUTY 3-BLOCK</h2>
+          <p id="overlay-subtitle" class="overlay-sub">宝石を揃えて連鎖する、至高のコラムス体験</p>
+
+          <div id="overlay-stats" class="overlay-stats" hidden>
+            <div class="overlay-stat-item">
+              <small>SCORE</small>
+              <strong id="overlay-final-score">0</strong>
+            </div>
+            <div class="overlay-stat-item">
+              <small>MAX CHAIN</small>
+              <strong id="overlay-final-chain">0</strong>
+            </div>
+          </div>
+
+          <div class="overlay-actions">
+            <button type="button" id="btn-primary-play" class="ui-btn primary">GAME START</button>
+            <button type="button" id="btn-overlay-settings" class="ui-btn">⚙ 設定 / 難易度</button>
+            <button type="button" class="ui-btn" data-action="install" hidden>📲 アプリをインストール</button>
+            <a class="ui-btn" href="./manual/index.html" target="_blank" rel="noopener">📖 操作マニュアル</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Landscape Right Panel -->
+    <aside class="side-panel glass-card" aria-label="スコアと操作説明">
+      <div class="panel-section">
+        <div class="section-label"><span>SCORE</span></div>
+        <div class="stat-value accent" data-bind="score">0</div>
+        <div class="stat-row">
+          <span>BEST</span>
+          <strong data-bind="best">0</strong>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <div class="section-label"><span>STATUS</span></div>
+        <div class="stat-row">
+          <span>LEVEL</span>
+          <strong data-bind="level">1</strong>
+        </div>
+        <div class="stat-row">
+          <span>GEMS CLEARED</span>
+          <strong data-bind="gems">0</strong>
+        </div>
+        <div class="stat-row">
+          <span>MAX CHAIN</span>
+          <strong data-bind="chain">0</strong>
+        </div>
+      </div>
+
+      <div class="panel-section controls-guide">
+        <div class="section-label"><span>CONTROLS</span></div>
+        <div><kbd>←</kbd> <kbd>→</kbd> / <kbd>A</kbd> <kbd>D</kbd> 移動</div>
+        <div><kbd>↑</kbd> / <kbd>W</kbd> / <kbd>X</kbd> 宝石入替</div>
+        <div><kbd>↓</kbd> / <kbd>S</kbd> 高速落下</div>
+        <div><kbd>Space</kbd> ハードドロップ</div>
+        <div><kbd>P</kbd> ポーズ / <kbd>F</kbd> 全画面</div>
+        <div style="margin-top:6px; opacity:0.85;">タッチ: タップで入替 / スワイプで移動・下フリックで急降下</div>
+      </div>
+    </aside>
+
+    <!-- Portrait / Tablet Touch Gamepad -->
+    <nav class="touch-pad glass-card" aria-label="タッチ操作パッド">
+      <div class="pad-group">
+        <button type="button" class="game-btn" data-pad="left" aria-label="左へ移動">
+          <span>◀</span><small>LEFT</small>
+        </button>
+        <button type="button" class="game-btn" data-pad="down" aria-label="高速落下">
+          <span>▼</span><small>SOFT</small>
+        </button>
+        <button type="button" class="game-btn" data-pad="right" aria-label="右へ移動">
+          <span>▶</span><small>RIGHT</small>
+        </button>
+      </div>
+
+      <div class="pad-group">
+        <button type="button" class="game-btn drop-btn" data-pad="harddrop" aria-label="ハードドロップ">
+          <span>⤓</span><small>DROP</small>
+        </button>
+        <button type="button" class="game-btn rotate-btn" data-pad="rotate" aria-label="宝石を入れ替え">
+          <span>↻</span><small>SWAP</small>
+        </button>
+      </div>
+    </nav>
+  </main>
+
+  <!-- Settings Modal -->
+  <div id="settings-modal" class="modal-backdrop" hidden role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="modal-card glass-card">
+      <div class="modal-header">
+        <h2 id="settings-title">設定 / モード</h2>
+        <button type="button" class="icon-btn" data-close-modal="settings-modal" aria-label="閉じる">✕</button>
+      </div>
+      <div class="modal-body allow-scroll">
+        <div>
+          <div class="section-label"><span>難易度プリセット（次回開始から反映）</span></div>
+          <div class="preset-group">
+            <button type="button" class="preset-btn" data-preset="relax">Relax</button>
+            <button type="button" class="preset-btn" data-preset="classic">Classic</button>
+            <button type="button" class="preset-btn" data-preset="master">Master</button>
+          </div>
+        </div>
+
+        <label class="setting-row">
+          <span>サウンドエフェクト（効果音）</span>
+          <span class="switch">
+            <input type="checkbox" id="opt-sound" checked>
+            <span class="switch-slider"></span>
+          </span>
+        </label>
+
+        <label class="setting-row">
+          <span>落下位置ゴースト表示</span>
+          <span class="switch">
+            <input type="checkbox" id="opt-ghost" checked>
+            <span class="switch-slider"></span>
+          </span>
+        </label>
+
+        <label class="setting-row">
+          <span>プリズムジュエル（特殊全消し宝石）</span>
+          <span class="switch">
+            <input type="checkbox" id="opt-magic" checked>
+            <span class="switch-slider"></span>
+          </span>
+        </label>
+
+        <label class="setting-row">
+          <span>横画面でもタッチ操作ボタンを表示</span>
+          <span class="switch">
+            <input type="checkbox" id="opt-landpad">
+            <span class="switch-slider"></span>
+          </span>
+        </label>
+
+        <a class="ui-btn" href="./manual/index.html" target="_blank" rel="noopener">📖 オンラインマニュアルを開く</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- iOS Safari Fullscreen / Install Guide Modal -->
+  <div id="ios-modal" class="modal-backdrop" hidden role="dialog" aria-modal="true" aria-labelledby="ios-title">
+    <div class="modal-card glass-card">
+      <div class="modal-header">
+        <h2 id="ios-title">iOS / iPadOS 全画面プレイガイド</h2>
+        <button type="button" class="icon-btn" data-close-modal="ios-modal" aria-label="閉じる">✕</button>
+      </div>
+      <div class="modal-body allow-scroll">
+        <p style="margin:0;">
+          iPhone・iPad の Safari でアドレスバーを隠して<strong>完全な全画面アプリ</strong>として遊ぶには、「ホーム画面に追加」をご利用ください。
+        </p>
+        <ol style="margin:0; padding-left: 1.3em;">
+          <li>Safari のツールバーにある <strong>共有ボタン（□↑）</strong> をタップします。</li>
+          <li>メニューから <strong>「ホーム画面に追加」</strong> を選択します。</li>
+          <li>ホーム画面に追加された <strong>Beauty3Block</strong> アイコンから起動すると全画面で遊べます。</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- Smartphone Landscape Rotate Prompt -->
+  <div id="rotate-guard" class="rotate-guard" role="alert">
+    <div class="rotate-icon" aria-hidden="true">📱</div>
+    <h2 style="margin:0; font-size:1.25rem;">縦向きにしてお楽しみください</h2>
+    <p style="margin:0; color:var(--text-muted); font-size:0.9rem; max-width:280px;">
+      スマートフォンでは縦向き（ポートレート）表示に最適化されています。端末を縦に回転するとゲームを再開できます。
+    </p>
+  </div>
+</body>
+</html>

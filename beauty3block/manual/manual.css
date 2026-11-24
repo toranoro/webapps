@@ -1,0 +1,163 @@
+:root {
+  --bg: #080b1c;
+  --surface: rgba(18, 24, 56, 0.78);
+  --border: rgba(180, 210, 255, 0.2);
+  --text: #f3f6ff;
+  --muted: #a5b6e2;
+  --cyan: #5ce1ff;
+  --gold: #ffd166;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 24px 16px 56px;
+  font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'Yu Gothic UI', system-ui, sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 15% 10%, rgba(74, 144, 255, 0.22), transparent 42%),
+    radial-gradient(circle at 85% 90%, rgba(235, 35, 110, 0.18), transparent 45%),
+    linear-gradient(160deg, #070917 0%, #111738 60%, #1a0f30 100%);
+  line-height: 1.7;
+}
+
+.wrap {
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+.hero {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px 26px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+}
+
+.hero h1 {
+  margin: 0 0 4px;
+  font-size: 1.6rem;
+  background: linear-gradient(120deg, #fff 0%, #8ce8ff 55%, #ff85b3 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.hero p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #279eff 0%, #7d4cff 100%);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 20px 24px;
+  margin-bottom: 18px;
+}
+
+.card h2 {
+  margin: 0 0 12px;
+  font-size: 1.15rem;
+  color: var(--cyan);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 6px;
+}
+
+.card h3 {
+  margin: 14px 0 6px;
+  font-size: 0.98rem;
+  color: var(--gold);
+}
+
+.jewel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.jewel-item {
+  background: rgba(8, 12, 30, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.jewel-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 9px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+th {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+kbd {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+ul,
+ol {
+  margin: 6px 0;
+  padding-left: 1.35em;
+}
+
+.note {
+  background: rgba(92, 225, 255, 0.1);
+  border-left: 3px solid var(--cyan);
+  padding: 10px 14px;
+  border-radius: 0 10px 10px 0;
+  margin-top: 10px;
+  font-size: 0.88rem;
+}
