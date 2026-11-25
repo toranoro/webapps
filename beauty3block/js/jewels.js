@@ -315,7 +315,8 @@
       if (jewelId === null || jewelId === undefined) return;
 
       ctx.save();
-      ctx.globalAlpha = alpha * (ghost ? 0.26 : 1);
+      const sealed = timer > 0 && !ghost;
+      ctx.globalAlpha = alpha * (ghost ? 0.26 : sealed ? 0.78 : 1);
 
       const cx = x + cellSize * 0.5;
       const cy = y + cellSize * 0.5;
@@ -343,7 +344,12 @@
         }
       }
 
-      if (timer > 0 && !ghost) {
+      if (sealed) {
+        // Armored seal rim so players know it won't match until countdown reaches 0
+        ctx.strokeStyle = 'rgba(255, 209, 102, 0.75)';
+        ctx.lineWidth = Math.max(1.2, cellSize * 0.04);
+        ctx.strokeRect(x + cellSize * 0.1, y + cellSize * 0.1, cellSize * 0.8, cellSize * 0.8);
+        ctx.globalAlpha = alpha;
         this._drawTimerBadge(ctx, cx, cy, cellSize, timer, timeSec);
       }
 

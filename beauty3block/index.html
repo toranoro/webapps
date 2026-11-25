@@ -16,23 +16,23 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Beauty3Block">
-  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png?v=20261125-05">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png?v=20261125-06">
 
   <!-- Icons & PWA Manifest -->
-  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg?v=20261125-05">
-  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=20261125-05">
-  <link rel="manifest" href="./manifest.json?v=20261125-05">
+  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg?v=20261125-06">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=20261125-06">
+  <link rel="manifest" href="./manifest.json?v=20261125-06">
 
-  <link rel="stylesheet" href="./css/style.css?v=20261125-05">
+  <link rel="stylesheet" href="./css/style.css?v=20261125-06">
 
-  <script defer src="./js/version.js?v=20261125-05"></script>
-  <script defer src="./js/audio.js?v=20261125-05"></script>
-  <script defer src="./js/bgm-tracks.js?v=20261125-05"></script>
-  <script defer src="./js/bgm.js?v=20261125-05"></script>
-  <script defer src="./js/jewels.js?v=20261125-05"></script>
-  <script defer src="./js/engine.js?v=20261125-05"></script>
-  <script defer src="./js/pwa.js?v=20261125-05"></script>
-  <script defer src="./js/main.js?v=20261125-05"></script>
+  <script defer src="./js/version.js?v=20261125-06"></script>
+  <script defer src="./js/audio.js?v=20261125-06"></script>
+  <script defer src="./js/bgm-tracks.js?v=20261125-06"></script>
+  <script defer src="./js/bgm.js?v=20261125-06"></script>
+  <script defer src="./js/jewels.js?v=20261125-06"></script>
+  <script defer src="./js/engine.js?v=20261125-06"></script>
+  <script defer src="./js/pwa.js?v=20261125-06"></script>
+  <script defer src="./js/main.js?v=20261125-06"></script>
 </head>
 <body>
   <div class="bg-aurora" aria-hidden="true"></div>
@@ -118,7 +118,12 @@
     <section id="board-stage" class="board-stage" aria-label="ゲームボード">
       <div id="board-frame" class="board-frame">
         <canvas id="board-canvas"></canvas>
-        <div id="fx-layer" class="fx-layer" aria-hidden="true"></div>
+        <div id="fx-layer" class="fx-layer" aria-hidden="true">
+          <div id="fx-banner" class="fx-banner">
+            <div id="fx-main" class="fx-main"></div>
+            <div id="fx-sub" class="fx-sub"></div>
+          </div>
+        </div>
 
         <div id="board-overlay" class="board-overlay allow-scroll">
           <h2 id="overlay-title" class="overlay-title">BEAUTY 3-BLOCK</h2>

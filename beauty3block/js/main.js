@@ -71,7 +71,9 @@
     const boardStage = document.getElementById('board-stage');
     const boardFrame = document.getElementById('board-frame');
     const boardCanvas = document.getElementById('board-canvas');
-    const fxLayer = document.getElementById('fx-layer');
+    const fxBanner = document.getElementById('fx-banner');
+    const fxMain = document.getElementById('fx-main');
+    const fxSub = document.getElementById('fx-sub');
     const boardCtx = boardCanvas.getContext('2d');
 
     const nextCanvases = [
@@ -259,6 +261,7 @@
 
     function drawNextPreviews() {
       for (const cv of nextCanvases) {
+        if (cv.offsetParent === null) continue;
         const ctx = cv.getContext('2d');
         const boxW = cv.clientWidth || parseInt(cv.getAttribute('width'), 10) || 56;
         const boxH = cv.clientHeight || parseInt(cv.getAttribute('height'), 10) || 132;
@@ -339,9 +342,9 @@
         resizeBoard();
       }
 
-      // Clear DOM popup layer cleanly when returning to IDLE or starting fresh
-      if (fxLayer && (engine.state === 'IDLE' || engine.state === 'GAMEOVER')) {
-        fxLayer.innerHTML = '';
+      // Hide pooled banner cleanly when returning to IDLE or starting fresh
+      if (fxBanner && (engine.state === 'IDLE' || engine.state === 'GAMEOVER')) {
+        fxBanner.classList.remove('is-visible');
       }
 
       // Overlay visibility & text
@@ -1200,33 +1203,27 @@
       boardCtx.restore();
     }
 
+    let fxHideTimer = null;
     function spawnDomPopup(pop) {
-      if (!fxLayer || !pop) return;
-      while (fxLayer.childElementCount >= 5) {
-        fxLayer.removeChild(fxLayer.firstElementChild);
+      if (!fxBanner || !fxMain || !fxSub || !pop) return;
+      if (fxHideTimer) {
+        clearTimeout(fxHideTimer);
+        fxHideTimer = null;
       }
-      const el = document.createElement('div');
-      el.className = 'fx-toast';
-      const pctX = Math.min(82, Math.max(18, (pop.x / B3B.COLS) * 100));
-      const pctY = Math.min(88, Math.max(12, ((pop.y - B3B.BUFFER_ROWS) / B3B.VISIBLE_ROWS) * 100));
-      el.style.left = `${pctX}%`;
-      el.style.top = `${pctY}%`;
-
-      const mainLine = document.createElement('div');
-      mainLine.className = 'fx-toast-main';
-      mainLine.style.color = pop.color || '#ffffff';
-      mainLine.textContent = pop.text;
-      el.appendChild(mainLine);
-
+      fxMain.style.color = pop.color || '#ffffff';
+      fxMain.textContent = pop.text;
       if (pop.sub) {
-        const subLine = document.createElement('div');
-        subLine.className = 'fx-toast-sub';
-        subLine.textContent = pop.sub;
-        el.appendChild(subLine);
+        fxSub.textContent = pop.sub;
+        fxSub.hidden = false;
+      } else {
+        fxSub.textContent = '';
+        fxSub.hidden = true;
       }
-
-      el.addEventListener('animationend', () => el.remove(), { once: true });
-      fxLayer.appendChild(el);
+      fxBanner.classList.add('is-visible');
+      fxHideTimer = setTimeout(() => {
+        fxHideTimer = null;
+        fxBanner.classList.remove('is-visible');
+      }, 950);
     }
 
     // Main animation loop

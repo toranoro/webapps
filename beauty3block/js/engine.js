@@ -852,13 +852,21 @@
       for (let r = 0; r < ROWS; r++) {
         for (let c = 0; c < COLS; c++) {
           const id = this.board[r][c];
-          if (id === null || id >= maxNormal) continue;
+          // Sealed countdown obstacle blocks (timers > 0) cannot match until countdown reaches 0!
+          if (id === null || id >= maxNormal || this.timers[r][c] > 0) continue;
 
           for (const [dc, dr] of dirs) {
             const line = [[r, c]];
             let nr = r + dr;
             let nc = c + dc;
-            while (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && this.board[nr][nc] === id) {
+            while (
+              nr >= 0 &&
+              nr < ROWS &&
+              nc >= 0 &&
+              nc < COLS &&
+              this.board[nr][nc] === id &&
+              this.timers[nr][nc] === 0
+            ) {
               line.push([nr, nc]);
               nr += dr;
               nc += dc;
@@ -941,24 +949,24 @@
     }
 
     _tickCountdownGems() {
-      let poppedCount = 0;
+      let unlockedCount = 0;
       for (let r = 0; r < ROWS; r++) {
         for (let c = 0; c < COLS; c++) {
           const tm = this.timers[r][c];
           if (tm > 0 && this.board[r][c] !== null) {
             const nextTm = tm - 1;
             if (nextTm <= 0) {
-              const oldId = this.board[r][c];
-              this._spawnShards(c, r, oldId);
-              this.board[r][c] = null;
+              // Unlock back into its original colored jewel so pre-arranged lines can chain!
+              const jewelId = this.board[r][c];
               this.timers[r][c] = 0;
-              poppedCount++;
-              const bonus = 250 * this.level;
+              this._spawnShards(c, r, jewelId);
+              unlockedCount++;
+              const bonus = 100 * this.level;
               this.score += bonus;
               this.popups.push({
                 x: c + 0.5,
                 y: Math.max(BUFFER_ROWS + 0.8, r),
-                text: `TIME 0! +${bonus}`,
+                text: `UNLOCK! +${bonus}`,
                 sub: '',
                 life: 1.0,
                 color: '#ffd166'
@@ -969,10 +977,9 @@
           }
         }
       }
-      if (poppedCount > 0) {
-        this.gemsCleared += poppedCount;
+      if (unlockedCount > 0) {
         this._updateBest(true);
-        if (this.audio) this.audio.playMatch(2, poppedCount + 2);
+        if (this.audio) this.audio.playRotate();
       }
     }
 

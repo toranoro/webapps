@@ -317,7 +317,7 @@ body {
   touch-action: none;
 }
 
-/* Lightweight GPU-composited popup layer (replaces heavy Canvas fillText) */
+/* Single static pooled banner (zero DOM churn, zero GPU layer thrashing) */
 .fx-layer {
   position: absolute;
   inset: 6px;
@@ -327,44 +327,38 @@ body {
   z-index: 3;
 }
 
-.fx-toast {
+.fx-banner {
   position: absolute;
-  transform: translate(-50%, -50%);
+  left: 50%;
+  top: 12%;
+  transform: translateX(-50%);
   text-align: center;
   pointer-events: none;
   white-space: nowrap;
-  will-change: transform, opacity;
-  animation: fxToastRise 1.05s ease-out forwards;
-  text-shadow: 0 2px 6px rgba(4, 7, 18, 0.96);
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: rgba(8, 12, 32, 0.84);
+  border: 1px solid rgba(190, 215, 255, 0.28);
+  opacity: 0;
+  transition: opacity 0.14s ease;
 }
 
-.fx-toast-main {
-  font-size: clamp(14px, 4.2vw, 21px);
-  font-weight: 900;
+.fx-banner.is-visible {
+  opacity: 1;
+}
+
+.fx-main {
+  font-size: 1rem;
+  font-weight: 700;
   letter-spacing: 0.04em;
-  line-height: 1.1;
+  line-height: 1.15;
 }
 
-.fx-toast-sub {
-  font-size: clamp(10px, 2.8vw, 13px);
+.fx-sub {
+  font-size: 0.72rem;
   font-weight: 700;
   color: #d7e6ff;
-  margin-top: 2px;
-}
-
-@keyframes fxToastRise {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, -35%) scale(0.86);
-  }
-  16% {
-    opacity: 1;
-    transform: translate(-50%, -55%) scale(1.06);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -125%) scale(1);
-  }
+  margin-top: 1px;
 }
 
 /* Board Overlay (Start / Pause / Game Over) */
