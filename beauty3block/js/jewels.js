@@ -160,6 +160,41 @@
     constructor() {
       this.cache = new Map();
       this.cachedKey = '';
+      this.timerCache = new Map();
+      this.timerCacheKey = '';
+    }
+
+    _ensureTimerCache(cellPx) {
+      const rounded = Math.max(16, Math.min(128, Math.round(cellPx) || 32));
+      const key = String(rounded);
+      if (this.timerCacheKey === key && this.timerCache.size === 5) return;
+      this.timerCache.clear();
+      this.timerCacheKey = key;
+
+      for (let t = 1; t <= 5; t++) {
+        const cv = document.createElement('canvas');
+        cv.width = rounded;
+        cv.height = rounded;
+        const g = cv.getContext('2d');
+        const cx = rounded * 0.5;
+        const cy = rounded * 0.5;
+        const urgent = t <= 1;
+        const r = rounded * 0.27;
+        g.beginPath();
+        g.arc(cx, cy, r, 0, Math.PI * 2);
+        g.fillStyle = urgent ? 'rgba(220, 24, 65, 0.92)' : 'rgba(8, 12, 32, 0.88)';
+        g.fill();
+        g.lineWidth = Math.max(1.2, rounded * 0.04);
+        g.strokeStyle = urgent ? '#ffe066' : '#ffd166';
+        g.stroke();
+
+        g.fillStyle = '#ffffff';
+        g.font = `900 ${Math.max(10, Math.round(rounded * 0.42))}px system-ui, sans-serif`;
+        g.textAlign = 'center';
+        g.textBaseline = 'middle';
+        g.fillText(String(t), cx, cy + 0.5);
+        this.timerCache.set(t, cv);
+      }
     }
 
     _ensureCache(cellPx) {
@@ -323,24 +358,13 @@
     }
 
     _drawTimerBadge(ctx, cx, cy, size, timer, timeSec) {
+      this._ensureTimerCache(size);
+      const sprite = this.timerCache.get(timer);
+      if (!sprite) return;
       const urgent = timer <= 1;
-      const pulse = urgent ? 1 + 0.1 * Math.sin(timeSec * 12) : 1;
-      const r = size * 0.27 * pulse;
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.fillStyle = urgent ? 'rgba(220, 24, 65, 0.92)' : 'rgba(8, 12, 32, 0.86)';
-      ctx.fill();
-      ctx.lineWidth = Math.max(1.2, size * 0.04);
-      ctx.strokeStyle = urgent ? '#ffe066' : '#ffd166';
-      ctx.stroke();
-
-      ctx.fillStyle = '#ffffff';
-      ctx.font = `900 ${Math.max(10, Math.round(size * 0.42))}px system-ui, sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(String(timer), cx, cy + 0.5);
-      ctx.restore();
+      const pulse = urgent ? 1 + 0.09 * Math.sin(timeSec * 12) : 1;
+      const drawSize = size * pulse;
+      ctx.drawImage(sprite, cx - drawSize * 0.5, cy - drawSize * 0.5, drawSize, drawSize);
     }
 
     _drawWeightBlock(ctx, x, y, size) {

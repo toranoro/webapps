@@ -93,10 +93,24 @@
       }
     }
 
-    _saveBestScore() {
-      try {
-        global.localStorage.setItem('beauty3block_best_score', String(this.bestScore));
-      } catch (_) {}
+    _saveBestScore(immediate = false) {
+      if (this._saveTimer) {
+        clearTimeout(this._saveTimer);
+        this._saveTimer = null;
+      }
+      const write = () => {
+        try {
+          global.localStorage.setItem('beauty3block_best_score', String(this.bestScore));
+        } catch (_) {}
+      };
+      if (immediate) {
+        write();
+      } else {
+        this._saveTimer = setTimeout(() => {
+          this._saveTimer = null;
+          write();
+        }, 450);
+      }
     }
 
     _getJewelTypeCount() {
@@ -224,7 +238,7 @@
     }
 
     returnToTitle() {
-      this._saveBestScore();
+      this._saveBestScore(true);
       this.board = this._createEmptyGrid(null);
       this.timers = this._createEmptyGrid(0);
       this.active = null;
@@ -250,7 +264,7 @@
       if (this.state === 'PAUSED') {
         this.state = this.prevStateBeforePause || 'FALLING';
       } else {
-        this._saveBestScore();
+        this._saveBestScore(true);
         this.prevStateBeforePause = this.state;
         this.state = 'PAUSED';
         this.softDropping = false;
@@ -265,7 +279,7 @@
         this.state === 'GRAVITY' ||
         this.state === 'WEIGHT_CRUSH'
       ) {
-        this._saveBestScore();
+        this._saveBestScore(true);
         this.prevStateBeforePause = this.state;
         this.state = 'PAUSED';
         this.softDropping = false;
@@ -358,7 +372,7 @@
       this.active = null;
       this.weightState = null;
       this.softDropping = false;
-      this._saveBestScore();
+      this._saveBestScore(true);
       if (this.audio) this.audio.playGameOver();
       this._emitChange();
     }
@@ -1028,7 +1042,7 @@
       if (this.score > this.bestScore) {
         this.bestScore = this.score;
         if (persist) {
-          this._saveBestScore();
+          this._saveBestScore(false);
         }
       }
     }

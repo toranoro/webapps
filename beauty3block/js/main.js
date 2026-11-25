@@ -71,6 +71,7 @@
     const boardStage = document.getElementById('board-stage');
     const boardFrame = document.getElementById('board-frame');
     const boardCanvas = document.getElementById('board-canvas');
+    const fxLayer = document.getElementById('fx-layer');
     const boardCtx = boardCanvas.getContext('2d');
 
     const nextCanvases = [
@@ -336,6 +337,11 @@
       document.body.classList.toggle('state-idle', isIdle);
       if (wasIdle !== isIdle) {
         resizeBoard();
+      }
+
+      // Clear DOM popup layer cleanly when returning to IDLE or starting fresh
+      if (fxLayer && (engine.state === 'IDLE' || engine.state === 'GAMEOVER')) {
+        fxLayer.innerHTML = '';
       }
 
       // Overlay visibility & text
@@ -1199,32 +1205,6 @@
         boardCtx.restore();
       }
 
-      // Floating score, chain & LEVEL UP popups (fast fillText shadow — avoids mobile GPU strokeText stalls)
-      for (const pop of engine.popups) {
-        const px = Math.min(boardWidth - 42, Math.max(42, pop.x * cellSize));
-        const py = Math.max(24, (pop.y - B3B.BUFFER_ROWS) * cellSize);
-        boardCtx.save();
-        boardCtx.globalAlpha = Math.max(0, Math.min(1, pop.life * 1.2));
-        boardCtx.textAlign = 'center';
-        boardCtx.textBaseline = 'middle';
-        const fontSize = Math.max(13, Math.round(cellSize * 0.44));
-        boardCtx.font = `800 ${fontSize}px system-ui, -apple-system, sans-serif`;
-        boardCtx.fillStyle = 'rgba(5, 8, 22, 0.9)';
-        boardCtx.fillText(pop.text, px, py + 2);
-        boardCtx.fillStyle = pop.color || '#ffffff';
-        boardCtx.fillText(pop.text, px, py);
-
-        if (pop.sub) {
-          const subSize = Math.max(10, Math.round(cellSize * 0.3));
-          boardCtx.font = `700 ${subSize}px system-ui, -apple-system, sans-serif`;
-          boardCtx.fillStyle = 'rgba(5, 8, 22, 0.9)';
-          boardCtx.fillText(pop.sub, px, py + fontSize * 0.85 + 1.5);
-          boardCtx.fillStyle = '#d7e6ff';
-          boardCtx.fillText(pop.sub, px, py + fontSize * 0.85);
-        }
-        boardCtx.restore();
-      }
-
       // Board-wide prism flash
       if (engine.boardFlash > 0) {
         boardCtx.fillStyle = `rgba(255, 255, 255, ${engine.boardFlash * 0.25})`;
@@ -1232,6 +1212,35 @@
       }
 
       boardCtx.restore();
+    }
+
+    function spawnDomPopup(pop) {
+      if (!fxLayer || !pop) return;
+      while (fxLayer.childElementCount >= 5) {
+        fxLayer.removeChild(fxLayer.firstElementChild);
+      }
+      const el = document.createElement('div');
+      el.className = 'fx-toast';
+      const pctX = Math.min(82, Math.max(18, (pop.x / B3B.COLS) * 100));
+      const pctY = Math.min(88, Math.max(12, ((pop.y - B3B.BUFFER_ROWS) / B3B.VISIBLE_ROWS) * 100));
+      el.style.left = `${pctX}%`;
+      el.style.top = `${pctY}%`;
+
+      const mainLine = document.createElement('div');
+      mainLine.className = 'fx-toast-main';
+      mainLine.style.color = pop.color || '#ffffff';
+      mainLine.textContent = pop.text;
+      el.appendChild(mainLine);
+
+      if (pop.sub) {
+        const subLine = document.createElement('div');
+        subLine.className = 'fx-toast-sub';
+        subLine.textContent = pop.sub;
+        el.appendChild(subLine);
+      }
+
+      el.addEventListener('animationend', () => el.remove(), { once: true });
+      fxLayer.appendChild(el);
     }
 
     // Main animation loop
@@ -1257,6 +1266,11 @@
         }
 
         engine.update(dt);
+
+        // Drain popups into GPU-composited DOM toasts (zero Canvas fillText calls!)
+        while (engine.popups.length > 0) {
+          spawnDomPopup(engine.popups.shift());
+        }
 
         if (engine.score !== hudScoreCache) {
           hudScoreCache = engine.score;
