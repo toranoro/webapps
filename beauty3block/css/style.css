@@ -79,7 +79,7 @@ body {
   align-items: center;
   justify-items: center;
   gap: 14px;
-  max-width: 1120px;
+  max-width: 1180px;
   margin: 0 auto;
 }
 
@@ -630,12 +630,12 @@ body {
   border-color: rgba(120, 220, 255, 0.38);
 }
 
-/* Optional Touch Pad in Tablet Landscape */
-body.show-landscape-pad .app-shell {
+/* Optional Touch Pad (when enabled in Settings) */
+body.show-touch-pad .app-shell {
   grid-template-rows: 1fr auto;
 }
 
-body.show-landscape-pad .touch-pad {
+body.show-touch-pad .touch-pad {
   display: flex;
   grid-column: 1 / -1;
   justify-self: center;
@@ -673,15 +673,19 @@ body.show-landscape-pad .touch-pad {
   }
 
   .touch-pad {
-    display: flex;
+    display: none;
     flex: 0 0 auto;
     margin: 0 auto;
+  }
+
+  body.show-touch-pad .touch-pad {
+    display: flex;
   }
 
   /* Clean Title-only view on mobile/portrait before GAME START */
   body.state-idle .portrait-top-hud,
   body.state-idle .touch-pad {
-    display: none;
+    display: none !important;
   }
 
   body.state-idle .board-frame {

@@ -37,7 +37,7 @@
       ghost: saved && typeof saved.ghost === 'boolean' ? saved.ghost : true,
       magicEnabled: saved && typeof saved.magicEnabled === 'boolean' ? saved.magicEnabled : true,
       preset: saved && B3B.PRESETS[saved.preset] ? saved.preset : 'classic',
-      showPadInLandscape: saved && typeof saved.showPadInLandscape === 'boolean' ? saved.showPadInLandscape : false
+      showTouchPad: saved && typeof saved.showTouchPad === 'boolean' ? saved.showTouchPad : false
     };
 
     audio.setEnabled(appSettings.sound);
@@ -184,19 +184,6 @@
         g.lineTo(boardWidth, y);
         g.stroke();
       }
-
-      // Subtle 3-zone tap divider ticks (top: CW, middle: swap, bottom: CCW)
-      g.save();
-      g.strokeStyle = 'rgba(120, 220, 255, 0.16)';
-      g.setLineDash([4, 6]);
-      [boardHeight / 3, (boardHeight * 2) / 3].forEach((zy) => {
-        const y = Math.round(zy) + 0.5;
-        g.beginPath();
-        g.moveTo(4, y);
-        g.lineTo(boardWidth - 4, y);
-        g.stroke();
-      });
-      g.restore();
 
       bgCacheCanvas = cv;
       bgCacheKey = key;
@@ -396,9 +383,9 @@
       if (toggleSoundInput) toggleSoundInput.checked = appSettings.sound;
       if (toggleGhostInput) toggleGhostInput.checked = appSettings.ghost;
       if (toggleMagicInput) toggleMagicInput.checked = appSettings.magicEnabled;
-      if (toggleLandPadInput) toggleLandPadInput.checked = appSettings.showPadInLandscape;
+      if (toggleLandPadInput) toggleLandPadInput.checked = appSettings.showTouchPad;
 
-      document.body.classList.toggle('show-landscape-pad', appSettings.showPadInLandscape);
+      document.body.classList.toggle('show-touch-pad', appSettings.showTouchPad);
 
       presetButtons.forEach((btn) => {
         btn.classList.toggle('is-active', btn.dataset.preset === appSettings.preset);
@@ -662,7 +649,7 @@
     }
     if (toggleLandPadInput) {
       toggleLandPadInput.addEventListener('change', () => {
-        appSettings.showPadInLandscape = toggleLandPadInput.checked;
+        appSettings.showTouchPad = toggleLandPadInput.checked;
         saveSettings(appSettings);
         syncSettingsUI();
         setTimeout(resizeBoard, 40);
@@ -859,8 +846,22 @@
       () => engine.setSoftDrop(false)
     );
 
-    // Direct Intuitive Touch & Mouse Gestures on Playfield Canvas
+    // Direct Touch & Mouse Gestures on Playfield Canvas:
+    // - Left/Right flick/slide: Move
+    // - Single Tap anywhere: Cycle/swap gems
+    // - Double Tap anywhere: Rotate block 90° CW
+    // - Down flick: Soft drop nudge ("少しだけ")
+    // - Double Down flick ("シュッシュッ"): Hard drop
     let gestureState = null;
+    let pendingTapTimer = null;
+    let lastDownFlickTime = 0;
+
+    function clearPendingTap() {
+      if (pendingTapTimer) {
+        clearTimeout(pendingTapTimer);
+        pendingTapTimer = null;
+      }
+    }
 
     function beginGesture(clientX, clientY) {
       if (engine.state !== 'FALLING') return;
@@ -872,18 +873,20 @@
         startTime: performance.now(),
         movedHoriz: false,
         movedDown: false,
-        rotatedUp: false,
-        softActive: false
+        softActive: false,
+        hardDropped: false
       };
     }
 
     function moveGesture(clientX, clientY) {
       if (!gestureState) return;
+      const now = performance.now();
       const dxStep = clientX - gestureState.lastStepX;
       const totalDy = clientY - gestureState.startY;
       const stepThreshold = Math.max(18, cellSize * 0.72);
 
       if (Math.abs(dxStep) >= stepThreshold) {
+        clearPendingTap();
         const steps = Math.trunc(dxStep / stepThreshold);
         const dir = steps > 0 ? 1 : -1;
         for (let i = 0; i < Math.abs(steps); i++) {
@@ -893,14 +896,18 @@
         gestureState.movedHoriz = true;
       }
 
-      if (!gestureState.rotatedUp && !gestureState.movedHoriz && totalDy <= -Math.max(24, cellSize * 0.72)) {
-        gestureState.rotatedUp = true;
-        engine.rotateBlock(true);
-      }
-
-      if (totalDy >= cellSize * 0.85 && !gestureState.movedHoriz && !gestureState.rotatedUp) {
+      if (!gestureState.movedHoriz && !gestureState.hardDropped && totalDy >= Math.max(22, cellSize * 0.65)) {
         gestureState.movedDown = true;
-        if (!gestureState.softActive) {
+        // 2nd quick downward flick ("シュッシュッ") -> instant Hard Drop
+        if (now - lastDownFlickTime <= 420 && !gestureState.softActive) {
+          clearPendingTap();
+          gestureState.hardDropped = true;
+          lastDownFlickTime = 0;
+          engine.hardDrop();
+          return;
+        }
+        // Continuous drag-down hold -> Soft Drop while held
+        if (now - gestureState.startTime >= 150 && !gestureState.softActive) {
           gestureState.softActive = true;
           engine.setSoftDrop(true);
         }
@@ -909,7 +916,8 @@
 
     function endGesture(clientX, clientY) {
       if (!gestureState) return;
-      const elapsed = performance.now() - gestureState.startTime;
+      const now = performance.now();
+      const elapsed = now - gestureState.startTime;
       const totalDx = clientX - gestureState.startX;
       const totalDy = clientY - gestureState.startY;
 
@@ -917,29 +925,40 @@
         engine.setSoftDrop(false);
       }
 
-      const isQuickFlickDown =
-        !gestureState.rotatedUp &&
-        totalDy > Math.max(38, cellSize * 1.15) &&
-        elapsed < 220 &&
-        Math.abs(totalDx) < cellSize * 1.2;
-      const isTap =
-        !gestureState.movedHoriz &&
-        !gestureState.movedDown &&
-        !gestureState.rotatedUp &&
-        Math.hypot(totalDx, totalDy) < 14 &&
-        elapsed < 320;
+      if (!gestureState.hardDropped) {
+        const isDownFlick =
+          !gestureState.movedHoriz &&
+          !gestureState.softActive &&
+          totalDy >= Math.max(20, cellSize * 0.6) &&
+          elapsed < 280;
 
-      if (isQuickFlickDown) {
-        engine.hardDrop();
-      } else if (isTap) {
-        const rect = boardCanvas.getBoundingClientRect();
-        const relY = rect.height > 0 ? (clientY - rect.top) / rect.height : 0.5;
-        if (relY < 1 / 3) {
-          engine.rotateBlock(true); // Top 1/3: Clockwise 90°
-        } else if (relY > 2 / 3) {
-          engine.rotateBlock(false); // Bottom 1/3: Counter-Clockwise 90°
-        } else {
-          engine.cycleGems(false); // Middle 1/3: Swap gems
+        const isTap =
+          !gestureState.movedHoriz &&
+          !gestureState.movedDown &&
+          Math.hypot(totalDx, totalDy) < 14 &&
+          elapsed < 300;
+
+        if (isDownFlick) {
+          clearPendingTap();
+          if (now - lastDownFlickTime <= 420) {
+            lastDownFlickTime = 0;
+            engine.hardDrop();
+          } else {
+            lastDownFlickTime = now;
+            engine.nudgeDown(1.5);
+          }
+        } else if (isTap) {
+          if (pendingTapTimer) {
+            // Double Tap -> Rotate block 90° clockwise
+            clearPendingTap();
+            engine.rotateBlock(true);
+          } else {
+            // Single Tap -> Swap/cycle gems after short double-tap window
+            pendingTapTimer = setTimeout(() => {
+              pendingTapTimer = null;
+              engine.cycleGems(false);
+            }, 210);
+          }
         }
       }
 
@@ -1000,12 +1019,13 @@
       const bg = ensureBgCache();
       boardCtx.drawImage(bg, 0, 0, boardWidth, boardHeight);
 
-      // Spawn warning highlight at top row of spawn column (col 2)
-      const dangerOccupied = engine.board[B3B.BUFFER_ROWS + 1][2] !== null;
+      // Spawn warning highlight at top row of spawn column
+      const spawnCol = B3B.SPAWN_COL ?? 3;
+      const dangerOccupied = engine.board[B3B.BUFFER_ROWS + 1][spawnCol] !== null;
       if (dangerOccupied) {
         const pulse = 0.25 + 0.2 * Math.sin(engine.timeSec * 8);
         boardCtx.fillStyle = `rgba(255, 70, 110, ${pulse})`;
-        boardCtx.fillRect(2 * cellSize, 0, cellSize, cellSize);
+        boardCtx.fillRect(spawnCol * cellSize, 0, cellSize, cellSize);
       }
 
       // Hard drop light trails

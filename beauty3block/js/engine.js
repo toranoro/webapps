@@ -2,11 +2,11 @@
   'use strict';
   const B3B = (global.Beauty3Block = global.Beauty3Block || {});
 
-  const COLS = 6;
+  const COLS = 8;
   const VISIBLE_ROWS = 13;
   const BUFFER_ROWS = 3;
   const ROWS = VISIBLE_ROWS + BUFFER_ROWS; // 16 total
-  const SPAWN_COL = 2;
+  const SPAWN_COL = 3;
 
   const PRESETS = {
     relax: { label: 'Relax', baseSpeed: 0.45, speedStep: 0.18, jewelTypes: 5 },
@@ -480,6 +480,22 @@
 
     setSoftDrop(enabled) {
       this.softDropping = Boolean(enabled);
+    }
+
+    nudgeDown(rows = 1.5) {
+      if (this.state !== 'FALLING' || !this.active) return false;
+      const maxValidY = this.getGhostPivotRow();
+      if (maxValidY === null) return false;
+      const prevFloor = Math.floor(this.active.y);
+      const nextY = Math.min(maxValidY, this.active.y + Math.max(0.5, rows));
+      if (nextY <= this.active.y) return false;
+      this.active.y = nextY;
+      const rFloor = Math.floor(this.active.y);
+      if (rFloor > prevFloor) {
+        this.score += rFloor - prevFloor;
+      }
+      if (this.audio) this.audio.playMove();
+      return true;
     }
 
     hardDrop() {
@@ -1155,6 +1171,7 @@
   }
 
   B3B.COLS = COLS;
+  B3B.SPAWN_COL = SPAWN_COL;
   B3B.VISIBLE_ROWS = VISIBLE_ROWS;
   B3B.BUFFER_ROWS = BUFFER_ROWS;
   B3B.ROWS = ROWS;
