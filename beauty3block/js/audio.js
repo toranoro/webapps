@@ -61,6 +61,12 @@
 
         osc.connect(gain);
         gain.connect(this.ctx.destination);
+        osc.onended = () => {
+          try {
+            osc.disconnect();
+            gain.disconnect();
+          } catch (_) {}
+        };
         osc.start(t0);
         osc.stop(t0 + duration + 0.01);
       } catch (_) {

@@ -284,20 +284,35 @@
         ctx.setTransform(localDpr, 0, 0, localDpr, 0, 0);
         ctx.clearRect(0, 0, boxW, boxH);
 
-        const gemSize = Math.min(boxW * 0.78, (boxH - 8) / 3);
-        const startX = (boxW - gemSize) * 0.5;
-        const startY = (boxH - gemSize * 3) * 0.5;
         const triplet = engine.nextTriplet || [0, 1, 2];
+        const timers = engine.nextTimers || [0, 0, 0];
 
-        for (let i = 0; i < 3; i++) {
+        if (engine.nextIsSingle) {
+          const singleSize = Math.min(boxW * 0.85, boxH * 0.45);
           renderer.drawJewel(
             ctx,
-            triplet[i],
-            startX,
-            startY + i * gemSize,
-            gemSize,
-            engine.timeSec
+            triplet[0],
+            (boxW - singleSize) * 0.5,
+            (boxH - singleSize) * 0.5,
+            singleSize,
+            engine.timeSec,
+            { mirrorColor: engine.nextMirrorColor || 0 }
           );
+        } else {
+          const gemSize = Math.min(boxW * 0.78, (boxH - 8) / 3);
+          const startX = (boxW - gemSize) * 0.5;
+          const startY = (boxH - gemSize * 3) * 0.5;
+          for (let i = 0; i < 3; i++) {
+            renderer.drawJewel(
+              ctx,
+              triplet[i],
+              startX,
+              startY + i * gemSize,
+              gemSize,
+              engine.timeSec,
+              { timer: timers[i] || 0 }
+            );
+          }
         }
       }
     }
@@ -1030,18 +1045,35 @@
 
           const x = c * cellSize;
           const y = (r - B3B.BUFFER_ROWS) * cellSize;
+          const tm = engine.timers[r]?.[c] || 0;
 
           if (matchedMap.has(`${r},${c}`)) {
-            const prog = engine.flashTimer / engine.flashDuration;
-            const pulse = 0.5 + 0.5 * Math.sin(prog * Math.PI * 6);
-            const scale = 1 + 0.12 * Math.sin(prog * Math.PI);
-            renderer.drawJewel(boardCtx, id, x, y, cellSize, engine.timeSec, {
-              scale,
-              flash: pulse * 0.78,
-              alpha: 1 - prog * 0.35
-            });
+            const prog = Math.min(1, engine.flashTimer / Math.max(0.01, engine.flashDuration));
+            if (prog < 0.65) {
+              // Phase 1: Anticipation charge-up ("タメ") — swell & tremble
+              const charge = prog / 0.65;
+              const jx = Math.sin(engine.timeSec * 55 + r * 2 + c) * (1.4 * charge);
+              const jy = Math.cos(engine.timeSec * 48 + c * 3) * (1.1 * charge);
+              const scale = 1 + 0.14 * charge;
+              const pulse = (0.35 + 0.35 * Math.sin(charge * Math.PI * 6)) * (engine.flashKind === 'BOMB' ? 1.1 : 0.85);
+              renderer.drawJewel(boardCtx, id, x + jx, y + jy, cellSize, engine.timeSec, {
+                scale,
+                flash: pulse,
+                timer: tm
+              });
+            } else {
+              // Phase 2: Release & pop ("パァン！")
+              const rel = (prog - 0.65) / 0.35;
+              const scale = 1.14 * (1 - rel * 0.55);
+              renderer.drawJewel(boardCtx, id, x, y, cellSize, engine.timeSec, {
+                scale,
+                flash: 0.92 * (1 - rel * 0.4),
+                alpha: 1 - rel * 0.7,
+                timer: tm
+              });
+            }
           } else {
-            renderer.drawJewel(boardCtx, id, x, y, cellSize, engine.timeSec);
+            renderer.drawJewel(boardCtx, id, x, y, cellSize, engine.timeSec, { timer: tm });
           }
         }
       }
@@ -1055,17 +1087,37 @@
           if (curR >= B3B.BUFFER_ROWS - 1) {
             const x = fp.c * cellSize;
             const y = (curR - B3B.BUFFER_ROWS) * cellSize;
-            renderer.drawJewel(boardCtx, fp.id, x, y, cellSize, engine.timeSec);
+            renderer.drawJewel(boardCtx, fp.id, x, y, cellSize, engine.timeSec, {
+              timer: fp.timer || 0
+            });
           }
         }
       }
 
-      // Ghost preview & Active triplet
+      // Weight Support Block crushing down column
+      if (engine.state === 'WEIGHT_CRUSH' && engine.weightState) {
+        const ws = engine.weightState;
+        const interp = Math.min(1, ws.stepTimer / 0.065);
+        const curR = ws.r + interp * 0.5;
+        if (curR >= B3B.BUFFER_ROWS - 1) {
+          renderer.drawJewel(
+            boardCtx,
+            B3B.SUPPORT_WEIGHT,
+            ws.col * cellSize,
+            (curR - B3B.BUFFER_ROWS) * cellSize,
+            cellSize,
+            engine.timeSec,
+            { scale: 1.08 }
+          );
+        }
+      }
+
+      // Ghost preview & Active triplet / support block
       if (engine.active && (engine.state === 'FALLING' || engine.state === 'PAUSED')) {
         const act = engine.active;
         const ghostPivot = engine.getGhostPivotRow();
         if (engine.settings.ghost && ghostPivot !== null && ghostPivot > act.y + 0.3) {
-          const ghostCells = engine.getActiveCells(act.col, ghostPivot, act.ori, act.gems);
+          const ghostCells = engine.getActiveCells(act.col, ghostPivot, act.ori, act.gems, act.isSingle, act.timers);
           for (const gc of ghostCells) {
             if (gc.r >= B3B.BUFFER_ROWS && gc.c >= 0 && gc.c < B3B.COLS) {
               renderer.drawJewel(
@@ -1075,14 +1127,14 @@
                 (gc.r - B3B.BUFFER_ROWS) * cellSize,
                 cellSize,
                 engine.timeSec,
-                { ghost: true }
+                { ghost: true, mirrorColor: act.mirrorColor || 0 }
               );
             }
           }
         }
 
-        // Active 3-gem bar (supports vertical and horizontal orientations)
-        const activeCells = engine.getActiveCells(act.col, act.y, act.ori, act.gems);
+        // Active 3-gem bar or 1x1 support block
+        const activeCells = engine.getActiveCells(act.col, act.y, act.ori, act.gems, act.isSingle, act.timers);
         let minCol = B3B.COLS - 1;
         let maxCol = 0;
         for (const ac of activeCells) {
@@ -1093,7 +1145,9 @@
             const y = (ac.r - B3B.BUFFER_ROWS) * cellSize;
             const rotScale = act.rotateAnim > 0 ? 1 + 0.08 * Math.sin(act.rotateAnim * Math.PI) : 1;
             renderer.drawJewel(boardCtx, ac.id, x, y, cellSize, engine.timeSec, {
-              scale: rotScale
+              scale: rotScale,
+              timer: ac.timer || 0,
+              mirrorColor: act.mirrorColor || 0
             });
           }
         }
@@ -1125,9 +1179,9 @@
         boardCtx.restore();
       }
 
-      // Floating score & chain popups
+      // Floating score, chain & LEVEL UP popups (fast fillText shadow — avoids mobile GPU strokeText stalls)
       for (const pop of engine.popups) {
-        const px = Math.min(boardWidth - 36, Math.max(36, pop.x * cellSize));
+        const px = Math.min(boardWidth - 42, Math.max(42, pop.x * cellSize));
         const py = Math.max(24, (pop.y - B3B.BUFFER_ROWS) * cellSize);
         boardCtx.save();
         boardCtx.globalAlpha = Math.max(0, Math.min(1, pop.life * 1.2));
@@ -1135,16 +1189,16 @@
         boardCtx.textBaseline = 'middle';
         const fontSize = Math.max(13, Math.round(cellSize * 0.44));
         boardCtx.font = `800 ${fontSize}px system-ui, -apple-system, sans-serif`;
-        boardCtx.lineWidth = 4;
-        boardCtx.strokeStyle = 'rgba(9, 11, 26, 0.88)';
-        boardCtx.strokeText(pop.text, px, py);
+        boardCtx.fillStyle = 'rgba(5, 8, 22, 0.9)';
+        boardCtx.fillText(pop.text, px, py + 2);
         boardCtx.fillStyle = pop.color || '#ffffff';
         boardCtx.fillText(pop.text, px, py);
 
         if (pop.sub) {
           const subSize = Math.max(10, Math.round(cellSize * 0.3));
           boardCtx.font = `700 ${subSize}px system-ui, -apple-system, sans-serif`;
-          boardCtx.strokeText(pop.sub, px, py + fontSize * 0.85);
+          boardCtx.fillStyle = 'rgba(5, 8, 22, 0.9)';
+          boardCtx.fillText(pop.sub, px, py + fontSize * 0.85 + 1.5);
           boardCtx.fillStyle = '#d7e6ff';
           boardCtx.fillText(pop.sub, px, py + fontSize * 0.85);
         }
@@ -1195,7 +1249,7 @@
         }
 
         renderBoard();
-        if (engine.nextIsMagic) {
+        if (engine.nextIsMagic || engine.nextIsSingle) {
           drawNextPreviews();
         }
       } catch (_) {

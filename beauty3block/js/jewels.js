@@ -78,6 +78,14 @@
   ];
 
   const MAGIC_ID = 6;
+  const SUPPORT_WEIGHT = 10;
+  const SUPPORT_MIRROR = 11;
+  const SUPPORT_ROD = 12;
+  const SUPPORT_BOMB = 13;
+
+  function isSupportId(id) {
+    return id >= SUPPORT_WEIGHT && id <= SUPPORT_BOMB;
+  }
 
   function makePolygonPoints(cx, cy, r, cut, scale = 1) {
     const s = r * scale;
@@ -268,7 +276,7 @@
     }
 
     drawJewel(ctx, jewelId, x, y, cellSize, timeSec = 0, options = {}) {
-      const { alpha = 1, scale = 1, flash = 0, ghost = false } = options;
+      const { alpha = 1, scale = 1, flash = 0, ghost = false, timer = 0, mirrorColor = 0 } = options;
       if (jewelId === null || jewelId === undefined) return;
 
       ctx.save();
@@ -284,12 +292,24 @@
 
       if (jewelId === MAGIC_ID) {
         this._drawMagicJewel(ctx, x, y, cellSize, timeSec, ghost);
+      } else if (jewelId === SUPPORT_WEIGHT) {
+        this._drawWeightBlock(ctx, x, y, cellSize, timeSec);
+      } else if (jewelId === SUPPORT_MIRROR) {
+        this._drawMirrorBlock(ctx, x, y, cellSize, timeSec, mirrorColor);
+      } else if (jewelId === SUPPORT_ROD) {
+        this._drawRodBlock(ctx, x, y, cellSize, timeSec);
+      } else if (jewelId === SUPPORT_BOMB) {
+        this._drawBombBlock(ctx, x, y, cellSize, timeSec);
       } else {
         this._ensureCache(cellSize);
         const sprite = this.cache.get(jewelId);
         if (sprite) {
           ctx.drawImage(sprite, x, y, cellSize, cellSize);
         }
+      }
+
+      if (timer > 0 && !ghost) {
+        this._drawTimerBadge(ctx, cx, cy, cellSize, timer, timeSec);
       }
 
       if (flash > 0) {
@@ -302,6 +322,207 @@
       ctx.restore();
     }
 
+    _drawTimerBadge(ctx, cx, cy, size, timer, timeSec) {
+      const urgent = timer <= 1;
+      const pulse = urgent ? 1 + 0.1 * Math.sin(timeSec * 12) : 1;
+      const r = size * 0.27 * pulse;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fillStyle = urgent ? 'rgba(220, 24, 65, 0.92)' : 'rgba(8, 12, 32, 0.86)';
+      ctx.fill();
+      ctx.lineWidth = Math.max(1.2, size * 0.04);
+      ctx.strokeStyle = urgent ? '#ffe066' : '#ffd166';
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `900 ${Math.max(10, Math.round(size * 0.42))}px system-ui, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(timer), cx, cy + 0.5);
+      ctx.restore();
+    }
+
+    _drawWeightBlock(ctx, x, y, size) {
+      const cx = x + size * 0.5;
+      const cy = y + size * 0.5;
+      const r = size * 0.42;
+
+      ctx.save();
+      // Heavy obsidian-gold trapezoid weight silhouette
+      const pts = [
+        [cx - r * 0.62, cy - r * 0.78],
+        [cx + r * 0.62, cy - r * 0.78],
+        [cx + r * 0.96, cy + r * 0.85],
+        [cx - r * 0.96, cy + r * 0.85]
+      ];
+      tracePoly(ctx, pts);
+      const grad = ctx.createLinearGradient(x, y, x + size, y + size);
+      grad.addColorStop(0, '#ffd875');
+      grad.addColorStop(0.35, '#4b5563');
+      grad.addColorStop(1, '#111827');
+      ctx.fillStyle = grad;
+      ctx.fill();
+      ctx.strokeStyle = '#ffd166';
+      ctx.lineWidth = Math.max(1.4, size * 0.045);
+      ctx.stroke();
+
+      // Top ring handle
+      ctx.beginPath();
+      ctx.arc(cx, cy - r * 0.82, r * 0.22, Math.PI, 0);
+      ctx.strokeStyle = '#ffd166';
+      ctx.stroke();
+
+      // Down arrow emblem
+      ctx.fillStyle = '#ffd166';
+      ctx.beginPath();
+      ctx.moveTo(cx, cy + r * 0.52);
+      ctx.lineTo(cx - r * 0.36, cy + r * 0.04);
+      ctx.lineTo(cx - r * 0.14, cy + r * 0.04);
+      ctx.lineTo(cx - r * 0.14, cy - r * 0.42);
+      ctx.lineTo(cx + r * 0.14, cy - r * 0.42);
+      ctx.lineTo(cx + r * 0.14, cy + r * 0.04);
+      ctx.lineTo(cx + r * 0.36, cy + r * 0.04);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    _drawMirrorBlock(ctx, x, y, size, timeSec, colorId = 0) {
+      const def = JEWEL_DEFS[colorId] || JEWEL_DEFS[0];
+      const cx = x + size * 0.5;
+      const cy = y + size * 0.5;
+      const r = size * 0.42;
+
+      ctx.save();
+      // Silver mirror bezel
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      const bezelGrad = ctx.createLinearGradient(x, y, x + size, y + size);
+      bezelGrad.addColorStop(0, '#ffffff');
+      bezelGrad.addColorStop(0.5, '#cbd5e1');
+      bezelGrad.addColorStop(1, '#475569');
+      ctx.fillStyle = bezelGrad;
+      ctx.fill();
+
+      // Colored jewel mirror surface
+      ctx.beginPath();
+      ctx.arc(cx, cy, r * 0.78, 0, Math.PI * 2);
+      const orbGrad = ctx.createRadialGradient(cx - r * 0.25, cy - r * 0.25, r * 0.05, cx, cy, r * 0.85);
+      orbGrad.addColorStop(0, '#ffffff');
+      orbGrad.addColorStop(0.32, def.light);
+      orbGrad.addColorStop(0.75, def.mid);
+      orbGrad.addColorStop(1, def.dark);
+      ctx.fillStyle = orbGrad;
+      ctx.fill();
+
+      // Shimmering diagonal reflection streak
+      const sweep = Math.sin(timeSec * 3.5) * r * 0.1;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.78)';
+      ctx.lineWidth = Math.max(1.5, size * 0.04);
+      ctx.beginPath();
+      ctx.arc(cx, cy, r * 0.52, -2.4 + sweep * 0.05, -1.2 + sweep * 0.05);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.lineWidth = Math.max(1.2, size * 0.03);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    _drawRodBlock(ctx, x, y, size, timeSec) {
+      const cx = x + size * 0.5;
+      const cy = y + size * 0.5;
+      const r = size * 0.42;
+
+      ctx.save();
+      // Royal violet crystal backing
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      const bg = ctx.createRadialGradient(cx, cy, r * 0.1, cx, cy, r);
+      bg.addColorStop(0, '#f0abfc');
+      bg.addColorStop(0.55, '#7e22ce');
+      bg.addColorStop(1, '#2e1065');
+      ctx.fillStyle = bg;
+      ctx.fill();
+      ctx.strokeStyle = '#fde047';
+      ctx.lineWidth = Math.max(1.3, size * 0.035);
+      ctx.stroke();
+
+      // Diagonal golden wand + glowing 4-point star tip
+      ctx.strokeStyle = '#ffd166';
+      ctx.lineWidth = Math.max(2, size * 0.07);
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(cx - r * 0.48, cy + r * 0.48);
+      ctx.lineTo(cx + r * 0.22, cy - r * 0.22);
+      ctx.stroke();
+
+      const sx = cx + r * 0.28;
+      const sy = cy - r * 0.28;
+      const sr = r * (0.36 + 0.05 * Math.sin(timeSec * 6));
+      ctx.fillStyle = '#fffbeb';
+      ctx.beginPath();
+      for (let i = 0; i < 8; i++) {
+        const a = (i * Math.PI) / 4;
+        const rad = i % 2 === 0 ? sr : sr * 0.36;
+        const px = sx + Math.cos(a) * rad;
+        const py = sy + Math.sin(a) * rad;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    _drawBombBlock(ctx, x, y, size, timeSec) {
+      const cx = x + size * 0.5;
+      const cy = y + size * 0.54;
+      const r = size * 0.38;
+
+      ctx.save();
+      // Crimson-obsidian bomb orb
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      const grad = ctx.createRadialGradient(cx - r * 0.28, cy - r * 0.28, r * 0.06, cx, cy, r);
+      grad.addColorStop(0, '#ff8fa3');
+      grad.addColorStop(0.45, '#dc2626');
+      grad.addColorStop(1, '#2a0812');
+      ctx.fillStyle = grad;
+      ctx.fill();
+      ctx.strokeStyle = '#fca5a5';
+      ctx.lineWidth = Math.max(1.2, size * 0.032);
+      ctx.stroke();
+
+      // Fuse & pulsing spark
+      ctx.strokeStyle = '#fde68a';
+      ctx.lineWidth = Math.max(1.6, size * 0.045);
+      ctx.beginPath();
+      ctx.moveTo(cx + r * 0.2, cy - r * 0.85);
+      ctx.quadraticCurveTo(cx + r * 0.55, cy - r * 1.22, cx + r * 0.72, cy - r * 1.0);
+      ctx.stroke();
+
+      const sparkR = r * (0.24 + 0.08 * Math.sin(timeSec * 14));
+      ctx.fillStyle = '#fef08a';
+      ctx.beginPath();
+      ctx.arc(cx + r * 0.72, cy - r * 1.0, sparkR, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Crosshair / explosion crest
+      ctx.strokeStyle = 'rgba(255, 235, 160, 0.85)';
+      ctx.lineWidth = Math.max(1.2, size * 0.03);
+      ctx.beginPath();
+      ctx.moveTo(cx - r * 0.35, cy);
+      ctx.lineTo(cx + r * 0.35, cy);
+      ctx.moveTo(cx, cy - r * 0.35);
+      ctx.lineTo(cx, cy + r * 0.35);
+      ctx.stroke();
+      ctx.restore();
+    }
+
     _drawMagicJewel(ctx, x, y, size, timeSec, ghost) {
       const cx = x + size * 0.5;
       const cy = y + size * 0.5;
@@ -310,15 +531,21 @@
 
       ctx.save();
       if (!ghost) {
-        ctx.shadowColor = `hsla(${hue}, 95%, 68%, 0.85)`;
-        ctx.shadowBlur = Math.max(6, size * 0.18);
+        // Lightweight radial halo instead of expensive GPU shadowBlur
+        const halo = ctx.createRadialGradient(cx, cy, r * 0.2, cx, cy, r * 1.18);
+        halo.addColorStop(0, `hsla(${hue}, 95%, 70%, 0.55)`);
+        halo.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = halo;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r * 1.18, 0, Math.PI * 2);
+        ctx.fill();
       }
 
       // 8-point prism star
       const pts = [];
       for (let i = 0; i < 16; i++) {
         const a = (i * Math.PI) / 8 + timeSec * 1.4;
-        const rad = i % 2 === 0 ? r * 1.06 : r * 0.68;
+        const rad = i % 2 === 0 ? r * 1.04 : r * 0.66;
         pts.push([cx + Math.cos(a) * rad, cy + Math.sin(a) * rad]);
       }
       tracePoly(ctx, pts);
@@ -344,5 +571,10 @@
 
   B3B.JEWEL_DEFS = JEWEL_DEFS;
   B3B.MAGIC_ID = MAGIC_ID;
+  B3B.SUPPORT_WEIGHT = SUPPORT_WEIGHT;
+  B3B.SUPPORT_MIRROR = SUPPORT_MIRROR;
+  B3B.SUPPORT_ROD = SUPPORT_ROD;
+  B3B.SUPPORT_BOMB = SUPPORT_BOMB;
+  B3B.isSupportId = isSupportId;
   B3B.JewelRenderer = JewelRenderer;
 })(window);

@@ -2,7 +2,7 @@
  * Chrome PWAインストール要件（fetchハンドラ）を満たしつつ、
  * 音声・Rangeリクエストを邪魔せず、通常のネットワーク優先で高速取得します。
  */
-const SW_VERSION = '20261125-01';
+const SW_VERSION = '20261125-02';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(self.skipWaiting());
