@@ -17,6 +17,8 @@
       this.pendingStart = false;
       this.unsupported = false;
       this.consecutiveErrors = 0;
+      this._switchTimer = null;
+      this._errorTimer = null;
 
       this.audio = new global.Audio();
       this.audio.preload = 'none';
@@ -33,14 +35,19 @@
       });
 
       this.audio.addEventListener('error', () => {
+        if (!this.audio.getAttribute('src')) return;
         this.consecutiveErrors++;
-        if (this.consecutiveErrors >= 3) {
+        if (this.consecutiveErrors >= 2) {
           this.unsupported = true;
           this._emitTrackChange();
           return;
         }
         if (this.enabled && this.mode === 'random' && this.tracks.length > 1) {
-          this.playNextRandom();
+          if (this._errorTimer) clearTimeout(this._errorTimer);
+          this._errorTimer = setTimeout(() => {
+            this._errorTimer = null;
+            this.playNextRandom();
+          }, 500);
         }
       });
 
@@ -108,6 +115,14 @@
     stop() {
       this.pendingStart = false;
       this.suspendedByVisibility = false;
+      if (this._switchTimer) {
+        clearTimeout(this._switchTimer);
+        this._switchTimer = null;
+      }
+      if (this._errorTimer) {
+        clearTimeout(this._errorTimer);
+        this._errorTimer = null;
+      }
       try {
         this.audio.pause();
         this.audio.removeAttribute('src');
@@ -205,6 +220,9 @@
       this.currentIndex = idx;
       this.unsupported = false;
       const track = this.tracks[idx];
+      try {
+        this.audio.pause();
+      } catch (_) {}
       this.audio.src = track.url;
       this.audio.loop = this.mode === 'repeat';
       this._emitTrackChange();
@@ -212,18 +230,25 @@
 
     _safePlay() {
       if (!this.enabled || this.suspendedByRotate || this.suspendedByVisibility) return;
-      try {
-        const p = this.audio.play();
-        if (p && typeof p.catch === 'function') {
-          p.catch((err) => {
-            if (err && err.name === 'NotAllowedError') {
-              this.pendingStart = true;
-            }
-          });
-        }
-      } catch (_) {
-        this.pendingStart = true;
+      if (this._switchTimer) {
+        clearTimeout(this._switchTimer);
       }
+      this._switchTimer = setTimeout(() => {
+        this._switchTimer = null;
+        if (!this.enabled || this.suspendedByRotate || this.suspendedByVisibility) return;
+        try {
+          const p = this.audio.play();
+          if (p && typeof p.catch === 'function') {
+            p.catch((err) => {
+              if (err && err.name === 'NotAllowedError') {
+                this.pendingStart = true;
+              }
+            });
+          }
+        } catch (_) {
+          this.pendingStart = true;
+        }
+      }, 45);
     }
   }
 

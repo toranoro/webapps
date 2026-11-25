@@ -185,6 +185,19 @@
         g.stroke();
       }
 
+      // Subtle 3-zone tap divider ticks (top: CW, middle: swap, bottom: CCW)
+      g.save();
+      g.strokeStyle = 'rgba(120, 220, 255, 0.16)';
+      g.setLineDash([4, 6]);
+      [boardHeight / 3, (boardHeight * 2) / 3].forEach((zy) => {
+        const y = Math.round(zy) + 0.5;
+        g.beginPath();
+        g.moveTo(4, y);
+        g.lineTo(boardWidth - 4, y);
+        g.stroke();
+      });
+      g.restore();
+
       bgCacheCanvas = cv;
       bgCacheKey = key;
       return cv;
@@ -904,7 +917,15 @@
       if (isQuickFlickDown) {
         engine.hardDrop();
       } else if (isTap) {
-        engine.cycleGems(false);
+        const rect = boardCanvas.getBoundingClientRect();
+        const relY = rect.height > 0 ? (clientY - rect.top) / rect.height : 0.5;
+        if (relY < 1 / 3) {
+          engine.rotateBlock(true); // Top 1/3: Clockwise 90°
+        } else if (relY > 2 / 3) {
+          engine.rotateBlock(false); // Bottom 1/3: Counter-Clockwise 90°
+        } else {
+          engine.cycleGems(false); // Middle 1/3: Swap gems
+        }
       }
 
       gestureState = null;

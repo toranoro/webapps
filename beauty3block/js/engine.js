@@ -9,9 +9,9 @@
   const SPAWN_COL = 2;
 
   const PRESETS = {
-    relax: { label: 'Relax', baseSpeed: 1.35, speedStep: 0.22, jewelTypes: 5 },
-    classic: { label: 'Classic', baseSpeed: 1.85, speedStep: 0.32, jewelTypes: 6 },
-    master: { label: 'Master', baseSpeed: 2.8, speedStep: 0.44, jewelTypes: 6 }
+    relax: { label: 'Relax', baseSpeed: 0.45, speedStep: 0.18, jewelTypes: 5 },
+    classic: { label: 'Classic', baseSpeed: 0.62, speedStep: 0.24, jewelTypes: 6 },
+    master: { label: 'Master', baseSpeed: 1.35, speedStep: 0.36, jewelTypes: 6 }
   };
 
   // 4-way orientation offsets [dc, dr] around the center gem (index 1)
