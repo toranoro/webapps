@@ -853,21 +853,12 @@
     );
 
     // Direct Touch & Mouse Gestures on Playfield Canvas:
-    // - Left/Right flick/slide: Move
-    // - Single Tap anywhere: Cycle/swap gems
-    // - Double Tap anywhere: Rotate block 90° CW
-    // - Down flick: Soft drop nudge ("少しだけ")
-    // - Double Down flick ("シュッシュッ"): Hard drop
+    // - Left/Right swipe: Move
+    // - Tap anywhere (instant, zero double-tap delay): Swap/cycle gems ("位置がえ")
+    // - Swipe Up: Rotate block 90° CW
+    // - Short Down Swipe: Drop a few rows ("短く落ちる")
+    // - Long Down Swipe: Hard drop to bottom ("底までどーん")
     let gestureState = null;
-    let pendingTapTimer = null;
-    let lastDownFlickTime = 0;
-
-    function clearPendingTap() {
-      if (pendingTapTimer) {
-        clearTimeout(pendingTapTimer);
-        pendingTapTimer = null;
-      }
-    }
 
     function beginGesture(clientX, clientY) {
       if (engine.state !== 'FALLING') return;
@@ -876,23 +867,23 @@
         startX: clientX,
         startY: clientY,
         lastStepX: clientX,
+        lastStepY: clientY,
         startTime: performance.now(),
         movedHoriz: false,
         movedDown: false,
-        softActive: false,
+        nudgedDown: false,
+        rotatedUp: false,
         hardDropped: false
       };
     }
 
     function moveGesture(clientX, clientY) {
       if (!gestureState) return;
-      const now = performance.now();
       const dxStep = clientX - gestureState.lastStepX;
       const totalDy = clientY - gestureState.startY;
       const stepThreshold = Math.max(18, cellSize * 0.72);
 
       if (Math.abs(dxStep) >= stepThreshold) {
-        clearPendingTap();
         const steps = Math.trunc(dxStep / stepThreshold);
         const dir = steps > 0 ? 1 : -1;
         for (let i = 0; i < Math.abs(steps); i++) {
@@ -902,69 +893,64 @@
         gestureState.movedHoriz = true;
       }
 
-      if (!gestureState.movedHoriz && !gestureState.hardDropped && totalDy >= Math.max(22, cellSize * 0.65)) {
-        gestureState.movedDown = true;
-        // 2nd quick downward flick ("シュッシュッ") -> instant Hard Drop
-        if (now - lastDownFlickTime <= 420 && !gestureState.softActive) {
-          clearPendingTap();
-          gestureState.hardDropped = true;
-          lastDownFlickTime = 0;
-          engine.hardDrop();
+      if (!gestureState.movedHoriz && !gestureState.hardDropped) {
+        // Swipe Up -> Rotate block 90° CW
+        if (!gestureState.rotatedUp && totalDy <= -Math.max(24, cellSize * 0.65)) {
+          gestureState.rotatedUp = true;
+          engine.rotateBlock(true);
           return;
         }
-        // Continuous drag-down hold -> Soft Drop while held
-        if (now - gestureState.startTime >= 150 && !gestureState.softActive) {
-          gestureState.softActive = true;
-          engine.setSoftDrop(true);
+
+        if (!gestureState.rotatedUp) {
+          const shortThresh = Math.max(20, cellSize * 0.55);
+          const longThresh = Math.max(96, Math.round(boardHeight * 0.22));
+
+          // Long Down Swipe -> Hard drop all the way down
+          if (totalDy >= longThresh) {
+            gestureState.hardDropped = true;
+            gestureState.movedDown = true;
+            engine.hardDrop();
+            return;
+          }
+
+          // Short Down Swipe -> step down gently per cell
+          if (totalDy >= shortThresh) {
+            gestureState.movedDown = true;
+            const downStep = Math.max(24, cellSize * 0.75);
+            let safety = 0;
+            while (clientY - gestureState.lastStepY >= downStep && safety < 3) {
+              engine.nudgeDown(1);
+              gestureState.lastStepY += downStep;
+              gestureState.nudgedDown = true;
+              safety++;
+            }
+          }
         }
       }
     }
 
     function endGesture(clientX, clientY) {
       if (!gestureState) return;
-      const now = performance.now();
-      const elapsed = now - gestureState.startTime;
+      const elapsed = performance.now() - gestureState.startTime;
       const totalDx = clientX - gestureState.startX;
       const totalDy = clientY - gestureState.startY;
 
-      if (gestureState.softActive) {
-        engine.setSoftDrop(false);
-      }
-
       if (!gestureState.hardDropped) {
-        const isDownFlick =
-          !gestureState.movedHoriz &&
-          !gestureState.softActive &&
-          totalDy >= Math.max(20, cellSize * 0.6) &&
-          elapsed < 280;
-
+        const shortThresh = Math.max(20, cellSize * 0.55);
+        const longThresh = Math.max(96, Math.round(boardHeight * 0.22));
         const isTap =
           !gestureState.movedHoriz &&
           !gestureState.movedDown &&
+          !gestureState.rotatedUp &&
           Math.hypot(totalDx, totalDy) < 14 &&
-          elapsed < 300;
+          elapsed < 320;
 
-        if (isDownFlick) {
-          clearPendingTap();
-          if (now - lastDownFlickTime <= 420) {
-            lastDownFlickTime = 0;
-            engine.hardDrop();
-          } else {
-            lastDownFlickTime = now;
-            engine.nudgeDown(1.5);
-          }
+        if (!gestureState.movedHoriz && !gestureState.rotatedUp && totalDy >= longThresh) {
+          engine.hardDrop();
+        } else if (!gestureState.movedHoriz && !gestureState.rotatedUp && totalDy >= shortThresh && !gestureState.nudgedDown) {
+          engine.nudgeDown(1);
         } else if (isTap) {
-          if (pendingTapTimer) {
-            // Double Tap -> Rotate block 90° clockwise
-            clearPendingTap();
-            engine.rotateBlock(true);
-          } else {
-            // Single Tap -> Swap/cycle gems after short double-tap window
-            pendingTapTimer = setTimeout(() => {
-              pendingTapTimer = null;
-              engine.cycleGems(false);
-            }, 210);
-          }
+          engine.cycleGems(false);
         }
       }
 
