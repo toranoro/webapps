@@ -7,6 +7,7 @@ import {
   getTileBadge, getTileLabel, getDoraFromIndicator,
 } from './engine/tiles.js';
 import { chooseAiDiscard, shouldAiRiichi } from './engine/ai.js';
+import { ATLAS_COLS, CELL_W, CELL_H, getAtlasSlotIndex } from './render/tileAtlas.js';
 import { Mahjong3DScene } from './render/webglScene.js';
 import { soundEngine } from './audio/sound.js';
 import { createMiniTileElement } from './ui/tileMiniSvg.js';
@@ -26,15 +27,16 @@ const KANJI_ROUNDS = ['一', '二', '三', '四'];
 
 class MahjongApp {
   constructor() {
-    this.assistMode = 'full'; // 'full' | 'hint' | 'off'
+    this.redGuideEnabled = true;
+    this.autoRiichi = true;
     this.tapMode = 'two-step'; // 'two-step' | 'one-step'
     this.viewMode = 'auto';   // 'auto' | 'wide' | 'hand'
     this.riichiSelectMode = false;
-    this.yakuNavOpen = false;
     this.selectedTile = null;
-    this.hoveredTile = null;
     this.lastDiscardedId = -1;
     this.aiTimer = null;
+    this.autoRiichiTimer = null;
+    this.bigTileButtons = new Map();
 
     setupViewportGuards();
     registerNoCacheServiceWorker();
@@ -62,7 +64,7 @@ class MahjongApp {
       kyotakuLabel: id('kyotaku-label'),
       doraList: id('dora-list'),
       btnAssistMode: id('btn-assist-mode'),
-      assistModeText: id('assist-mode-text'),
+      btnAutoRiichi: id('btn-auto-riichi'),
       btnViewMode: id('btn-view-mode'),
       viewModeText: id('view-mode-text'),
       btnSound: id('btn-sound'),
@@ -73,21 +75,18 @@ class MahjongApp {
       btnSettings: id('btn-settings'),
       callBanner: id('call-banner'),
       actionBar: id('action-bar'),
-      callAdviceBox: id('call-advice-box'),
       actionButtons: id('action-buttons'),
-      assistPanel: id('assist-panel'),
-      shantenBadge: id('shanten-badge'),
-      assistDetail: id('assist-detail'),
-      btnYakuNavToggle: id('btn-yaku-nav-toggle'),
-      yakuNavDrawer: id('yaku-nav-drawer'),
+      bigHandScroll: id('big-hand-scroll'),
       startModal: id('start-modal'),
       btnStartGame: id('btn-start-game'),
+      chkAutoRiichi: id('chk-auto-riichi'),
       chkTileLabels: id('chk-tile-labels'),
       chkRedFives: id('chk-red-fives'),
       resultModal: id('result-modal'),
       resultContent: id('result-content'),
       btnNextRound: id('btn-next-round'),
       settingsModal: id('settings-modal'),
+      setAutoRiichi: id('set-auto-riichi'),
       setTileLabels: id('set-tile-labels'),
       btnResetCamera: id('btn-reset-camera'),
       btnRestartMatch: id('btn-restart-match'),
@@ -97,20 +96,30 @@ class MahjongApp {
     };
   }
 
+  getRedBorderTypes() {
+    if (!this.redGuideEnabled) return null;
+    if (this.game.phase !== PHASE.PLAYER_TURN || this.game.turnPlayer !== 0) return null;
+    const assist = this.currentAssist;
+    if (!assist) return null;
+    // ツモ上がり可能なときは打牌赤枠は出さない
+    if (assist.turnActions?.canTsumo) return null;
+
+    if (this.riichiSelectMode && assist.turnActions?.riichiDiscards) {
+      return new Set(assist.turnActions.riichiDiscards.map((r) => r.type));
+    }
+    if (assist.bestDiscardType !== null && assist.bestDiscardType !== undefined) {
+      return new Set([assist.bestDiscardType]);
+    }
+    return null;
+  }
+
   initScene() {
     this.scene = new Mahjong3DScene(this.dom.canvas, {
-      shouldHighlightBest: () => this.assistMode === 'full' && !this.riichiSelectMode,
-      onTileHover: (tile) => {
-        this.hoveredTile = tile;
-        this.renderAssistDetail();
-      },
-      onTileTap: (tile) => this.handlePlayerTileTap(tile),
+      getRedBorderTypes: () => this.getRedBorderTypes(),
+      onTileTap: (tile) => this.handlePlayerTileTap(tile, 'upper'),
       onEmptyTap: () => {
         if (!this.riichiSelectMode) {
-          this.selectedTile = null;
-          this.scene.setSelectedTile(-1);
-          this.renderActionButtons();
-          this.renderAssistDetail();
+          this.clearSelection();
         }
       },
     });
@@ -129,7 +138,6 @@ class MahjongApp {
   }
 
   bindUI() {
-    // Segmented controls helper
     const bindSeg = (containerId, onSelect) => {
       const el = document.getElementById(containerId);
       if (!el) return;
@@ -144,7 +152,7 @@ class MahjongApp {
 
     let chosenMatchType = 'tonpu';
     bindSeg('opt-match-type', (v) => { chosenMatchType = v; });
-    bindSeg('opt-assist-init', (v) => { this.setAssistMode(v); });
+    bindSeg('opt-assist-init', (v) => { this.setRedGuide(v === 'on'); });
     bindSeg('opt-tap-mode', (v) => {
       this.tapMode = v;
       this.syncTapSegmented('set-tap-mode', v);
@@ -154,15 +162,24 @@ class MahjongApp {
       this.syncTapSegmented('opt-tap-mode', v);
     });
 
+    this.dom.chkAutoRiichi.addEventListener('change', (e) => {
+      this.setAutoRiichi(e.target.checked);
+    });
+    this.dom.setAutoRiichi.addEventListener('change', (e) => {
+      this.setAutoRiichi(e.target.checked);
+    });
+
     this.dom.chkTileLabels.addEventListener('change', (e) => {
       const checked = e.target.checked;
       this.dom.setTileLabels.checked = checked;
       this.scene.setBeginnerLabels(checked);
+      this.renderBigHandTray(this.game.getSnapshot());
     });
     this.dom.setTileLabels.addEventListener('change', (e) => {
       const checked = e.target.checked;
       this.dom.chkTileLabels.checked = checked;
       this.scene.setBeginnerLabels(checked);
+      this.renderBigHandTray(this.game.getSnapshot());
     });
 
     this.dom.btnStartGame.addEventListener('click', () => {
@@ -171,14 +188,18 @@ class MahjongApp {
       this.dom.startModal.classList.add('hidden');
       this.game.matchType = chosenMatchType;
       this.game.useRedFives = this.dom.chkRedFives.checked;
+      this.setAutoRiichi(this.dom.chkAutoRiichi.checked);
       this.scene.setBeginnerLabels(this.dom.chkTileLabels.checked);
       this.game.startMatch(chosenMatchType);
     });
 
     this.dom.btnAssistMode.addEventListener('click', () => {
-      const order = ['full', 'hint', 'off'];
-      const next = order[(order.indexOf(this.assistMode) + 1) % order.length];
-      this.setAssistMode(next);
+      this.setRedGuide(!this.redGuideEnabled);
+      soundEngine.playSelect();
+    });
+
+    this.dom.btnAutoRiichi.addEventListener('click', () => {
+      this.setAutoRiichi(!this.autoRiichi);
       soundEngine.playSelect();
     });
 
@@ -220,13 +241,6 @@ class MahjongApp {
       this.dom.startModal.classList.remove('hidden');
     });
 
-    this.dom.btnYakuNavToggle.addEventListener('click', () => {
-      this.yakuNavOpen = !this.yakuNavOpen;
-      this.dom.yakuNavDrawer.classList.toggle('hidden', !this.yakuNavOpen);
-      this.dom.btnYakuNavToggle.textContent = this.yakuNavOpen ? '狙える役 ▲' : '狙える役 ▼';
-      soundEngine.playSelect();
-    });
-
     this.dom.btnNextRound.addEventListener('click', () => {
       this.dom.resultModal.classList.add('hidden');
       if (this.game.phase === PHASE.MATCH_END) {
@@ -244,14 +258,29 @@ class MahjongApp {
     el.querySelectorAll('.seg-btn').forEach((b) => b.classList.toggle('active', b.dataset.val === val));
   }
 
-  setAssistMode(mode) {
-    this.assistMode = mode;
-    const labels = { full: '徹底ナビ', hint: 'ヒント', off: 'アシストOFF' };
-    this.dom.assistModeText.textContent = labels[mode];
-    this.dom.btnAssistMode.classList.toggle('active', mode !== 'off');
-    this.dom.assistPanel.classList.toggle('hidden', mode === 'off');
+  setRedGuide(enabled) {
+    this.redGuideEnabled = !!enabled;
+    this.dom.btnAssistMode.classList.toggle('active', this.redGuideEnabled);
     this.scene.rebuildTargetTransforms();
-    this.renderAssist();
+    this.syncBigHandTrayStates();
+  }
+
+  setAutoRiichi(enabled) {
+    this.autoRiichi = !!enabled;
+    this.dom.chkAutoRiichi.checked = this.autoRiichi;
+    this.dom.setAutoRiichi.checked = this.autoRiichi;
+    this.dom.btnAutoRiichi.classList.toggle('active', this.autoRiichi);
+    if (this.autoRiichi) {
+      this.scheduleAutoRiichiIfNeeded();
+    } else {
+      clearTimeout(this.autoRiichiTimer);
+    }
+  }
+
+  clearSelection() {
+    this.selectedTile = null;
+    this.scene.setSelectedTile(-1);
+    this.syncBigHandTrayStates();
   }
 
   showBanner(text, duration = 1200) {
@@ -265,6 +294,7 @@ class MahjongApp {
 
   onGameEvent(eventType, detail, snapshot) {
     clearTimeout(this.aiTimer);
+    clearTimeout(this.autoRiichiTimer);
 
     if (eventType === 'ROUND_START') {
       this.lastDiscardedId = -1;
@@ -301,15 +331,41 @@ class MahjongApp {
     this.currentAssist = assist;
     this.scene.updateGameState(snapshot, assist, this.lastDiscardedId);
     this.renderHUD(snapshot);
-    this.renderAssist();
+    this.renderBigHandTray(snapshot);
     this.renderActionButtons();
 
-    // AIターン進行スケジューリング
     if (snapshot.phase === PHASE.AI_TURN) {
       this.aiTimer = setTimeout(() => this.stepAI(), 420);
     } else if (snapshot.phase === PHASE.CALL_WINDOW) {
       this.game.processAiCallResponses();
+    } else if (snapshot.phase === PHASE.PLAYER_TURN && snapshot.turnPlayer === 0) {
+      this.scheduleAutoRiichiIfNeeded();
     }
+  }
+
+  scheduleAutoRiichiIfNeeded() {
+    clearTimeout(this.autoRiichiTimer);
+    if (!this.autoRiichi) return;
+    if (this.game.phase !== PHASE.PLAYER_TURN || this.game.turnPlayer !== 0) return;
+    const p0 = this.game.players[0];
+    if (!p0.isRiichi || !p0.drawnTile) return;
+
+    const acts = this.currentAssist?.turnActions;
+    // ツモアガリできる場合は自動停止し「ツモ！」ボタンの押下を待つ
+    if (acts?.canTsumo) return;
+
+    const drawnId = p0.drawnTile.id;
+    this.autoRiichiTimer = setTimeout(() => {
+      if (
+        this.autoRiichi &&
+        this.game.phase === PHASE.PLAYER_TURN &&
+        this.game.turnPlayer === 0 &&
+        this.game.players[0].isRiichi &&
+        this.game.players[0].drawnTile?.id === drawnId
+      ) {
+        this.game.discardTile(0, drawnId, false);
+      }
+    }, 450);
   }
 
   stepAI() {
@@ -335,22 +391,25 @@ class MahjongApp {
     }
   }
 
-  handlePlayerTileTap(tile) {
+  handlePlayerTileTap(tile, source = 'upper') {
     if (this.game.phase !== PHASE.PLAYER_TURN || this.game.turnPlayer !== 0) return;
 
+    const acts = this.currentAssist?.turnActions;
+    if (acts?.canTsumo) {
+      this.showBanner('アガれます！「ツモ！」を押してください', 1000);
+      return;
+    }
+
     const p0 = this.game.players[0];
-    // リーチ中はツモ牌のみ打牌可能
     if (p0.isRiichi && p0.drawnTile && tile.id !== p0.drawnTile.id) {
       this.showBanner('リーチ中はツモ牌のみ切れます', 900);
       return;
     }
 
-    // リーチ宣言牌選択モード中
     if (this.riichiSelectMode) {
-      const acts = this.currentAssist?.turnActions;
       const valid = acts?.riichiDiscards.some((r) => r.type === tile.type);
       if (!valid) {
-        this.showBanner('その牌ではテンパイになりません', 1000);
+        this.showBanner('赤枠の牌でリーチできます', 1000);
         return;
       }
       this.game.discardTile(0, tile.id, true);
@@ -362,15 +421,14 @@ class MahjongApp {
       return;
     }
 
-    // 2タップモード：1回目で選択浮き上がり、同じ牌をもう一度タップで打牌
+    // 2タップモード：1回目で上段・下段ともにスッと上昇、同じ牌をもう一度タップで打牌
     if (this.selectedTile && this.selectedTile.id === tile.id) {
       this.game.discardTile(0, tile.id, false);
     } else {
       soundEngine.playSelect();
       this.selectedTile = tile;
       this.scene.setSelectedTile(tile.id);
-      this.renderActionButtons();
-      this.renderAssistDetail();
+      this.syncBigHandTrayStates(source === 'upper');
     }
   }
 
@@ -387,7 +445,6 @@ class MahjongApp {
       this.dom.kyotakuLabel.classList.add('hidden');
     }
 
-    // ドラ表示
     this.dom.doraList.innerHTML = '';
     for (const ind of snapshot.doraIndicators) {
       const actualDora = getDoraFromIndicator(ind.type);
@@ -396,9 +453,8 @@ class MahjongApp {
       this.dom.doraList.appendChild(chip);
     }
 
-    // 4家 / 2家 HUD
     const n = snapshot.players.length;
-    const seatCardIds = [null, 'seat-right', 'seat-top', 'seat-left'];
+    const seatCardIds = ['seat-self', 'seat-right', 'seat-top', 'seat-left'];
     document.getElementById('seat-right')?.classList.toggle('hidden', n === 2);
     document.getElementById('seat-left')?.classList.toggle('hidden', n === 2);
 
@@ -418,143 +474,94 @@ class MahjongApp {
       if (scoreEl) scoreEl.textContent = p.score.toLocaleString();
       if (riichiEl) riichiEl.classList.toggle('hidden', !p.isRiichi);
 
-      if (seatCardIds[slot]) {
-        const card = document.getElementById(seatCardIds[slot]);
-        if (card) card.classList.toggle('active-turn', snapshot.turnPlayer === i && snapshot.phase !== PHASE.ROUND_END);
-      }
+      const card = document.getElementById(seatCardIds[slot]);
+      if (card) card.classList.toggle('active-turn', snapshot.turnPlayer === i && snapshot.phase !== PHASE.ROUND_END);
     }
   }
 
-  renderAssist() {
-    const assist = this.currentAssist;
-    if (!assist || this.assistMode === 'off') return;
+  renderBigHandTray(snapshot) {
+    const container = this.dom.bigHandScroll;
+    if (!container || !snapshot) return;
+    const p0 = snapshot.players[0];
+    const hand = p0.hand;
+    const hasDrawnGap = snapshot.turnPlayer === 0 && p0.drawnTileId !== -1 && hand.some((t) => t.id === p0.drawnTileId);
 
-    // シャンテン表示
-    const badge = this.dom.shantenBadge;
-    badge.classList.remove('tenpai', 'furiten');
-    if (assist.isFuriten) {
-      badge.classList.add('furiten');
-      badge.textContent = '⚠ フリテン中（ツモのみ可）';
-    } else if (assist.shanten <= 0) {
-      badge.classList.add('tenpai');
-      badge.textContent = assist.shanten === -1 ? '✨ アガリ形完成！' : '🔥 聴牌！アガリ待ち！';
-    } else {
-      badge.textContent = `あと ${assist.shanten}枚で聴牌（${assist.shanten}シャンテン）`;
+    const ordered = [];
+    let drawnEntry = null;
+    for (const t of hand) {
+      if (hasDrawnGap && t.id === p0.drawnTileId) drawnEntry = t;
+      else ordered.push(t);
     }
+    if (drawnEntry) ordered.push(drawnEntry);
 
-    // 狙える役ナビ
-    this.dom.yakuNavDrawer.innerHTML = '';
-    for (const y of assist.potentialYakus) {
-      const card = document.createElement('div');
-      card.className = 'yaku-nav-item';
-      card.innerHTML = `
-        <div class="yaku-nav-top"><span>${y.name}</span><span>${y.hanText}</span></div>
-        <div class="yaku-nav-status">${y.status} ${y.callOk ? '（鳴きOK）' : '（門前限定）'}</div>
-        <div class="yaku-nav-tip">${y.tip}</div>
-      `;
-      this.dom.yakuNavDrawer.appendChild(card);
-    }
-
-    this.renderAssistDetail();
-  }
-
-  renderAssistDetail() {
-    const assist = this.currentAssist;
-    const container = this.dom.assistDetail;
+    const atlas = this.scene.getAtlasCanvas();
     container.innerHTML = '';
-    if (!assist || this.assistMode === 'off') return;
+    this.bigTileButtons.clear();
 
-    // 1) 自分の手番：選択中またはホバー中の牌の打牌プレビュー
-    if (assist.isMyTurn) {
-      const targetTile = this.selectedTile || this.hoveredTile;
-      if (targetTile) {
-        const opt = assist.discardOptions.find((o) => o.type === targetTile.type);
-        if (opt) {
-          const tileChip = createMiniTileElement(targetTile.type, targetTile.isRed);
-          container.appendChild(tileChip);
+    for (const t of ordered) {
+      const isDrawn = hasDrawnGap && t.id === p0.drawnTileId;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'big-tile-btn';
+      if (isDrawn) btn.classList.add('is-drawn');
+      btn.setAttribute('aria-label', getTileBadge(t.type, t.isRed));
 
-          const text = document.createElement('span');
-          const shLabel = opt.nextShanten === 0 ? '聴牌（テンパイ）' : `${opt.nextShanten}シャンテン`;
-          text.innerHTML = `を切ると → <strong>${shLabel}</strong>（有効牌 <strong>${opt.ukeireTotal}枚</strong>）`;
-          container.appendChild(text);
+      const cvs = document.createElement('canvas');
+      cvs.width = 160;
+      cvs.height = 220;
+      const ctx = cvs.getContext('2d');
+      const slot = getAtlasSlotIndex(t.type, t.isRed);
+      const col = slot % ATLAS_COLS;
+      const row = Math.floor(slot / ATLAS_COLS);
+      ctx.drawImage(atlas, col * CELL_W, row * CELL_H, CELL_W, CELL_H, 0, 0, cvs.width, cvs.height);
 
-          if (opt.isBest && this.assistMode === 'full') {
-            const star = document.createElement('span');
-            star.className = 'best-badge';
-            star.textContent = '⭐ おすすめ打牌';
-            container.appendChild(star);
-          }
-
-          if (this.assistMode === 'full') {
-            for (const w of opt.waitsDetail.slice(0, 5)) {
-              const wc = document.createElement('span');
-              wc.className = 'wait-chip';
-              wc.appendChild(createMiniTileElement(w.type));
-              const remTxt = document.createElement('span');
-              remTxt.textContent = `残${w.remaining}`;
-              wc.appendChild(remTxt);
-              container.appendChild(wc);
-            }
-            if (opt.waitsDetail.length > 5) {
-              const more = document.createElement('span');
-              more.textContent = `他${opt.waitsDetail.length - 5}種`;
-              container.appendChild(more);
-            }
-          }
-          return;
-        }
-      }
-
-      // 未選択時のガイダンス
-      const guide = document.createElement('span');
-      if (this.riichiSelectMode) {
-        guide.textContent = '⚡ リーチ宣言：捨てる牌をタップしてください（テンパイになる牌のみ有効）';
-      } else {
-        guide.textContent =
-          this.tapMode === 'two-step'
-            ? 'あなたの番です：牌をタップして確認 → もう1回タップ（または「切る」ボタン）で打牌します'
-            : 'あなたの番です：切りたい牌をタップすると打牌します（緑に光る牌がおすすめ）';
-      }
-      container.appendChild(guide);
-      return;
+      btn.appendChild(cvs);
+      btn.addEventListener('click', () => this.handlePlayerTileTap(t, 'lower'));
+      container.appendChild(btn);
+      this.bigTileButtons.set(t.id, { btn, tile: t, isDrawn });
     }
 
-    // 2) 他家の手番で自分がテンパイ中：待ち牌と予想点数を表示
-    if (assist.currentWaits.length > 0) {
-      const lbl = document.createElement('span');
-      lbl.textContent = '待ち牌：';
-      container.appendChild(lbl);
-
-      for (const w of assist.currentWaits) {
-        const wc = document.createElement('span');
-        wc.className = 'wait-chip';
-        wc.appendChild(createMiniTileElement(w.type));
-        const info = document.createElement('span');
-        if (w.noYakuOnRon) {
-          info.textContent = `残${w.remaining}（ツモ${w.tsumoPoints}点・ロン役なし）`;
-        } else {
-          info.textContent = `残${w.remaining}（ロン${w.ronPoints}点 / ツモ${w.tsumoPoints}点）`;
-        }
-        wc.appendChild(info);
-        container.appendChild(wc);
-      }
-      return;
+    this.syncBigHandTrayStates(false);
+    // 新しくツモった時はツモ牌が見える右端へ横スクロール（scrollIntoViewは使わずコンテナ内scrollLeftのみ操作）
+    if (hasDrawnGap && drawnEntry) {
+      requestAnimationFrame(() => {
+        container.scrollTo({ left: container.scrollWidth, behavior: 'smooth' });
+      });
     }
+  }
 
-    const waitTxt = document.createElement('span');
-    const curName = this.game.players[this.game.turnPlayer]?.name || '';
-    waitTxt.textContent = `${curName} が思考中です…`;
-    container.appendChild(waitTxt);
+  scrollBigTileToCenter(btn) {
+    const container = this.dom.bigHandScroll;
+    if (!container || !btn) return;
+    const targetLeft = btn.offsetLeft - (container.clientWidth - btn.offsetWidth) * 0.5;
+    container.scrollTo({ left: Math.max(0, targetLeft), behavior: 'smooth' });
+  }
+
+  syncBigHandTrayStates(scrollSelectedIntoView = false) {
+    const p0 = this.game.players[0];
+    const isRiichiLocked = p0.isRiichi && this.game.turnPlayer === 0;
+    const redTypes = this.getRedBorderTypes();
+
+    for (const [id, item] of this.bigTileButtons.entries()) {
+      const isSel = this.selectedTile && this.selectedTile.id === id;
+      const isRedGuide = !!(redTypes && redTypes.has(item.tile.type));
+      const dimmed = isRiichiLocked && !item.isDrawn;
+
+      item.btn.classList.toggle('selected', !!isSel);
+      item.btn.classList.toggle('red-guide', isRedGuide);
+      item.btn.classList.toggle('dimmed', dimmed);
+
+      if (scrollSelectedIntoView && isSel) {
+        this.scrollBigTileToCenter(item.btn);
+      }
+    }
   }
 
   renderActionButtons() {
     const assist = this.currentAssist;
     const bar = this.dom.actionBar;
     const btns = this.dom.actionButtons;
-    const advice = this.dom.callAdviceBox;
     btns.innerHTML = '';
-    advice.innerHTML = '';
-    advice.classList.add('hidden');
 
     const makeBtn = (text, cls, onClick) => {
       const b = document.createElement('button');
@@ -565,27 +572,21 @@ class MahjongApp {
       btns.appendChild(b);
     };
 
-    // 1) 鳴き・ロンウィンドウ
+    // 1) 鳴き・ロンウィンドウ（卓上の空きスペース＝上段の上部に配置）
     if (this.game.phase === PHASE.CALL_WINDOW && assist?.callOffer) {
       const offer = assist.callOffer;
       const tile = assist.calledTile;
       const tileName = getTileBadge(tile.type, tile.isRed);
 
-      if (this.assistMode === 'full' && assist.callAdvice) {
-        const msgs = [];
-        if (assist.callAdvice.pon) msgs.push(assist.callAdvice.pon);
-        if (assist.callAdvice.chi) msgs.push(assist.callAdvice.chi);
-        if (msgs.length > 0) {
-          advice.textContent = msgs[0];
-          advice.classList.remove('hidden');
-        }
-      }
-
+      // ロン可能なときは「やめる」ボタンを出さず、達成感のある「ロン！」のみを表示
       if (offer.ron) {
-        makeBtn(`🔥 ロン！ (${offer.ron.score.ronPay.toLocaleString()}点)`, 'win', () => {
+        makeBtn(`🔥 ロン！`, 'win', () => {
           this.game.submitCallResponse(0, { type: 'ron' });
         });
+        bar.classList.remove('hidden');
+        return;
       }
+
       if (offer.pon) {
         makeBtn(`ポン (${tileName})`, 'call', () => {
           this.game.submitCallResponse(0, { type: 'pon', option: offer.pon });
@@ -604,7 +605,7 @@ class MahjongApp {
           });
         }
       }
-      makeBtn('スルー', 'pass', () => {
+      makeBtn('やめる', 'pass', () => {
         this.game.submitCallResponse(0, { type: 'pass' });
       });
 
@@ -615,39 +616,33 @@ class MahjongApp {
     // 2) 自分の手番アクション
     if (this.game.phase === PHASE.PLAYER_TURN && this.game.turnPlayer === 0) {
       const acts = assist?.turnActions;
-      let any = false;
 
+      // ツモアガリ可能なときは「やめる」ボタン無しで大きく「ツモ！」のみ表示
       if (acts?.canTsumo) {
-        any = true;
-        makeBtn(`✨ ツモ！ (${acts.tsumoResult.score.total.toLocaleString()}点)`, 'win', () => {
+        makeBtn(`✨ ツモ！`, 'win', () => {
           this.game.declareTsumo(0);
         });
+        bar.classList.remove('hidden');
+        return;
       }
 
-      if (this.selectedTile && !this.riichiSelectMode && this.tapMode === 'two-step') {
-        any = true;
-        const name = getTileBadge(this.selectedTile.type, this.selectedTile.isRed);
-        makeBtn(`${name} を切る`, 'discard', () => {
-          this.game.discardTile(0, this.selectedTile.id, false);
-        });
-      }
-
+      let any = false;
       if (acts?.canRiichi) {
         any = true;
         if (this.riichiSelectMode) {
-          makeBtn('リーチを取り消す', 'pass', () => {
+          makeBtn('リーチをやめる', 'pass', () => {
             this.riichiSelectMode = false;
             this.scene.rebuildTargetTransforms();
+            this.syncBigHandTrayStates();
             this.renderActionButtons();
-            this.renderAssistDetail();
           });
         } else {
-          makeBtn('⚡ リーチ宣言', 'riichi', () => {
+          makeBtn('⚡ リーチ', 'riichi', () => {
             this.riichiSelectMode = true;
-            this.selectedTile = null;
-            this.scene.setSelectedTile(-1);
+            this.clearSelection();
+            this.scene.rebuildTargetTransforms();
+            this.syncBigHandTrayStates();
             this.renderActionButtons();
-            this.renderAssistDetail();
           });
         }
       }
@@ -672,7 +667,7 @@ class MahjongApp {
 
       if (acts?.canKyuushu) {
         any = true;
-        makeBtn('九種九牌で流局', 'pass', () => {
+        makeBtn('九種九牌', 'pass', () => {
           this.game.declareKyuushu(0);
         });
       }
@@ -707,7 +702,6 @@ class MahjongApp {
       `;
       box.appendChild(header);
 
-      // 和了手牌表示
       const handRow = document.createElement('div');
       handRow.className = 'res-hand-row';
       for (const t of winner.hand) {
@@ -731,7 +725,6 @@ class MahjongApp {
       }
       box.appendChild(handRow);
 
-      // 成立役＋初心者向け解説
       const yakuList = document.createElement('div');
       yakuList.className = 'res-yaku-list';
       for (const y of wr.yakus) {
@@ -757,7 +750,6 @@ class MahjongApp {
       box.appendChild(header);
     }
 
-    // 点数移動
     const deltasGrid = document.createElement('div');
     deltasGrid.className = 'res-deltas';
     for (let i = 0; i < snapshot.players.length; i++) {

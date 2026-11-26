@@ -9,9 +9,9 @@ export function setupViewportGuards() {
   document.addEventListener('gesturechange', prevent, { passive: false });
   document.addEventListener('gestureend', prevent, { passive: false });
 
-  // スクロール可能なモーダル外でのタッチスクロール・ドラッグ崩れを防止
+  // スクロール可能なモーダルや拡大手牌トレイ外でのタッチスクロール・ドラッグ崩れを防止
   document.addEventListener('touchmove', (e) => {
-    if (!e.target.closest('.scrollable')) {
+    if (!e.target.closest('.scrollable, .big-hand-scroll')) {
       e.preventDefault();
     }
   }, { passive: false });
@@ -38,7 +38,7 @@ export function setupViewportGuards() {
 
 export function registerNoCacheServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
-  navigator.serviceWorker.register('./sw.js?v=20261127063332', { updateViaCache: 'none' })
+  navigator.serviceWorker.register('./sw.js?v=20261127071841', { updateViaCache: 'none' })
     .then((reg) => {
       reg.update().catch(() => {});
     })

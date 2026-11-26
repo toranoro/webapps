@@ -57,6 +57,7 @@ uniform vec3 uEyePos;
 uniform vec3 uHighlight;   // rgb tint / glow
 uniform float uHighlightStrength;
 uniform float uDim;        // 1.0 = normal, <1.0 = slightly dimmed
+uniform float uRedBorder;  // 1.0 = draw bright red border on front face
 
 out vec4 fragColor;
 
@@ -104,6 +105,14 @@ void main() {
   // ハイライト / 選択 / おすすめ強調
   lit = mix(lit, lit * 0.76 + uHighlight * 0.52, uHighlightStrength);
   lit *= uDim;
+
+  if (uRedBorder > 0.5 && vFaceType > 0.5 && vFaceType < 1.5) {
+    float bx = min(vUv.x, 1.0 - vUv.x);
+    float by = min(vUv.y, 1.0 - vUv.y);
+    if (bx < 0.085 || by < 0.062) {
+      lit = vec3(0.96, 0.14, 0.18);
+    }
+  }
 
   fragColor = vec4(clamp(lit, 0.0, 1.0), 1.0);
 }
@@ -305,8 +314,13 @@ export class Mahjong3DScene {
     this.shadowMesh = createMeshVAO(gl, createShadowQuadGeometry(), false);
 
     // テクスチャ生成
-    this.atlasTex = this.uploadTexture(createTileAtlasCanvas(this.showBeginnerLabels), true);
+    this.atlasCanvas = createTileAtlasCanvas(this.showBeginnerLabels);
+    this.atlasTex = this.uploadTexture(this.atlasCanvas, true);
     this.feltTex = this.uploadTexture(createFeltTextureCanvas(), false);
+  }
+
+  getAtlasCanvas() {
+    return this.atlasCanvas;
   }
 
   uploadTexture(sourceCanvas, clamp = true) {
@@ -327,7 +341,8 @@ export class Mahjong3DScene {
     this.showBeginnerLabels = enabled;
     const gl = this.gl;
     gl.deleteTexture(this.atlasTex);
-    this.atlasTex = this.uploadTexture(createTileAtlasCanvas(enabled), true);
+    this.atlasCanvas = createTileAtlasCanvas(enabled);
+    this.atlasTex = this.uploadTexture(this.atlasCanvas, true);
   }
 
   setViewMode(mode) {
@@ -449,7 +464,7 @@ export class Mahjong3DScene {
     let fovDeg = isPortrait ? 52 : 38;
     let eyeY = isPortrait ? 17.0 : 8.2;
     let eyeZ = isPortrait ? 15.6 : 8.9;
-    let targetZ = isPortrait ? 2.65 : 1.05;
+    let targetZ = isPortrait ? 3.25 : 1.15;
 
     const fovRad = (fovDeg * Math.PI) / 180;
 
@@ -566,6 +581,7 @@ export class Mahjong3DScene {
         arcProgress: 1,
         highlight: target.highlight || [0, 0, 0],
         highlightStrength: target.highlightStrength || 0,
+        redBorder: !!target.redBorder,
         dim: target.dim ?? 1.0,
         faceUp: target.faceUp !== false,
         shadowScale: target.shadowScale || [1, 1],
@@ -596,6 +612,7 @@ export class Mahjong3DScene {
       entry.targetRot = [...target.rot];
       entry.highlight = target.highlight || [0, 0, 0];
       entry.highlightStrength = target.highlightStrength || 0;
+      entry.redBorder = !!target.redBorder;
       entry.dim = target.dim ?? 1.0;
       entry.faceUp = target.faceUp !== false;
       entry.shadowScale = target.shadowScale || [1, 1];
@@ -732,89 +749,70 @@ export class Mahjong3DScene {
         }
         if (drawnEntry) ordered.push(drawnEntry);
 
-        const bestType = this.assist?.isMyTurn ? this.assist.bestDiscardType : null;
+        const redBorderTypes = this.callbacks.getRedBorderTypes?.() || null;
         const isRiichiLocked = p.isRiichi;
 
         if (isPortrait) {
-          // 縦向きスマホ：手牌を2段（上段最大7枚＋下段残り＆ツモ牌）で特大表示しタップしやすくする
-          const dHand = 8.2;
+          // 縦向きスマホ：上段は小さめの全体1列（14枚すべて表示・選択牌は上へ浮き上がり・赤枠ナビ付）
+          const dHand = 10.6;
           const halfH = dHand * Math.tan(camInfo.fovRad * 0.5);
           const visibleW = 2.0 * halfH * (this.aspect || 0.5);
-          const maxRowRawWidth = 6 * (TILE_W * 1.05) + 0.22 + TILE_W;
-          const handScale = Math.max(0.50, Math.min(1.05, (visibleW * 0.90) / maxRowRawWidth));
-          const pitch = TILE_W * 1.05 * handScale;
+          const maxRawWidth = 13 * (TILE_W * 1.03) + 0.22 + TILE_W;
+          const handScale = Math.max(0.38, Math.min(0.95, (visibleW * 0.94) / maxRawWidth));
+          const pitch = TILE_W * 1.03 * handScale;
           const gap = 0.22 * handScale;
-
-          // 13-14枚なら上7・下6(+1)、それ以下でもバランスよく上下分割
-          const splitIdx = ordered.length <= 7 ? ordered.length : (ordered.length >= 12 ? 7 : Math.ceil(ordered.length / 2));
-          const rows = splitIdx < ordered.length
-            ? [ordered.slice(0, splitIdx), ordered.slice(splitIdx)]
-            : [ordered];
+          const rowWidth = (ordered.length - 1) * pitch + (hasDrawnGap ? gap : 0);
+          const startX = -rowWidth * 0.5;
 
           const camPitch = Math.atan2(-camInfo.fwd[1], -camInfo.fwd[2]);
           const tilt = -camPitch;
           const yaw = -Math.atan2(camInfo.fwd[0], -camInfo.fwd[2]);
+          const yOffset = -0.51 * halfH;
 
-          const rowNdcY = rows.length === 2 ? [-0.21, -0.45] : [-0.34];
+          for (let i = 0; i < ordered.length; i++) {
+            const t = ordered[i];
+            const isDrawn = hasDrawnGap && t.id === p.drawnTileId;
+            const xLocal = startX + i * pitch + (isDrawn ? gap : 0);
+            const isSel = t.id === this.selectedTileId;
+            const isHov = t.id === this.hoveredTileId;
+            const isRedGuide = !!(redBorderTypes && redBorderTypes.has(t.type));
 
-          for (let r = 0; r < rows.length; r++) {
-            const rowTiles = rows[r];
-            const rowHasGap = (r === rows.length - 1) && hasDrawnGap;
-            const rowWidth = (rowTiles.length - 1) * pitch + (rowHasGap ? gap : 0);
-            const startX = -rowWidth * 0.5;
-            const yOffset = rowNdcY[r] * halfH;
-
-            for (let c = 0; c < rowTiles.length; c++) {
-              const t = rowTiles[c];
-              const isDrawn = hasDrawnGap && t.id === p.drawnTileId;
-              const xLocal = startX + c * pitch + (isDrawn ? gap : 0);
-              const isSel = t.id === this.selectedTileId;
-              const isHov = t.id === this.hoveredTileId;
-              const isBest = bestType !== null && t.type === bestType;
-
-              let liftFwd = 0;
-              let liftUp = 0;
-              if (isSel) {
-                liftUp = 0.16 * handScale;
-                liftFwd = -0.35 * handScale;
-              } else if (isHov) {
-                liftUp = 0.08 * handScale;
-                liftFwd = -0.15 * handScale;
-              }
-
-              const dist = dHand + liftFwd;
-              const px = camInfo.eye[0] + camInfo.fwd[0] * dist + camInfo.right[0] * xLocal + camInfo.camUp[0] * (yOffset + liftUp);
-              const py = camInfo.eye[1] + camInfo.fwd[1] * dist + camInfo.right[1] * xLocal + camInfo.camUp[1] * (yOffset + liftUp);
-              const pz = camInfo.eye[2] + camInfo.fwd[2] * dist + camInfo.right[2] * xLocal + camInfo.camUp[2] * (yOffset + liftUp);
-
-              let highlight = [0, 0, 0];
-              let hStr = 0;
-              if (isSel) {
-                highlight = [1.0, 0.85, 0.25];
-                hStr = 0.34;
-              } else if (isBest && this.callbacks.shouldHighlightBest?.()) {
-                highlight = [0.28, 0.95, 0.62];
-                hStr = 0.18;
-              }
-              const dim = (isRiichiLocked && !isDrawn && snap.turnPlayer === 0) ? 0.72 : 1.0;
-
-              this.upsertTileTarget(`tile_${t.id}`, t, {
-                pos: [px, py, pz],
-                rot: [tilt, yaw, 0],
-                highlight,
-                highlightStrength: hStr,
-                dim,
-                scale: handScale,
-                shadowScale: [0, 0],
-                shadowAlpha: 0.0,
-                isPlayerHand: true,
-              });
+            let liftFwd = 0;
+            let liftUp = 0;
+            if (isSel) {
+              liftUp = 0.34 * handScale;
+              liftFwd = -0.25 * handScale;
+            } else if (isHov) {
+              liftUp = 0.14 * handScale;
+              liftFwd = -0.10 * handScale;
             }
+
+            const dist = dHand + liftFwd;
+            const px = camInfo.eye[0] + camInfo.fwd[0] * dist + camInfo.right[0] * xLocal + camInfo.camUp[0] * (yOffset + liftUp);
+            const py = camInfo.eye[1] + camInfo.fwd[1] * dist + camInfo.right[1] * xLocal + camInfo.camUp[1] * (yOffset + liftUp);
+            const pz = camInfo.eye[2] + camInfo.fwd[2] * dist + camInfo.right[2] * xLocal + camInfo.camUp[2] * (yOffset + liftUp);
+
+            const highlight = isSel ? [1.0, 0.85, 0.25] : [0, 0, 0];
+            const hStr = isSel ? 0.32 : 0.0;
+            const dim = (isRiichiLocked && !isDrawn && snap.turnPlayer === 0) ? 0.72 : 1.0;
+
+            this.upsertTileTarget(`tile_${t.id}`, t, {
+              pos: [px, py, pz],
+              rot: [tilt, yaw, 0],
+              highlight,
+              highlightStrength: hStr,
+              redBorder: isRedGuide,
+              dim,
+              scale: handScale,
+              shadowScale: [0, 0],
+              shadowAlpha: 0.0,
+              isPlayerHand: true,
+            });
           }
         } else {
-          // 横向き・タブレット：手前に1列正面向き配置
-          const baseZ = 4.45;
-          const baseY = 0.58 * TILE_H * this.getPlayerHandScale(camInfo, 0.55, baseZ) + 0.18;
+          // 横向き・タブレット：画面下いっぱいに1列正面向き配置
+          const baseZ = 4.60;
+          const baseY = 0.56 * TILE_H * this.getPlayerHandScale(camInfo, 0.52, baseZ) + 0.14;
           const handScale = this.getPlayerHandScale(camInfo, baseY, baseZ);
           const pitch = TILE_W * 1.03 * handScale;
           const gap = 0.24 * handScale;
@@ -829,28 +827,20 @@ export class Mahjong3DScene {
             const x = startX + i * pitch + (isDrawn ? gap : 0);
             const isSel = t.id === this.selectedTileId;
             const isHov = t.id === this.hoveredTileId;
-            const isBest = bestType !== null && t.type === bestType;
+            const isRedGuide = !!(redBorderTypes && redBorderTypes.has(t.type));
 
             let liftY = 0;
             let liftZ = 0;
             if (isSel) {
-              liftY = 0.34 * handScale;
+              liftY = 0.36 * handScale;
               liftZ = -0.14 * handScale;
             } else if (isHov) {
               liftY = 0.16 * handScale;
               liftZ = -0.06 * handScale;
             }
 
-            let highlight = [0, 0, 0];
-            let hStr = 0;
-            if (isSel) {
-              highlight = [1.0, 0.85, 0.25];
-              hStr = 0.34;
-            } else if (isBest && this.callbacks.shouldHighlightBest?.()) {
-              highlight = [0.28, 0.95, 0.62];
-              hStr = 0.18;
-            }
-
+            const highlight = isSel ? [1.0, 0.85, 0.25] : [0, 0, 0];
+            const hStr = isSel ? 0.32 : 0.0;
             const dim = (isRiichiLocked && !isDrawn && snap.turnPlayer === 0) ? 0.72 : 1.0;
 
             this.upsertTileTarget(`tile_${t.id}`, t, {
@@ -858,6 +848,7 @@ export class Mahjong3DScene {
               rot: [tilt, 0, 0],
               highlight,
               highlightStrength: hStr,
+              redBorder: isRedGuide,
               dim,
               scale: handScale,
               shadowScale: [1.05 * handScale, 0.85 * handScale],
@@ -1024,6 +1015,7 @@ export class Mahjong3DScene {
     const uHighLoc = gl.getUniformLocation(this.tileProg, 'uHighlight');
     const uHighStrLoc = gl.getUniformLocation(this.tileProg, 'uHighlightStrength');
     const uDimLoc = gl.getUniformLocation(this.tileProg, 'uDim');
+    const uRedBorderLoc = gl.getUniformLocation(this.tileProg, 'uRedBorder');
 
     gl.bindVertexArray(this.tileMesh.vao);
 
@@ -1044,6 +1036,7 @@ export class Mahjong3DScene {
       gl.uniform3fv(uHighLoc, entry.highlight);
       gl.uniform1f(uHighStrLoc, entry.highlightStrength);
       gl.uniform1f(uDimLoc, entry.dim);
+      gl.uniform1f(uRedBorderLoc, entry.redBorder ? 1.0 : 0.0);
       gl.drawElements(gl.TRIANGLES, this.tileMesh.count, gl.UNSIGNED_SHORT, 0);
     }
     this.playerHandHitBoxes = hitBoxes;

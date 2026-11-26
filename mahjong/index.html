@@ -8,45 +8,48 @@
   <meta http-equiv="Expires" content="0">
 
   <title>雅 3D麻雀 - 初心者アシスト付</title>
-  <meta name="description" content="美しい3Dグラフィックスと丁寧な初心者サポートで気持ちよく楽しめる4人打ち麻雀">
+  <meta name="description" content="美しい3Dグラフィックスと赤枠ナビ・オートリーチで気持ちよく楽しめる4人/2人打ち麻雀">
   <meta name="theme-color" content="#0b2d20">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="雅3D麻雀">
 
-  <link rel="manifest" href="./manifest.webmanifest?v=20261127063332">
-  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg?v=20261127063332">
-  <link rel="apple-touch-icon" sizes="180x180" href="./assets/icon-180.png?v=20261127063332">
-  <link rel="stylesheet" href="./css/styles.css?v=20261127063332">
+  <link rel="manifest" href="./manifest.webmanifest?v=20261127071841">
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg?v=20261127071841">
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/icon-180.png?v=20261127071841">
+  <link rel="stylesheet" href="./css/styles.css?v=20261127071841">
 </head>
 <body>
   <div id="app">
     <!-- 3D WebGL2 Canvas -->
     <canvas id="mahjong-canvas" aria-label="3D麻雀卓"></canvas>
 
-    <!-- 上部ステータス＆コントロールバー -->
+    <!-- 上部ステータス＆ツールバー -->
     <header id="top-bar">
       <div class="round-pill">
         <span id="round-label" class="round-title">東一局</span>
         <span id="honba-label" class="sub-badge">0本場</span>
-        <span id="wall-label" class="sub-badge">残 70</span>
+        <span id="wall-label" class="sub-badge">残 69</span>
         <span id="kyotaku-label" class="sub-badge hidden">供託 0</span>
       </div>
 
-      <div class="dora-pill" id="dora-pill" title="ドラ表示牌と実際のドラ">
+      <div class="dora-pill" id="dora-pill" title="現在のドラ">
         <span class="dora-caption">ドラ</span>
         <div id="dora-list" class="dora-tiles"></div>
       </div>
 
       <div class="toolbar-actions">
-        <button id="btn-assist-mode" class="tool-btn active" type="button" title="初心者アシスト切替">
-          <span class="btn-icon">✨</span><span class="btn-text" id="assist-mode-text">徹底ナビ</span>
+        <button id="btn-assist-mode" class="tool-btn active" type="button" title="赤枠おすすめナビ ON/OFF">
+          <span class="btn-icon">🟥</span><span class="btn-text" id="assist-mode-text">赤枠ナビ</span>
+        </button>
+        <button id="btn-auto-riichi" class="tool-btn active" type="button" title="オートリーチ（ツモ/ロンまで自動進行）">
+          <span class="btn-icon">⚡</span><span class="btn-text" id="auto-riichi-text">自動リーチ</span>
         </button>
         <button id="btn-view-mode" class="tool-btn" type="button" title="カメラ視点切替">
           <span class="btn-icon">🎥</span><span class="btn-text" id="view-mode-text">標準視点</span>
         </button>
-        <button id="btn-sound" class="tool-btn active" type="button" title="効果音ON/OFF">
+        <button id="btn-sound" class="tool-btn active" type="button" title="効果音 ON/OFF">
           <span class="btn-icon" id="sound-icon">🔊</span>
         </button>
         <button id="btn-install" class="tool-btn install-btn hidden" type="button" title="アプリをインストール">
@@ -64,7 +67,16 @@
       </div>
     </header>
 
-    <!-- 4家プレイヤー情報HUD -->
+    <!-- 4家 / 2家 プレイヤー情報HUD -->
+    <div id="seat-self" class="seat-card seat-self">
+      <div class="seat-wind" id="seat-wind-0">東</div>
+      <div class="seat-info">
+        <div class="seat-name" id="seat-name-0">あなた</div>
+        <div class="seat-score" id="seat-score-0">25,000</div>
+      </div>
+      <span class="riichi-tag hidden" id="seat-riichi-0">リーチ</span>
+    </div>
+
     <div id="seat-top" class="seat-card seat-top">
       <div class="seat-wind" id="seat-wind-2">西</div>
       <div class="seat-info">
@@ -95,33 +107,14 @@
     <!-- 発声・イベント中央トースト -->
     <div id="call-banner" class="call-banner hidden"></div>
 
-    <!-- あなたの手元UI（初心者アシスト + アクションボタン + 自家情報） -->
-    <section id="bottom-hud">
-      <!-- 鳴き・ロン・リーチ等のアクションボタン領域 -->
-      <div id="action-bar" class="action-bar hidden">
-        <div id="call-advice-box" class="call-advice-box hidden"></div>
-        <div id="action-buttons" class="action-buttons"></div>
-      </div>
+    <!-- 卓の空きスペース（上段手牌の上部）に出るアクションボタン -->
+    <div id="action-bar" class="action-bar hidden">
+      <div id="action-buttons" class="action-buttons"></div>
+    </div>
 
-      <!-- 初心者向けアシストバー -->
-      <div id="assist-panel" class="assist-panel">
-        <div class="assist-header-row">
-          <div id="seat-self" class="seat-self-badge">
-            <span class="seat-wind self" id="seat-wind-0">東</span>
-            <span class="seat-name" id="seat-name-0">あなた</span>
-            <span class="seat-score" id="seat-score-0">25,000</span>
-            <span class="riichi-tag hidden" id="seat-riichi-0">リーチ</span>
-          </div>
-          <div id="shanten-badge" class="shanten-badge">対局準備中</div>
-          <button id="btn-yaku-nav-toggle" class="mini-chip-btn" type="button">狙える役 ▼</button>
-        </div>
-
-        <!-- 選択/ホバー牌の打牌プレビュー、またはテンパイ待ち牌パネル -->
-        <div id="assist-detail" class="assist-detail"></div>
-
-        <!-- 狙える役ナビゲーター（展開パネル） -->
-        <div id="yaku-nav-drawer" class="yaku-nav-drawer hidden"></div>
-      </div>
+    <!-- 縦向きスマホ専用：下段どーんと拡大手牌トレイ（卓と同じ緑背景・横スクロール連動） -->
+    <section id="big-hand-tray" class="big-hand-tray" aria-label="拡大手牌スクロールエリア">
+      <div id="big-hand-scroll" class="big-hand-scroll"></div>
     </section>
 
     <!-- タイトル・新規対局モーダル -->
@@ -129,7 +122,7 @@
       <div class="modal-card scrollable">
         <div class="title-emblem">發</div>
         <h1 class="modal-title">雅 3D麻雀</h1>
-        <p class="modal-subtitle">美しい3D卓と丁寧なナビで、役や点数が分からなくても気持ちよく打てる麻雀プロトタイプ</p>
+        <p class="modal-subtitle">美しい3D卓と赤枠ナビ・オートリーチで、初心者でも気持ちよく打てる麻雀アプリ</p>
 
         <div class="option-grid">
           <div class="option-group">
@@ -142,23 +135,26 @@
           </div>
 
           <div class="option-group">
-            <label class="option-label">初心者ナビ・補助</label>
+            <label class="option-label">赤枠おすすめナビ</label>
             <div class="segmented" id="opt-assist-init">
-              <button type="button" class="seg-btn active" data-val="full">徹底ナビ（おすすめ）</button>
-              <button type="button" class="seg-btn" data-val="hint">ヒントのみ</button>
-              <button type="button" class="seg-btn" data-val="off">アシストOFF</button>
+              <button type="button" class="seg-btn active" data-val="on">赤枠ナビ ON（おすすめ）</button>
+              <button type="button" class="seg-btn" data-val="off">赤枠ナビ OFF</button>
             </div>
           </div>
 
           <div class="option-group">
             <label class="option-label">牌の打ち方（誤タップ防止）</label>
             <div class="segmented" id="opt-tap-mode">
-              <button type="button" class="seg-btn active" data-val="two-step">2タップ（確認して打つ）</button>
+              <button type="button" class="seg-btn active" data-val="two-step">2タップ（上げて確認→打牌）</button>
               <button type="button" class="seg-btn" data-val="one-step">1タップ即打牌</button>
             </div>
           </div>
 
           <div class="option-row-toggles">
+            <label class="toggle-item">
+              <input type="checkbox" id="chk-auto-riichi" checked>
+              <span>オートリーチ（リーチ後はツモ／ロンまで自動進行）</span>
+            </label>
             <label class="toggle-item">
               <input type="checkbox" id="chk-tile-labels" checked>
               <span>牌の左上に「1萬・東」などガイド文字を表示</span>
@@ -200,6 +196,10 @@
             </div>
           </div>
           <label class="toggle-item">
+            <input type="checkbox" id="set-auto-riichi" checked>
+            <span>オートリーチ（ツモ／ロンまで自動進行）</span>
+          </label>
+          <label class="toggle-item">
             <input type="checkbox" id="set-tile-labels" checked>
             <span>牌の左上にガイド文字を表示</span>
           </label>
@@ -232,6 +232,6 @@
     </div>
   </div>
 
-  <script type="module" src="./js/main.js?v=20261127063332"></script>
+  <script type="module" src="./js/main.js?v=20261127071841"></script>
 </body>
 </html>
