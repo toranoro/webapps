@@ -1,0 +1,202 @@
+:root {
+  --bg: #fff8fb;
+  --card: #ffffff;
+  --border: #ffd6e5;
+  --text: #4a3b47;
+  --sub: #7a6875;
+  --pink: #eb5d8a;
+  --mint: #4fc3b2;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Hiragino Maru Gothic ProN", "Yu Gothic UI", "Meiryo", system-ui, -apple-system, sans-serif;
+  color: var(--text);
+  background: linear-gradient(160deg, #fff4f8 0%, #fffdf5 50%, #eef8ff 100%);
+  line-height: 1.65;
+}
+
+.manual-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 2px solid var(--border);
+  padding: 12px 16px;
+}
+
+.header-inner {
+  max-width: 920px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.header-title {
+  margin: 0;
+  font-size: 1.15rem;
+  color: var(--pink);
+  font-weight: 900;
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #ff8bb0, #ff6b98);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 0.88rem;
+  padding: 8px 16px;
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(255, 107, 152, 0.3);
+}
+
+.manual-container {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 20px 16px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.toc a {
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.card {
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 22px;
+  padding: 20px;
+  box-shadow: 0 8px 24px rgba(173, 126, 152, 0.12);
+}
+
+.card h2 {
+  margin: 0 0 12px;
+  font-size: 1.18rem;
+  color: var(--pink);
+  border-bottom: 2px dashed #ffe0ec;
+  padding-bottom: 6px;
+}
+
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.step-box {
+  background: #fff8fb;
+  border: 1.5px solid #ffdce9;
+  border-radius: 16px;
+  padding: 14px;
+}
+
+.step-badge {
+  display: inline-block;
+  background: var(--pink);
+  color: #fff;
+  font-weight: 900;
+  font-size: 0.78rem;
+  padding: 2px 10px;
+  border-radius: 999px;
+  margin-bottom: 6px;
+}
+
+.tips-list {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.tips-list li + li {
+  margin-top: 8px;
+}
+
+.char-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 12px;
+}
+
+.char-card {
+  background: #fffafd;
+  border: 1.5px solid #ffe0ec;
+  border-radius: 16px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.char-card canvas {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+}
+
+.char-lv {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--pink);
+}
+
+.char-name {
+  font-weight: 800;
+  font-size: 0.94rem;
+}
+
+.char-desc {
+  font-size: 0.76rem;
+  color: var(--sub);
+}
+
+.char-score {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #4b9c8f;
+  margin-top: 2px;
+}
+
+.device-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 12px;
+}
+
+.device-box {
+  background: #f7fcff;
+  border: 1.5px solid #cfe9f7;
+  border-radius: 16px;
+  padding: 14px;
+}
+
+.device-box h3 {
+  margin: 0 0 8px;
+  font-size: 0.98rem;
+  color: #2f7d96;
+}

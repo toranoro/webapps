@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <title>雅 3D麻雀 - 初心者アシスト付</title>
+  <meta name="description" content="美しい3Dグラフィックスと丁寧な初心者サポートで気持ちよく楽しめる4人打ち麻雀">
+  <meta name="theme-color" content="#0b2d20">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="雅3D麻雀">
+
+  <link rel="manifest" href="./manifest.webmanifest?v=20261126220500">
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg?v=20261126220500">
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/icon-180.png?v=20261126220500">
+  <link rel="stylesheet" href="./css/styles.css?v=20261126220500">
+</head>
+<body>
+  <div id="app">
+    <!-- 3D WebGL2 Canvas -->
+    <canvas id="mahjong-canvas" aria-label="3D麻雀卓"></canvas>
+
+    <!-- 上部ステータス＆コントロールバー -->
+    <header id="top-bar">
+      <div class="round-pill">
+        <span id="round-label" class="round-title">東一局</span>
+        <span id="honba-label" class="sub-badge">0本場</span>
+        <span id="wall-label" class="sub-badge">残 70</span>
+        <span id="kyotaku-label" class="sub-badge hidden">供託 0</span>
+      </div>
+
+      <div class="dora-pill" id="dora-pill" title="ドラ表示牌と実際のドラ">
+        <span class="dora-caption">ドラ</span>
+        <div id="dora-list" class="dora-tiles"></div>
+      </div>
+
+      <div class="toolbar-actions">
+        <button id="btn-assist-mode" class="tool-btn active" type="button" title="初心者アシスト切替">
+          <span class="btn-icon">✨</span><span class="btn-text" id="assist-mode-text">徹底ナビ</span>
+        </button>
+        <button id="btn-view-mode" class="tool-btn" type="button" title="カメラ視点切替">
+          <span class="btn-icon">🎥</span><span class="btn-text" id="view-mode-text">標準視点</span>
+        </button>
+        <button id="btn-sound" class="tool-btn active" type="button" title="効果音ON/OFF">
+          <span class="btn-icon" id="sound-icon">🔊</span>
+        </button>
+        <button id="btn-install" class="tool-btn install-btn hidden" type="button" title="アプリをインストール">
+          <span class="btn-icon">📲</span><span class="btn-text">導入</span>
+        </button>
+        <button id="btn-fullscreen" class="tool-btn" type="button" title="全画面表示">
+          <span class="btn-icon">⛶</span>
+        </button>
+        <button id="btn-manual" class="tool-btn" type="button" title="ルール・マニュアル">
+          <span class="btn-icon">📖</span><span class="btn-text">入門</span>
+        </button>
+        <button id="btn-settings" class="tool-btn" type="button" title="設定・新対局">
+          <span class="btn-icon">⚙</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- 4家プレイヤー情報HUD -->
+    <div id="seat-top" class="seat-card seat-top">
+      <div class="seat-wind" id="seat-wind-2">西</div>
+      <div class="seat-info">
+        <div class="seat-name" id="seat-name-2">風月（AI）</div>
+        <div class="seat-score" id="seat-score-2">25,000</div>
+      </div>
+      <span class="riichi-tag hidden" id="seat-riichi-2">リーチ</span>
+    </div>
+
+    <div id="seat-left" class="seat-card seat-left">
+      <div class="seat-wind" id="seat-wind-3">北</div>
+      <div class="seat-info">
+        <div class="seat-name" id="seat-name-3">雅（AI）</div>
+        <div class="seat-score" id="seat-score-3">25,000</div>
+      </div>
+      <span class="riichi-tag hidden" id="seat-riichi-3">リーチ</span>
+    </div>
+
+    <div id="seat-right" class="seat-card seat-right">
+      <div class="seat-wind" id="seat-wind-1">南</div>
+      <div class="seat-info">
+        <div class="seat-name" id="seat-name-1">花鳥（AI）</div>
+        <div class="seat-score" id="seat-score-1">25,000</div>
+      </div>
+      <span class="riichi-tag hidden" id="seat-riichi-1">リーチ</span>
+    </div>
+
+    <!-- 発声・イベント中央トースト -->
+    <div id="call-banner" class="call-banner hidden"></div>
+
+    <!-- あなたの手元UI（初心者アシスト + アクションボタン + 自家情報） -->
+    <section id="bottom-hud">
+      <!-- 鳴き・ロン・リーチ等のアクションボタン領域 -->
+      <div id="action-bar" class="action-bar hidden">
+        <div id="call-advice-box" class="call-advice-box hidden"></div>
+        <div id="action-buttons" class="action-buttons"></div>
+      </div>
+
+      <!-- 初心者向けアシストバー -->
+      <div id="assist-panel" class="assist-panel">
+        <div class="assist-header-row">
+          <div id="seat-self" class="seat-self-badge">
+            <span class="seat-wind self" id="seat-wind-0">東</span>
+            <span class="seat-name" id="seat-name-0">あなた</span>
+            <span class="seat-score" id="seat-score-0">25,000</span>
+            <span class="riichi-tag hidden" id="seat-riichi-0">リーチ</span>
+          </div>
+          <div id="shanten-badge" class="shanten-badge">対局準備中</div>
+          <button id="btn-yaku-nav-toggle" class="mini-chip-btn" type="button">狙える役 ▼</button>
+        </div>
+
+        <!-- 選択/ホバー牌の打牌プレビュー、またはテンパイ待ち牌パネル -->
+        <div id="assist-detail" class="assist-detail"></div>
+
+        <!-- 狙える役ナビゲーター（展開パネル） -->
+        <div id="yaku-nav-drawer" class="yaku-nav-drawer hidden"></div>
+      </div>
+    </section>
+
+    <!-- タイトル・新規対局モーダル -->
+    <div id="start-modal" class="modal-backdrop">
+      <div class="modal-card scrollable">
+        <div class="title-emblem">發</div>
+        <h1 class="modal-title">雅 3D麻雀</h1>
+        <p class="modal-subtitle">美しい3D卓と丁寧なナビで、役や点数が分からなくても気持ちよく打てる麻雀プロトタイプ</p>
+
+        <div class="option-grid">
+          <div class="option-group">
+            <label class="option-label">対局形式</label>
+            <div class="segmented" id="opt-match-type">
+              <button type="button" class="seg-btn active" data-val="tonpu">東風戦（約10分）</button>
+              <button type="button" class="seg-btn" data-val="hanchan">半荘戦（本格）</button>
+            </div>
+          </div>
+
+          <div class="option-group">
+            <label class="option-label">初心者ナビ・補助</label>
+            <div class="segmented" id="opt-assist-init">
+              <button type="button" class="seg-btn active" data-val="full">徹底ナビ（おすすめ）</button>
+              <button type="button" class="seg-btn" data-val="hint">ヒントのみ</button>
+              <button type="button" class="seg-btn" data-val="off">アシストOFF</button>
+            </div>
+          </div>
+
+          <div class="option-group">
+            <label class="option-label">牌の打ち方（誤タップ防止）</label>
+            <div class="segmented" id="opt-tap-mode">
+              <button type="button" class="seg-btn active" data-val="two-step">2タップ（確認して打つ）</button>
+              <button type="button" class="seg-btn" data-val="one-step">1タップ即打牌</button>
+            </div>
+          </div>
+
+          <div class="option-row-toggles">
+            <label class="toggle-item">
+              <input type="checkbox" id="chk-tile-labels" checked>
+              <span>牌の左上に「1萬・東」などガイド文字を表示</span>
+            </label>
+            <label class="toggle-item">
+              <input type="checkbox" id="chk-red-fives" checked>
+              <span>赤ドラあり（赤5萬・5筒・5索）</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-footer-btns">
+          <button id="btn-start-game" class="primary-cta" type="button">対局をはじめる</button>
+          <a href="./manual/index.html" target="_blank" rel="noopener" class="secondary-cta">📖 ルール・操作マニュアルを見る</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- 和了・流局リザルトモーダル -->
+    <div id="result-modal" class="modal-backdrop hidden">
+      <div class="modal-card result-card scrollable">
+        <div id="result-content"></div>
+        <div class="modal-footer-btns">
+          <button id="btn-next-round" class="primary-cta" type="button">次の局へ進む</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 設定・ヘルプ案内モーダル -->
+    <div id="settings-modal" class="modal-backdrop hidden">
+      <div class="modal-card scrollable">
+        <h2 class="modal-title-sm">設定・メニュー</h2>
+        <div class="option-grid">
+          <div class="option-group">
+            <label class="option-label">牌の打ち方</label>
+            <div class="segmented" id="set-tap-mode">
+              <button type="button" class="seg-btn active" data-val="two-step">2タップ（誤操作防止）</button>
+              <button type="button" class="seg-btn" data-val="one-step">1タップ即打牌</button>
+            </div>
+          </div>
+          <label class="toggle-item">
+            <input type="checkbox" id="set-tile-labels" checked>
+            <span>牌の左上にガイド文字を表示</span>
+          </label>
+          <button id="btn-reset-camera" class="secondary-cta" type="button">🎥 カメラ視点をリセット</button>
+          <button id="btn-restart-match" class="secondary-cta danger" type="button">🔄 最初から対局をやり直す</button>
+          <a href="./manual/index.html" target="_blank" rel="noopener" class="secondary-cta">📖 オンラインマニュアルを開く</a>
+        </div>
+        <div class="modal-footer-btns">
+          <button id="btn-close-settings" class="primary-cta" type="button">対局に戻る</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- iOS Safari等 全画面インストール案内モーダル -->
+    <div id="ios-fs-modal" class="modal-backdrop hidden">
+      <div class="modal-card scrollable">
+        <h2 class="modal-title-sm">全画面アプリとして使う方法</h2>
+        <p class="ios-guide-text">
+          iPad / iPhone の Safari ではブラウザ仕様上ボタンからの自動全画面ができないため、以下の手順で<strong>完全フルスクリーンアプリ</strong>として遊べます：
+        </p>
+        <ol class="ios-steps">
+          <li>Safari のツールバーにある <strong>共有ボタン（□に↑のアイコン）</strong> をタップ</li>
+          <li>メニューから <strong>「ホーム画面に追加」</strong> を選択</li>
+          <li>ホーム画面に追加された「雅3D麻雀」アイコンから起動すると、アドレスバー無しの全画面で快適にプレイできます！</li>
+        </ol>
+        <div class="modal-footer-btns">
+          <button id="btn-close-ios-fs" class="primary-cta" type="button">わかりました</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./js/main.js?v=20261126220500"></script>
+</body>
+</html>

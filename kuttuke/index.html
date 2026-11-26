@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>くっつけ！ぷにスクイーズ</title>
+
+  <!-- キャッシュ無効化対応 -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <!-- PWA / Chrome / Android / iOS Safari 全画面設定 -->
+  <meta name="theme-color" content="#ff8bb0">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="ぷにスクイーズ">
+
+  <link rel="manifest" href="./manifest.webmanifest?v=20261126221144">
+  <link rel="icon" type="image/png" sizes="192x192" href="./assets/icons/icon-192.png?v=20261126221144">
+  <link rel="apple-touch-icon" href="./assets/icons/apple-touch-icon.png?v=20261126221144">
+  <link rel="stylesheet" href="./css/style.css?v=20261126221144">
+</head>
+<body>
+  <!-- ふんわり背景 -->
+  <div class="bg-blobs" aria-hidden="true">
+    <div class="bg-blob bg-blob-1"></div>
+    <div class="bg-blob bg-blob-2"></div>
+    <div class="bg-blob bg-blob-3"></div>
+  </div>
+
+  <div class="app-shell">
+    <main class="game-layout">
+      <!-- 縦向き（スマホ / タブレット縦）用コンパクトヘッダー -->
+      <header class="mobile-topbar">
+        <div class="topbar-row">
+          <div class="brand-mini">🍡 ぷにスクイーズ</div>
+          <div class="score-pills">
+            <div class="pill-card">
+              <span class="pill-label">SCORE</span>
+              <span class="pill-value" id="scoreMobile">0</span>
+            </div>
+            <div class="pill-card">
+              <span class="pill-label">BEST</span>
+              <span class="pill-value" id="bestMobile">0</span>
+            </div>
+            <div class="next-mini" title="つぎのスクイーズ">
+              <span class="pill-label">NEXT</span>
+              <canvas id="nextCanvasMobile" width="52" height="52"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="action-strip">
+          <div class="mini-evo-bar" id="miniEvoBar" aria-label="進化のじゅんばん"></div>
+          <div class="icon-btn-group">
+            <button type="button" class="icon-btn" data-action="rules" title="あそびかた" aria-label="あそびかた">❓</button>
+            <button type="button" class="icon-btn" data-action="mute" title="サウンド切替" aria-label="サウンド切替">🔊</button>
+            <button type="button" class="icon-btn" data-action="fullscreen" title="全画面表示" aria-label="全画面表示">⛶</button>
+            <button type="button" class="icon-btn" data-action="restart" title="やりなおす" aria-label="やりなおす">🔄</button>
+          </div>
+        </div>
+      </header>
+
+      <!-- 横向き（PC / タブレット横）用 左パネル -->
+      <aside class="side-panel side-left">
+        <section class="panel-card title-card">
+          <h1 class="game-title">🍡 くっつけ！<br>ぷにスクイーズ</h1>
+          <p class="game-subtitle">おなじコをくっつけて大きくしよう！</p>
+        </section>
+
+        <section class="panel-card">
+          <div class="score-box">
+            <div class="score-stat">
+              <div class="label">スコア</div>
+              <div class="val" id="scoreDesktop">0</div>
+            </div>
+            <div class="score-stat">
+              <div class="label">ハイスコア</div>
+              <div class="val" id="bestDesktop">0</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel-card next-box">
+          <div class="section-heading" style="width:100%;">
+            <span>つぎのスクイーズ</span>
+          </div>
+          <div class="next-preview-wrap">
+            <canvas id="nextCanvasDesktop" width="110" height="110"></canvas>
+          </div>
+          <div class="next-name" id="nextNameDesktop">ぷち豆もち</div>
+        </section>
+
+        <section class="panel-card">
+          <div class="control-buttons">
+            <button type="button" class="btn btn-primary btn-full" data-action="restart">🔄 さいしょから</button>
+            <button type="button" class="btn btn-secondary" data-action="rules">❓ あそびかた</button>
+            <button type="button" class="btn btn-secondary" data-action="mute">🔊 サウンド</button>
+            <button type="button" class="btn btn-mint" data-action="fullscreen">⛶ 全画面</button>
+            <a class="btn btn-secondary" href="./manual/index.html?v=20261126221144">📖 マニュアル</a>
+            <button type="button" class="btn btn-primary btn-full" data-action="install" style="display:none;">📲 アプリ追加</button>
+          </div>
+        </section>
+      </aside>
+
+      <!-- 中央ゲームステージ -->
+      <section class="stage-area" id="stageArea">
+        <div class="canvas-frame">
+          <canvas id="gameCanvas" aria-label="ぷにスクイーズ パズル盤面"></canvas>
+        </div>
+        <div class="hint-banner" id="hintBanner">
+          👆 ゆび・マウスでうごかして はなすと おちるよ！
+        </div>
+      </section>
+
+      <!-- 横向き（PC / タブレット横）用 右パネル -->
+      <aside class="side-panel side-right">
+        <section class="panel-card">
+          <div class="section-heading">
+            <span>✨ 進化のわ（くっつくと大きくなるよ）</span>
+          </div>
+          <div class="evo-list" id="desktopEvoList"></div>
+        </section>
+
+        <section class="panel-card quick-rule-box">
+          <div class="section-heading"><span>💡 かんたんルール</span></div>
+          <ul>
+            <li>同じキャラがくっつくと<strong>1段階進化</strong>！</li>
+            <li>赤い点線から<strong>2.5秒あふれる</strong>と終了</li>
+            <li>PCはマウス、または <strong>← → + Space</strong> で操作</li>
+          </ul>
+        </section>
+      </aside>
+
+      <!-- 縦向き用フッター -->
+      <footer class="mobile-footer">
+        <span class="mobile-footer-hint">おなじスクイーズをくっつけよう！</span>
+        <div class="mobile-footer-actions">
+          <button type="button" class="btn btn-mint btn-xs" data-action="install" style="display:none;">📲 アプリ化</button>
+          <a class="btn btn-secondary btn-xs" href="./manual/index.html?v=20261126221144">📖 マニュアル</a>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <!-- スマホ横向き時：縦向き案内オーバーレイ -->
+  <div class="rotate-overlay" role="dialog" aria-modal="true" aria-label="画面の向きのご案内">
+    <div class="rotate-icon">📱</div>
+    <h2 style="margin:0;color:#eb5d8a;">たてむきにしてあそんでね！</h2>
+    <p style="margin:0;font-size:0.9rem;color:#6f5c6b;max-width:300px;">
+      スマートフォンでは縦向き画面に最適化されています。本体をたてに持ってご利用ください。
+    </p>
+  </div>
+
+  <!-- あそびかた＆進化図鑑モーダル -->
+  <div class="modal-backdrop hidden" id="ruleModal" role="dialog" aria-modal="true" aria-labelledby="ruleModalTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="ruleModalTitle">🍡 あそびかた＆進化のわ</h2>
+        <button type="button" class="icon-btn" data-action="close-modal" aria-label="閉じる">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="rule-steps">
+          <div class="rule-step">
+            <div class="rule-num">1</div>
+            <div>
+              <strong>狙いをさだめて落とそう！</strong><br>
+              画面をなぞって（マウスを動かして）落としたい場所を決め、指をはなすかクリックすると「ぽっ」と落ちます。
+            </div>
+          </div>
+          <div class="rule-step">
+            <div class="rule-num">2</div>
+            <div>
+              <strong>おなじキャラ同士がくっつくと進化！</strong><br>
+              同じスクイーズ同士がぶつかると「ぷにっ！」と合体して、1つ大きなスクイーズに進化＆スコアGET！連続合体でコンボボーナスも入ります。
+            </div>
+          </div>
+          <div class="rule-step">
+            <div class="rule-num">3</div>
+            <div>
+              <strong>あふれる前に「王様もちふわ」を目指そう！</strong><br>
+              上の赤い点線からスクイーズが2.5秒以上はみ出るとゲームオーバー。最大Lv.11同士が合体すると大爆発ボーナスで消えてスッキリします！
+            </div>
+          </div>
+        </div>
+        <h3 style="margin:8px 0 4px;font-size:0.92rem;">✨ 全11段階スクイーズ図鑑</h3>
+        <div class="evo-grid" id="ruleEvoGrid"></div>
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-secondary" href="./manual/index.html?v=20261126221144">📖 くわしいマニュアル</a>
+        <button type="button" class="btn btn-primary" data-action="close-modal">あそぶ！</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ゲームオーバーモーダル -->
+  <div class="modal-backdrop hidden" id="gameOverModal" role="dialog" aria-modal="true" aria-labelledby="gameOverTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="gameOverTitle">☁️ ここまで！おつかれさま！</h2>
+      </div>
+      <div class="modal-body" style="text-align:center;">
+        <div class="new-record-badge" id="newRecordBadge" style="display:none;">🎉 NEW RECORD!</div>
+        <div class="gameover-stats">
+          <div class="gameover-stat-box">
+            <div style="font-size:0.78rem;color:#7d6a78;font-weight:700;">こんかいのスコア</div>
+            <div class="big" id="finalScore">0</div>
+          </div>
+          <div class="gameover-stat-box">
+            <div style="font-size:0.78rem;color:#7d6a78;font-weight:700;">ハイスコア</div>
+            <div class="big" id="finalBest">0</div>
+          </div>
+        </div>
+        <p style="margin:6px 0 0;font-weight:700;">
+          いちばん大きくしたスクイーズ：<br>
+          <span id="finalMaxChar" style="color:#eb5d8a;font-size:1.05rem;">-</span>
+        </p>
+      </div>
+      <div class="modal-footer" style="justify-content:center;">
+        <button type="button" class="btn btn-secondary" data-action="rules">📖 進化表をみる</button>
+        <button type="button" class="btn btn-primary" data-action="restart">🔄 もういちどあそぶ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- iOS Safari 全画面ガイドモーダル -->
+  <div class="modal-backdrop hidden" id="iosGuideModal" role="dialog" aria-modal="true" aria-labelledby="iosGuideTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="iosGuideTitle">📱 iPad / iPhone 全画面のやりかた</h2>
+        <button type="button" class="icon-btn" data-action="close-modal" aria-label="閉じる">✕</button>
+      </div>
+      <div class="modal-body">
+        <p>iOSのSafariでは、ホーム画面に追加するとアドレスバーが消えて<strong>完全な全画面アプリ</strong>として遊べます。</p>
+        <ol style="padding-left:20px;">
+          <li>Safariのツールバーにある <strong>共有ボタン（□に↑）</strong> をタップ</li>
+          <li>メニューを下にスクロールして <strong>「ホーム画面に追加」</strong> をタップ</li>
+          <li>右上の <strong>「追加」</strong> をタップし、ホーム画面のアイコンから起動！</li>
+        </ol>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-action="close-modal">わかった！</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script type="module" src="./js/main.js?v=20261126221144"></script>
+</body>
+</html>
