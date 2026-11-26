@@ -172,9 +172,9 @@ html, body {
 }
 
 .seat-top {
-  top: calc(56px + var(--safe-top));
-  left: 50%;
-  transform: translateX(-50%);
+  top: calc(52px + var(--safe-top));
+  left: calc(14px + var(--safe-left));
+  transform: none;
 }
 
 .seat-left {
@@ -737,6 +737,8 @@ html, body {
   }
   .seat-top {
     top: calc(88px + var(--safe-top));
+    left: 50%;
+    transform: translateX(-50%);
   }
   .seat-left {
     top: 28%;

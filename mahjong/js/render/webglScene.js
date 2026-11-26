@@ -76,31 +76,35 @@ void main() {
   }
 
   // 主光源（暖かみのある卓上ライト）
-  vec3 L1 = normalize(vec3(2.8, 12.0, 5.5) - vWorldPos);
-  // 補助リムライト（冷色寄りで立体感を強調）
-  vec3 L2 = normalize(vec3(-6.0, 7.0, -5.0) - vWorldPos);
+  vec3 L1 = normalize(vec3(2.4, 12.5, 5.2) - vWorldPos);
+  // 補助リムライト
+  vec3 L2 = normalize(vec3(-5.0, 8.0, -4.0) - vWorldPos);
 
   float diff1 = max(dot(N, L1), 0.0);
   float diff2 = max(dot(N, L2), 0.0);
 
-  // 半球環境光（上＝暖白、下＝卓の緑反射）
-  float hemi = N.y * 0.5 + 0.5;
-  vec3 ambient = mix(vec3(0.24, 0.36, 0.28), vec3(0.58, 0.57, 0.54), hemi);
-
-  // スペキュラ（象牙牌の美しいツヤ）
-  vec3 H1 = normalize(L1 + V);
-  float spec1 = pow(max(dot(N, H1), 0.0), 48.0) * 0.34;
-  float fresnel = pow(1.0 - max(dot(N, V), 0.0), 3.0) * 0.14;
-
-  vec3 lit = baseCol * (ambient + diff1 * vec3(0.68, 0.66, 0.62) + diff2 * vec3(0.16, 0.19, 0.22));
-  lit += vec3(spec1 + fresnel);
+  vec3 lit;
+  if (vFaceType > 0.5 && vFaceType < 1.5) {
+    // 絵柄面：白飛びを防ぎつつ文字・図柄の黒/赤/緑のコントラストをくっきり保ち、微光沢を乗せる
+    vec3 H1 = normalize(L1 + V);
+    float specFace = pow(max(dot(N, H1), 0.0), 64.0) * 0.09;
+    float lightAmt = 0.72 + diff1 * 0.28 + diff2 * 0.08;
+    lit = baseCol * lightAmt + vec3(specFace);
+  } else {
+    // 側面・背面・ベベル：立体感のある陰影＋光沢
+    float hemi = N.y * 0.5 + 0.5;
+    vec3 ambient = mix(vec3(0.32, 0.34, 0.28), vec3(0.58, 0.57, 0.54), hemi);
+    vec3 H1 = normalize(L1 + V);
+    float spec1 = pow(max(dot(N, H1), 0.0), 42.0) * 0.22;
+    float fresnel = pow(1.0 - max(dot(N, V), 0.0), 3.0) * 0.09;
+    lit = baseCol * (ambient + diff1 * vec3(0.52, 0.50, 0.47) + diff2 * vec3(0.14, 0.15, 0.16));
+    lit += vec3(spec1 + fresnel);
+  }
 
   // ハイライト / 選択 / おすすめ強調
-  lit = mix(lit, lit * 0.72 + uHighlight * 0.55, uHighlightStrength);
+  lit = mix(lit, lit * 0.76 + uHighlight * 0.52, uHighlightStrength);
   lit *= uDim;
 
-  // トーンマッピング風ソフトクリップ
-  lit = lit / (lit + vec3(0.18)) * 1.15;
   fragColor = vec4(clamp(lit, 0.0, 1.0), 1.0);
 }
 `;
@@ -295,7 +299,7 @@ export class Mahjong3DScene {
     this.tableFeltMesh = createMeshVAO(gl, createBoxGeometry(9.4, 0.24, 9.4, [0.1, 0.36, 0.24], 5.0), false);
     this.rimTopMesh = createMeshVAO(gl, createBoxGeometry(10.0, 0.38, 0.34, [0.24, 0.14, 0.08], 1.0), false);
     this.rimSideMesh = createMeshVAO(gl, createBoxGeometry(0.34, 0.38, 10.0, [0.24, 0.14, 0.08], 1.0), false);
-    this.centerWellMesh = createMeshVAO(gl, createBoxGeometry(1.92, 0.03, 1.92, [0.06, 0.16, 0.12], 1.0), false);
+    this.centerWellMesh = createMeshVAO(gl, createBoxGeometry(1.92, 0.03, 0.92, [0.06, 0.16, 0.12], 1.0), false);
     this.riichiStickMesh = createMeshVAO(gl, createBoxGeometry(1.15, 0.055, 0.11, [0.96, 0.96, 0.94], 1.0), false);
     this.riichiDotMesh = createMeshVAO(gl, createBoxGeometry(0.08, 0.065, 0.08, [0.88, 0.14, 0.16], 1.0), false);
     this.shadowMesh = createMeshVAO(gl, createShadowQuadGeometry(), false);
@@ -574,32 +578,38 @@ export class Mahjong3DScene {
     const snap = this.snapshot;
     const isPortrait = (this.aspect || 1) < 1.0;
 
-    // 1) 中央ドラ表示牌（最大4枚）＋小さな山飾り
+    // 1) 中央ドラ表示牌（最大4枚）＋小さな山飾り（中央コンソール上辺へコンパクト配置）
     const doraInds = snap.doraIndicators || [];
+    const doraScale = 0.68;
     for (let i = 0; i < 4; i++) {
-      const x = -0.78 + i * 0.52;
+      const x = -0.68 + i * (TILE_W * 1.02 * doraScale);
       if (i < doraInds.length) {
         const t = doraInds[i];
         this.upsertTileTarget(`dora_${t.id}`, t, {
-          pos: [x, TILE_D * 0.5 + 0.02, -0.58],
+          pos: [x, TILE_D * 0.5 * doraScale + 0.02, -0.58],
           rot: [-Math.PI * 0.5, 0, 0],
-          shadowScale: [0.85, 1.05],
+          scale: doraScale,
+          shadowScale: [0.85 * doraScale, 1.05 * doraScale],
           shadowAlpha: 0.34,
           highlight: [1.0, 0.84, 0.25],
-          highlightStrength: 0.14,
+          highlightStrength: 0.12,
         });
       } else {
         this.upsertTileTarget(`dora_back_${i}`, { id: 900 + i, type: 0, isRed: false }, {
-          pos: [x, TILE_D * 0.5 + 0.02, -0.58],
-          rot: [Math.PI * 0.5, 0, 0], // 裏向き
-          shadowScale: [0.85, 1.05],
+          pos: [x, TILE_D * 0.5 * doraScale + 0.02, -0.58],
+          rot: [Math.PI * 0.5, 0, 0], // 裏向き（オレンジ）
+          scale: doraScale,
+          shadowScale: [0.85 * doraScale, 1.05 * doraScale],
           shadowAlpha: 0.30,
         });
       }
     }
 
     // 2) 各プレイヤーの河（捨て牌）・手牌・副露
-    const seatAngles = [0, Math.PI * 0.5, Math.PI, -Math.PI * 0.5]; // 0:手前(南方向表示), 1:右, 2:奥, 3:左
+    const seatAngles = [0, Math.PI * 0.5, Math.PI, -Math.PI * 0.5]; // 0:手前, 1:右, 2:奥, 3:左
+    const riverScale = 0.78;
+    const meldScale = 0.72;
+    const aiHandScale = 0.62;
 
     for (let pIdx = 0; pIdx < 4; pIdx++) {
       const p = snap.players[pIdx];
@@ -613,26 +623,27 @@ export class Mahjong3DScene {
         -lx * sinA + lz * cosA,
       ];
 
-      // 捨て牌（河）：6枚×3段、ローカル基準 x in [-1.6..1.6], z = 1.48..
+      // 捨て牌（河）：6枚×3段、少し小ぶりにして中央周りに余裕を確保
       let col = 0;
       let row = 0;
       for (let dIdx = 0; dIdx < p.discards.length; dIdx++) {
         const d = p.discards[dIdx];
-        if (d.calledBy >= 0) continue; // 鳴かれた牌は河から消えて副露へ移動
+        if (d.calledBy >= 0) continue;
 
-        const stepX = TILE_W * 0.96;
-        const stepZ = TILE_H * 0.96;
+        const stepX = TILE_W * 0.98 * riverScale;
+        const stepZ = TILE_H * 0.98 * riverScale;
         const extraRotY = d.isRiichiTile ? Math.PI * 0.5 : 0;
-        const lx = -stepX * 2.5 + col * stepX + (d.isRiichiTile ? 0.10 : 0);
-        const lz = 1.46 + row * stepZ;
+        const lx = -stepX * 2.5 + col * stepX + (d.isRiichiTile ? 0.08 : 0);
+        const lz = 1.42 + row * stepZ;
 
         const isLatestDiscard = d.tile.id === this.lastDiscardedTileId;
         this.upsertTileTarget(`tile_${d.tile.id}`, d.tile, {
-          pos: toWorld(lx, TILE_D * 0.5, lz),
+          pos: toWorld(lx, TILE_D * 0.5 * riverScale, lz),
           rot: [-Math.PI * 0.5, angle + extraRotY, 0],
+          scale: riverScale,
           highlight: isLatestDiscard ? [0.25, 0.92, 1.0] : [0, 0, 0],
-          highlightStrength: isLatestDiscard ? 0.28 : 0.0,
-          shadowScale: d.isRiichiTile ? [1.25, 0.8] : [0.95, 1.15],
+          highlightStrength: isLatestDiscard ? 0.25 : 0.0,
+          shadowScale: d.isRiichiTile ? [1.25 * riverScale, 0.8 * riverScale] : [0.95 * riverScale, 1.15 * riverScale],
           shadowAlpha: 0.36,
           allowArc: true,
           spawnDrop: true,
@@ -645,43 +656,45 @@ export class Mahjong3DScene {
         }
       }
 
-      // 副露（鳴き）：右手前角
-      let meldCursorX = 3.55;
+      // 副露（鳴き）：各家右手前角
+      let meldCursorX = 3.85;
       for (let mIdx = 0; mIdx < p.melds.length; mIdx++) {
         const m = p.melds[mIdx];
         for (let tIdx = 0; tIdx < m.tiles.length; tIdx++) {
           const mt = m.tiles[tIdx];
           const isCalled = mt.id === m.calledTileId;
           const isAnkanHidden = m.type === 'ankan' && (tIdx === 0 || tIdx === 3);
-          const lx = meldCursorX - tIdx * (TILE_W * 0.94);
-          const lz = 3.75;
+          const lx = meldCursorX - tIdx * (TILE_W * 0.96 * meldScale);
+          const lz = 3.65;
           this.upsertTileTarget(`tile_${mt.id}`, mt, {
-            pos: toWorld(lx, TILE_D * 0.5, lz),
+            pos: toWorld(lx, TILE_D * 0.5 * meldScale, lz),
             rot: [isAnkanHidden ? Math.PI * 0.5 : -Math.PI * 0.5, angle + (isCalled ? Math.PI * 0.5 : 0), 0],
-            shadowScale: [0.9, 1.1],
+            scale: meldScale,
+            shadowScale: [0.9 * meldScale, 1.1 * meldScale],
             shadowAlpha: 0.34,
           });
         }
-        meldCursorX -= (m.tiles.length * TILE_W * 0.96 + 0.22);
+        meldCursorX -= (m.tiles.length * TILE_W * 0.98 * meldScale + 0.16);
       }
 
       // 手牌
       if (pIdx === 0) {
-        // あなたの手牌：手前に立てて少し傾ける（アスペクト比に応じて自動スケールし左右切れを完全防止）
+        // あなたの手牌：カメラに対して正面を向くようにし、アスペクト比に応じて自動スケール
         const hand = p.hand;
         const count = hand.length;
         const hasDrawnGap = snap.turnPlayer === 0 && p.drawnTileId !== -1 && hand.some((t) => t.id === p.drawnTileId);
-        const baseZ = isPortrait ? 4.42 : 4.18;
+        const baseZ = isPortrait ? 4.65 : 4.45;
         const camInfo = this.getCameraMatrices();
-        const handScale = this.getPlayerHandScale(camInfo, TILE_H * 0.48 + 0.05, baseZ);
+        const baseY = 0.58 * TILE_H * this.getPlayerHandScale(camInfo, 0.55, baseZ) + 0.18;
+        const handScale = this.getPlayerHandScale(camInfo, baseY, baseZ);
         const pitch = TILE_W * 1.03 * handScale;
         const gap = 0.24 * handScale;
         const totalWidth = (count - 1) * pitch + (hasDrawnGap ? gap : 0);
         const startX = -totalWidth * 0.5;
-        const baseY = TILE_H * 0.48 * handScale + 0.06;
-        const tilt = -0.34; // 少し手前に傾けて牌面をカメラへ向ける
+        // カメラ視線角に正対させて正面からくっきり見えるようにする
+        const camPitch = Math.atan2(camInfo.eye[1] - baseY, camInfo.eye[2] - baseZ);
+        const tilt = -camPitch;
 
-        // 表示順：手牌の並び通り（ツモ牌が最後尾にあれば右端へ離す）
         const ordered = [];
         let drawnEntry = null;
         for (const t of hand) {
@@ -718,7 +731,7 @@ export class Mahjong3DScene {
             hStr = 0.34;
           } else if (isBest && this.callbacks.shouldHighlightBest?.()) {
             highlight = [0.28, 0.95, 0.62];
-            hStr = 0.20;
+            hStr = 0.18;
           }
 
           const dim = (isRiichiLocked && !isDrawn && snap.turnPlayer === 0) ? 0.72 : 1.0;
@@ -736,9 +749,10 @@ export class Mahjong3DScene {
           });
         }
       } else {
-        // AIの手牌：立っているが牌面は内側（相手自身）向き、ただし終局/和了時は倒してオープン！
+        // AIの手牌：通常時は小ぶりサイズで自分の側（外側）を向き、プレイヤーからは背面オレンジ＋天面の白だけが見える！
+        // 和了・流局時は手牌を倒してオープン表示
         const hand = p.hand;
-        const pitch = TILE_W * 1.01;
+        const pitch = TILE_W * 1.01 * aiHandScale;
         const totalWidth = (hand.length - 1) * pitch;
         const startX = -totalWidth * 0.5;
         const reveal = snap.phase === 'ROUND_END' || snap.phase === 'MATCH_END';
@@ -746,12 +760,13 @@ export class Mahjong3DScene {
         for (let i = 0; i < hand.length; i++) {
           const t = hand[i];
           const lx = startX + i * pitch;
-          const lz = 4.18;
+          const lz = 4.35;
           this.upsertTileTarget(`tile_${t.id}`, t, {
-            pos: toWorld(lx, reveal ? TILE_D * 0.5 : TILE_H * 0.5, lz),
-            rot: reveal ? [-Math.PI * 0.5, angle, 0] : [0, angle + Math.PI, 0],
-            shadowScale: [0.95, 0.8],
-            shadowAlpha: 0.36,
+            pos: toWorld(lx, (reveal ? TILE_D : TILE_H) * 0.5 * aiHandScale, lz),
+            rot: reveal ? [-Math.PI * 0.5, angle, 0] : [0, angle, 0],
+            scale: aiHandScale,
+            shadowScale: [0.95 * aiHandScale, 0.8 * aiHandScale],
+            shadowAlpha: 0.34,
           });
         }
       }
@@ -819,7 +834,7 @@ export class Mahjong3DScene {
     };
 
     drawTablePart(this.tableFeltMesh, [0, -0.12, 0], 0, true);
-    drawTablePart(this.centerWellMesh, [0, 0.0, 0], 0, false);
+    drawTablePart(this.centerWellMesh, [0, 0.0, -0.58], 0, false);
     drawTablePart(this.rimTopMesh, [0, 0.06, -4.85], 0, false);
     drawTablePart(this.rimTopMesh, [0, 0.06,  4.85], 0, false);
     drawTablePart(this.rimSideMesh, [-4.85, 0.06, 0], 0, false);

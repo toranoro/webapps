@@ -38,7 +38,7 @@ export function setupViewportGuards() {
 
 export function registerNoCacheServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
-  navigator.serviceWorker.register('./sw.js?v=20261126220500', { updateViaCache: 'none' })
+  navigator.serviceWorker.register('./sw.js?v=20261126223358', { updateViaCache: 'none' })
     .then((reg) => {
       reg.update().catch(() => {});
     })
