@@ -28,12 +28,14 @@
       (B3B.BGM_TRACKS && B3B.BGM_TRACKS[1] && B3B.BGM_TRACKS[1].file) ||
       (B3B.BGM_TRACKS && B3B.BGM_TRACKS[0] && B3B.BGM_TRACKS[0].file) ||
       '';
+    const hasSfxVolume = saved && typeof saved.sfxVolume === 'number';
     const appSettings = {
       sound: saved && typeof saved.sound === 'boolean' ? saved.sound : true,
       bgmEnabled: saved && typeof saved.bgmEnabled === 'boolean' ? saved.bgmEnabled : true,
       bgmMode: saved && (saved.bgmMode === 'random' || saved.bgmMode === 'repeat') ? saved.bgmMode : 'random',
       bgmTrack: saved && typeof saved.bgmTrack === 'string' ? saved.bgmTrack : defaultTrack,
-      bgmVolume: saved && typeof saved.bgmVolume === 'number' ? saved.bgmVolume : 0.55,
+      bgmVolume: hasSfxVolume && typeof saved.bgmVolume === 'number' ? saved.bgmVolume : 0.28,
+      sfxVolume: hasSfxVolume ? saved.sfxVolume : 0.75,
       ghost: saved && typeof saved.ghost === 'boolean' ? saved.ghost : true,
       magicEnabled: saved && typeof saved.magicEnabled === 'boolean' ? saved.magicEnabled : true,
       preset: saved && B3B.PRESETS[saved.preset] ? saved.preset : 'classic',
@@ -41,6 +43,7 @@
     };
 
     audio.setEnabled(appSettings.sound);
+    audio.setVolume(appSettings.sfxVolume);
     engine.settings.ghost = appSettings.ghost;
     engine.settings.magicEnabled = appSettings.magicEnabled;
     engine.settings.preset = appSettings.preset;
@@ -117,7 +120,10 @@
 
     const toggleBgmInput = document.getElementById('opt-bgm');
     const bgmVolumeInput = document.getElementById('opt-bgm-volume');
+    const bgmVolumeVal = document.getElementById('val-bgm-volume');
     const toggleSoundInput = document.getElementById('opt-sound');
+    const sfxVolumeInput = document.getElementById('opt-sfx-volume');
+    const sfxVolumeVal = document.getElementById('val-sfx-volume');
     const toggleGhostInput = document.getElementById('opt-ghost');
     const toggleMagicInput = document.getElementById('opt-magic');
     const toggleLandPadInput = document.getElementById('opt-landpad');
@@ -229,6 +235,7 @@
       if (boardFrame.style.width !== frameW) boardFrame.style.width = frameW;
       if (boardFrame.style.height !== frameH) boardFrame.style.height = frameH;
 
+      renderer.prewarm(cellSize);
       ensureBgCache();
       drawNextPreviews();
     }
@@ -308,25 +315,20 @@
       }
     }
 
+    function setTextIfChanged(els, txt) {
+      els.forEach((el) => {
+        if (el.textContent !== txt) el.textContent = txt;
+      });
+    }
+
     function syncHUD() {
-      scoreEls.forEach((el) => {
-        el.textContent = engine.score.toLocaleString();
-      });
-      bestEls.forEach((el) => {
-        el.textContent = engine.bestScore.toLocaleString();
-      });
-      levelEls.forEach((el) => {
-        el.textContent = String(engine.level);
-      });
-      gemsEls.forEach((el) => {
-        el.textContent = String(engine.gemsCleared);
-      });
-      chainEls.forEach((el) => {
-        el.textContent = String(engine.maxChain);
-      });
-      presetBadges.forEach((el) => {
-        el.textContent = (B3B.PRESETS[engine.settings.preset] || B3B.PRESETS.classic).label;
-      });
+      setTextIfChanged(scoreEls, engine.score.toLocaleString());
+      setTextIfChanged(bestEls, engine.bestScore.toLocaleString());
+      setTextIfChanged(levelEls, String(engine.level));
+      setTextIfChanged(gemsEls, String(engine.gemsCleared));
+      setTextIfChanged(chainEls, String(engine.maxChain));
+      const presetLabel = (B3B.PRESETS[engine.settings.preset] || B3B.PRESETS.classic).label;
+      setTextIfChanged(presetBadges, presetLabel);
 
       const paused = engine.state === 'PAUSED';
       btnPauseList.forEach((btn) => {
@@ -388,8 +390,13 @@
 
     function syncSettingsUI() {
       if (toggleBgmInput) toggleBgmInput.checked = appSettings.bgmEnabled;
-      if (bgmVolumeInput) bgmVolumeInput.value = String(Math.round(appSettings.bgmVolume * 100));
+      const bgmPct = Math.round(appSettings.bgmVolume * 100);
+      if (bgmVolumeInput) bgmVolumeInput.value = String(bgmPct);
+      if (bgmVolumeVal) bgmVolumeVal.textContent = `${bgmPct}%`;
       if (toggleSoundInput) toggleSoundInput.checked = appSettings.sound;
+      const sfxPct = Math.round(appSettings.sfxVolume * 100);
+      if (sfxVolumeInput) sfxVolumeInput.value = String(sfxPct);
+      if (sfxVolumeVal) sfxVolumeVal.textContent = `${sfxPct}%`;
       if (toggleGhostInput) toggleGhostInput.checked = appSettings.ghost;
       if (toggleMagicInput) toggleMagicInput.checked = appSettings.magicEnabled;
       if (toggleLandPadInput) toggleLandPadInput.checked = appSettings.showTouchPad;
@@ -627,9 +634,22 @@
     }
     if (bgmVolumeInput) {
       bgmVolumeInput.addEventListener('input', () => {
-        const vol = Math.max(0, Math.min(1, Number(bgmVolumeInput.value) / 100));
+        const pct = Math.max(0, Math.min(100, Math.round(Number(bgmVolumeInput.value))));
+        const vol = pct / 100;
         appSettings.bgmVolume = vol;
         bgm.setVolume(vol);
+        if (bgmVolumeVal) bgmVolumeVal.textContent = `${pct}%`;
+        saveSettings(appSettings);
+      });
+    }
+
+    if (sfxVolumeInput) {
+      sfxVolumeInput.addEventListener('input', () => {
+        const pct = Math.max(0, Math.min(100, Math.round(Number(sfxVolumeInput.value))));
+        const vol = pct / 100;
+        appSettings.sfxVolume = vol;
+        audio.setVolume(vol);
+        if (sfxVolumeVal) sfxVolumeVal.textContent = `${pct}%`;
         saveSettings(appSettings);
       });
     }
@@ -1250,9 +1270,17 @@
 
         engine.update(dt);
 
-        // Drain popups into GPU-composited DOM toasts (zero Canvas fillText calls!)
-        while (engine.popups.length > 0) {
-          spawnDomPopup(engine.popups.shift());
+        // Coalesce frame popups so fixed banner updates at most once per frame
+        if (engine.popups.length > 0) {
+          let chosen = engine.popups[engine.popups.length - 1];
+          for (let i = 0; i < engine.popups.length; i++) {
+            if (engine.popups[i] && engine.popups[i].text === 'LEVEL UP!') {
+              chosen = engine.popups[i];
+              break;
+            }
+          }
+          engine.popups.length = 0;
+          spawnDomPopup(chosen);
         }
 
         if (engine.score !== hudScoreCache) {

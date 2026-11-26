@@ -10,7 +10,7 @@
       this.enabled = true;
       this.mode = 'random'; // 'random' | 'repeat'
       this.selectedFile = this.tracks.length > 1 ? this.tracks[1].file : (this.tracks[0]?.file || '');
-      this.volume = 0.55;
+      this.volume = 0.28;
       this.currentIndex = -1;
       this.suspendedByVisibility = false;
       this.suspendedByRotate = false;

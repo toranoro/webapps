@@ -189,12 +189,17 @@
         g.stroke();
 
         g.fillStyle = '#ffffff';
-        g.font = `900 ${Math.max(10, Math.round(rounded * 0.42))}px system-ui, sans-serif`;
+        g.font = `bold ${Math.max(10, Math.round(rounded * 0.42))}px sans-serif`;
         g.textAlign = 'center';
         g.textBaseline = 'middle';
         g.fillText(String(t), cx, cy + 0.5);
         this.timerCache.set(t, cv);
       }
+    }
+
+    prewarm(cellPx) {
+      this._ensureCache(cellPx);
+      this._ensureTimerCache(cellPx);
     }
 
     _ensureCache(cellPx) {

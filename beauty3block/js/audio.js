@@ -5,44 +5,59 @@
   class JewelAudio {
     constructor() {
       this.ctx = null;
+      this.sfxGain = null;
       this.enabled = true;
+      this.volume = 0.75; // 0.0 .. 1.0
       this.unlocked = false;
-      // Pentatonic / crystal major notes (Hz) for ascending chains
       this.chainScale = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5, 1174.66, 1318.51, 1567.98];
     }
 
     setEnabled(val) {
       this.enabled = Boolean(val);
+      this._syncGain();
+    }
+
+    setVolume(val) {
+      this.volume = Math.max(0, Math.min(1, Number(val) || 0));
+      this._syncGain();
+    }
+
+    _syncGain() {
+      if (this.sfxGain && this.ctx) {
+        try {
+          this.sfxGain.gain.setValueAtTime(this.enabled ? this.volume : 0, this.ctx.currentTime);
+        } catch (_) {}
+      }
     }
 
     unlock() {
-      if (!this.enabled) return;
       try {
         if (!this.ctx) {
           const AudioCtx = global.AudioContext || global.webkitAudioContext;
           if (!AudioCtx) return;
           this.ctx = new AudioCtx();
+          this.sfxGain = this.ctx.createGain();
+          this.sfxGain.gain.value = this.enabled ? this.volume : 0;
+          this.sfxGain.connect(this.ctx.destination);
         }
         if (this.ctx.state === 'suspended') {
-          this.ctx.resume();
+          this.ctx.resume().catch(() => {});
         }
         if (!this.unlocked && this.ctx.state === 'running') {
           const osc = this.ctx.createOscillator();
           const gain = this.ctx.createGain();
           gain.gain.value = 0.0001;
           osc.connect(gain);
-          gain.connect(this.ctx.destination);
+          gain.connect(this.sfxGain || this.ctx.destination);
           osc.start();
           osc.stop(this.ctx.currentTime + 0.01);
           this.unlocked = true;
         }
-      } catch (_) {
-        // Audio unavailable or blocked; fail silently
-      }
+      } catch (_) {}
     }
 
-    _tone({ freq = 440, endFreq = null, type = 'sine', duration = 0.08, volume = 0.08, delay = 0 }) {
-      if (!this.enabled) return;
+    _tone({ freq = 440, endFreq = null, type = 'sine', duration = 0.08, volume = 0.22, delay = 0 }) {
+      if (!this.enabled || this.volume <= 0) return;
       try {
         if (!this.ctx) this.unlock();
         if (!this.ctx || this.ctx.state !== 'running') return;
@@ -60,7 +75,7 @@
         gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
 
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.sfxGain || this.ctx.destination);
         osc.onended = () => {
           try {
             osc.disconnect();
@@ -69,26 +84,24 @@
         };
         osc.start(t0);
         osc.stop(t0 + duration + 0.01);
-      } catch (_) {
-        // Ignore transient mobile WebAudio errors
-      }
+      } catch (_) {}
     }
 
     playMove() {
-      this._tone({ freq: 520, endFreq: 620, type: 'triangle', duration: 0.038, volume: 0.035 });
+      this._tone({ freq: 520, endFreq: 660, type: 'triangle', duration: 0.04, volume: 0.14 });
     }
 
     playRotate() {
-      this._tone({ freq: 680, endFreq: 960, type: 'sine', duration: 0.055, volume: 0.05 });
+      this._tone({ freq: 680, endFreq: 1020, type: 'sine', duration: 0.06, volume: 0.2 });
     }
 
     playLock() {
-      this._tone({ freq: 185, endFreq: 110, type: 'triangle', duration: 0.065, volume: 0.065 });
+      this._tone({ freq: 210, endFreq: 115, type: 'triangle', duration: 0.075, volume: 0.22 });
     }
 
     playHardDrop() {
-      this._tone({ freq: 260, endFreq: 95, type: 'triangle', duration: 0.1, volume: 0.09 });
-      this._tone({ freq: 880, endFreq: 440, type: 'sine', duration: 0.06, volume: 0.03 });
+      this._tone({ freq: 240, endFreq: 75, type: 'triangle', duration: 0.12, volume: 0.34 });
+      this._tone({ freq: 980, endFreq: 520, type: 'sine', duration: 0.07, volume: 0.14 });
     }
 
     playMatch(chain = 1, count = 3) {
@@ -102,40 +115,39 @@
           endFreq: root * mult * 1.03,
           type: 'sine',
           duration: 0.22,
-          volume: 0.085,
+          volume: 0.26,
           delay: i * 0.042
         });
       }
-      // Subtle harmonic bell overtone for chains >= 2
       if (chain >= 2) {
         this._tone({
           freq: root * 2,
           type: 'triangle',
           duration: 0.28,
-          volume: 0.045,
+          volume: 0.16,
           delay: 0.06
         });
       }
     }
 
     playMagic() {
-      const notes = [523.25, 659.25, 783.99, 1046.5, 1318.51, 1567.98];
+      const notes = [523.25, 659.25, 783.99, 1046.5, 1318.51];
       notes.forEach((f, i) => {
-        this._tone({ freq: f, type: 'sine', duration: 0.25, volume: 0.08, delay: i * 0.045 });
+        this._tone({ freq: f, type: 'sine', duration: 0.24, volume: 0.24, delay: i * 0.045 });
       });
     }
 
     playLevelUp() {
-      const notes = [587.33, 739.99, 880, 1174.66];
+      const notes = [587.33, 880, 1174.66];
       notes.forEach((f, i) => {
-        this._tone({ freq: f, type: 'triangle', duration: 0.18, volume: 0.065, delay: i * 0.055 });
+        this._tone({ freq: f, type: 'triangle', duration: 0.18, volume: 0.24, delay: i * 0.06 });
       });
     }
 
     playGameOver() {
       const notes = [392.0, 349.23, 311.13, 261.63];
       notes.forEach((f, i) => {
-        this._tone({ freq: f, type: 'triangle', duration: 0.26, volume: 0.075, delay: i * 0.11 });
+        this._tone({ freq: f, type: 'triangle', duration: 0.26, volume: 0.24, delay: i * 0.11 });
       });
     }
   }
