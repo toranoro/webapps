@@ -102,6 +102,19 @@ export class MahjongGame {
 
   startMatch(matchType = this.matchType) {
     this.matchType = matchType;
+    const isTwo = matchType === 'two_player';
+    this.players = isTwo
+      ? [
+          new PlayerState(0, DEFAULT_NAMES[0], true),
+          new PlayerState(1, DEFAULT_NAMES[3], false),
+        ]
+      : [
+          new PlayerState(0, DEFAULT_NAMES[0], true),
+          new PlayerState(1, DEFAULT_NAMES[1], false),
+          new PlayerState(2, DEFAULT_NAMES[2], false),
+          new PlayerState(3, DEFAULT_NAMES[3], false),
+        ];
+
     for (const p of this.players) p.score = 25000;
     this.roundWind = WIND_EAST;
     this.roundNumber = 0;
@@ -113,9 +126,12 @@ export class MahjongGame {
   }
 
   startRound() {
+    const n = this.players.length;
     const deck = shuffleDeck(createDeck(this.useRedFives), this.rng);
     this.deadWall = deck.slice(deck.length - 14);
-    this.wall = deck.slice(0, deck.length - 14);
+    const fullWall = deck.slice(0, deck.length - 14);
+    // 二人打ちは配牌26枚＋ツモ山44枚（1人22巡）でテンポよく河も綺麗に収める
+    this.wall = n === 2 ? fullWall.slice(0, 26 + 44) : fullWall;
     this.wallPos = 0;
     this.rinshanPos = 8;
     this.doraCount = 1;
@@ -126,13 +142,13 @@ export class MahjongGame {
     this.pendingDiscard = null;
     this.lastDrawnWasRinshan = false;
 
-    for (let i = 0; i < 4; i++) {
-      const windIdx = (i - this.dealerIndex + 4) % 4;
+    for (let i = 0; i < n; i++) {
+      const windIdx = (i - this.dealerIndex + n) % n;
       this.players[i].resetRound(WIND_CYCLE[windIdx]);
     }
 
-    for (let i = 0; i < 4; i++) {
-      const pIdx = (this.dealerIndex + i) % 4;
+    for (let i = 0; i < n; i++) {
+      const pIdx = (this.dealerIndex + i) % n;
       const cards = this.wall.slice(this.wallPos, this.wallPos + 13);
       this.wallPos += 13;
       this.players[pIdx].hand = sortTiles(cards);
@@ -295,9 +311,10 @@ export class MahjongGame {
     const offersByPlayer = {};
     let hasAny = false;
     const isLastDiscard = this.wallRemaining() === 0;
+    const n = this.players.length;
 
-    for (let offset = 1; offset <= 3; offset++) {
-      const pIdx = (fromIndex + offset) % 4;
+    for (let offset = 1; offset < n; offset++) {
+      const pIdx = (fromIndex + offset) % n;
       const p = this.players[pIdx];
       const acts = { ron: null, pon: null, minkan: null, chi: [] };
 
@@ -389,9 +406,10 @@ export class MahjongGame {
     if (!this.pendingCall || !this.pendingDiscard) return;
     const { fromIndex, tile } = this.pendingDiscard;
     const responses = this.pendingCall.responses;
+    const n = this.players.length;
 
-    for (let offset = 1; offset <= 3; offset++) {
-      const idx = (fromIndex + offset) % 4;
+    for (let offset = 1; offset < n; offset++) {
+      const idx = (fromIndex + offset) % n;
       if (responses[idx]?.type === 'ron') {
         const winResult = this.pendingCall.offersByPlayer[idx].ron;
         this.pendingCall = null;
@@ -401,8 +419,8 @@ export class MahjongGame {
       }
     }
 
-    for (let offset = 1; offset <= 3; offset++) {
-      const idx = (fromIndex + offset) % 4;
+    for (let offset = 1; offset < n; offset++) {
+      const idx = (fromIndex + offset) % n;
       const resp = responses[idx];
       if (resp?.type === 'pon' || resp?.type === 'minkan') {
         this.executeOpenMeld(idx, fromIndex, tile, resp.type, resp.option.handTiles);
@@ -410,7 +428,7 @@ export class MahjongGame {
       }
     }
 
-    const shimoIdx = (fromIndex + 1) % 4;
+    const shimoIdx = (fromIndex + 1) % n;
     if (responses[shimoIdx]?.type === 'chi') {
       this.executeOpenMeld(shimoIdx, fromIndex, tile, 'chi', responses[shimoIdx].option.handTiles);
       return;
@@ -487,8 +505,9 @@ export class MahjongGame {
     this.firstTurnIntact = false;
     for (const pl of this.players) pl.isIppatsu = false;
 
-    for (let offset = 1; offset <= 3; offset++) {
-      const otherIdx = (playerIndex + offset) % 4;
+    const n = this.players.length;
+    for (let offset = 1; offset < n; offset++) {
+      const otherIdx = (playerIndex + offset) % n;
       const other = this.players[otherIdx];
       const waits = getWaits(tilesToCounts(other.hand), other.melds.length);
       if (waits.includes(tile.type)) {
@@ -541,30 +560,39 @@ export class MahjongGame {
   }
 
   advanceTurn(lastPlayerIndex) {
-    if (lastPlayerIndex === (this.dealerIndex + 3) % 4) this.firstTurnIntact = false;
-    this.turnPlayer = (lastPlayerIndex + 1) % 4;
+    const n = this.players.length;
+    if (lastPlayerIndex === (this.dealerIndex + n - 1) % n) this.firstTurnIntact = false;
+    this.turnPlayer = (lastPlayerIndex + 1) % n;
     this.drawForCurrentPlayer(false);
   }
 
   finishWin(winnerIdx, loserIdx, winTile, winResult) {
-    const deltas = [0, 0, 0, 0];
+    const n = this.players.length;
+    const deltas = new Array(n).fill(0);
     const winner = this.players[winnerIdx];
     const sc = winResult.score;
 
     if (winResult.isTsumo) {
-      for (let i = 0; i < 4; i++) {
-        if (i === winnerIdx) continue;
-        const pay = (i === this.dealerIndex) ? sc.dealerPay : sc.nonDealerPay;
-        deltas[i] -= pay;
-        deltas[winnerIdx] += pay;
+      if (n === 2) {
+        const otherIdx = 1 - winnerIdx;
+        const pay = sc.baseWin + this.honba * 300;
+        deltas[otherIdx] -= pay;
+        deltas[winnerIdx] += pay + this.riichiSticks * 1000;
+      } else {
+        for (let i = 0; i < n; i++) {
+          if (i === winnerIdx) continue;
+          const pay = (i === this.dealerIndex) ? sc.dealerPay : sc.nonDealerPay;
+          deltas[i] -= pay;
+          deltas[winnerIdx] += pay;
+        }
+        deltas[winnerIdx] += this.riichiSticks * 1000;
       }
-      deltas[winnerIdx] += this.riichiSticks * 1000;
     } else {
       deltas[loserIdx] -= sc.ronPay;
       deltas[winnerIdx] += sc.ronPay + this.riichiSticks * 1000;
     }
 
-    for (let i = 0; i < 4; i++) this.players[i].score += deltas[i];
+    for (let i = 0; i < n; i++) this.players[i].score += deltas[i];
     const usedKyotaku = this.riichiSticks;
     this.riichiSticks = 0;
 
@@ -579,13 +607,15 @@ export class MahjongGame {
   }
 
   finishExhaustiveDraw() {
+    const n = this.players.length;
     const tenpaiFlags = this.players.map((p) => calcShanten(tilesToCounts(p.hand), p.melds.length).shanten === 0);
     const tenpaiCount = tenpaiFlags.filter(Boolean).length;
-    const deltas = [0, 0, 0, 0];
-    if (tenpaiCount > 0 && tenpaiCount < 4) {
-      const gain = 3000 / tenpaiCount;
-      const loss = 3000 / (4 - tenpaiCount);
-      for (let i = 0; i < 4; i++) {
+    const deltas = new Array(n).fill(0);
+    if (tenpaiCount > 0 && tenpaiCount < n) {
+      const pot = n === 2 ? 1500 : 3000;
+      const gain = pot / tenpaiCount;
+      const loss = pot / (n - tenpaiCount);
+      for (let i = 0; i < n; i++) {
         deltas[i] = tenpaiFlags[i] ? gain : -loss;
         this.players[i].score += deltas[i];
       }
@@ -596,8 +626,9 @@ export class MahjongGame {
   }
 
   finishSpecialDraw(reason, renchan = true) {
+    const n = this.players.length;
     this.phase = PHASE.ROUND_END;
-    this.roundResult = { type: 'draw', reason, tenpaiFlags: [false, false, false, false], deltas: [0, 0, 0, 0], renchan };
+    this.roundResult = { type: 'draw', reason, tenpaiFlags: new Array(n).fill(false), deltas: new Array(n).fill(0), renchan };
     this.emit('ROUND_END', this.roundResult);
   }
 
@@ -608,9 +639,11 @@ export class MahjongGame {
       return;
     }
 
+    const n = this.players.length;
     const renchan = this.roundResult.renchan;
-    const maxWinds = this.matchType === 'hanchan' ? 2 : 1;
-    const isFinalRound = this.roundWind === WIND_CYCLE[maxWinds - 1] && this.roundNumber === 3;
+    const maxWinds = (this.matchType === 'hanchan' || this.matchType === 'two_player') ? 2 : 1;
+    const roundsPerWind = n;
+    const isFinalRound = this.roundWind === WIND_CYCLE[maxWinds - 1] && this.roundNumber === (roundsPerWind - 1);
 
     if (renchan) {
       this.honba++;
@@ -628,11 +661,11 @@ export class MahjongGame {
     if (isFinalRound) { this.finishMatch('規定の最終局が終了しました'); return; }
 
     this.roundNumber++;
-    if (this.roundNumber >= 4) {
+    if (this.roundNumber >= roundsPerWind) {
       this.roundNumber = 0;
       this.roundWind = WIND_CYCLE[WIND_CYCLE.indexOf(this.roundWind) + 1];
     }
-    this.dealerIndex = (this.dealerIndex + 1) % 4;
+    this.dealerIndex = (this.dealerIndex + 1) % n;
     this.startRound();
   }
 

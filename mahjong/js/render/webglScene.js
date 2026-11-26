@@ -606,12 +606,13 @@ export class Mahjong3DScene {
     }
 
     // 2) 各プレイヤーの河（捨て牌）・手牌・副露
-    const seatAngles = [0, Math.PI * 0.5, Math.PI, -Math.PI * 0.5]; // 0:手前, 1:右, 2:奥, 3:左
+    const nPlayers = snap.players.length;
+    const seatAngles = nPlayers === 2 ? [0, Math.PI] : [0, Math.PI * 0.5, Math.PI, -Math.PI * 0.5];
     const riverScale = 0.78;
     const meldScale = 0.72;
     const aiHandScale = 0.62;
 
-    for (let pIdx = 0; pIdx < 4; pIdx++) {
+    for (let pIdx = 0; pIdx < nPlayers; pIdx++) {
       const p = snap.players[pIdx];
       const angle = seatAngles[pIdx];
       const cosA = Math.cos(angle);
@@ -650,7 +651,7 @@ export class Mahjong3DScene {
         });
 
         col++;
-        if (col >= 6 && row < 2) {
+        if (col >= 6 && row < 3) {
           col = 0;
           row++;
         }
@@ -842,13 +843,19 @@ export class Mahjong3DScene {
 
     // リーチ棒の描画
     if (this.snapshot) {
-      const stickOffsets = [
-        { pos: [0, 0.03, 1.18], rotY: 0 },
-        { pos: [1.18, 0.03, 0], rotY: Math.PI * 0.5 },
-        { pos: [0, 0.03, -1.18], rotY: 0 },
-        { pos: [-1.18, 0.03, 0], rotY: Math.PI * 0.5 },
-      ];
-      for (let i = 0; i < 4; i++) {
+      const nPlayers = this.snapshot.players.length;
+      const stickOffsets = nPlayers === 2
+        ? [
+            { pos: [0, 0.03, 1.18], rotY: 0 },
+            { pos: [0, 0.03, -1.18], rotY: 0 },
+          ]
+        : [
+            { pos: [0, 0.03, 1.18], rotY: 0 },
+            { pos: [1.18, 0.03, 0], rotY: Math.PI * 0.5 },
+            { pos: [0, 0.03, -1.18], rotY: 0 },
+            { pos: [-1.18, 0.03, 0], rotY: Math.PI * 0.5 },
+          ];
+      for (let i = 0; i < nPlayers; i++) {
         if (this.snapshot.players[i].isRiichi) {
           const st = stickOffsets[i];
           drawTablePart(this.riichiStickMesh, st.pos, st.rotY, false);

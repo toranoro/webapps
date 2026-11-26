@@ -7,12 +7,12 @@ import { analyzeDiscardOptions, calcShanten } from './shanten.js';
 export function buildVisibleCounts(gameState, viewerIdx) {
   const counts = new Int32Array(34);
   for (const ind of gameState.doraIndicators) counts[ind.type]++;
-  for (let p = 0; p < 4; p++) {
+  for (let p = 0; p < gameState.players.length; p++) {
     const pl = gameState.players[p];
     for (const d of pl.discards) counts[d.tile.type]++;
     for (const m of pl.melds) for (const t of m.tiles) counts[t.type]++;
   }
-  if (viewerIdx >= 0 && viewerIdx < 4) {
+  if (viewerIdx >= 0 && viewerIdx < gameState.players.length) {
     for (const t of gameState.players[viewerIdx].hand) counts[t.type]++;
   }
   return counts;

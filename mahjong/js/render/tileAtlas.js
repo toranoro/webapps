@@ -1,6 +1,7 @@
 /**
  * Canvas2D による高コントラスト・鮮明な牌テクスチャアトラス & 卓マットテクスチャ生成
  */
+
 export const ATLAS_COLS = 8;
 export const ATLAS_ROWS = 5;
 export const CELL_W = 256;

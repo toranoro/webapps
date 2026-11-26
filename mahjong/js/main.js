@@ -396,14 +396,19 @@ class MahjongApp {
       this.dom.doraList.appendChild(chip);
     }
 
-    // 4家HUD
+    // 4家 / 2家 HUD
+    const n = snapshot.players.length;
     const seatCardIds = [null, 'seat-right', 'seat-top', 'seat-left'];
-    for (let i = 0; i < 4; i++) {
+    document.getElementById('seat-right')?.classList.toggle('hidden', n === 2);
+    document.getElementById('seat-left')?.classList.toggle('hidden', n === 2);
+
+    for (let i = 0; i < n; i++) {
       const p = snapshot.players[i];
-      const windEl = document.getElementById(`seat-wind-${i}`);
-      const nameEl = document.getElementById(`seat-name-${i}`);
-      const scoreEl = document.getElementById(`seat-score-${i}`);
-      const riichiEl = document.getElementById(`seat-riichi-${i}`);
+      const slot = n === 2 ? (i === 0 ? 0 : 2) : i;
+      const windEl = document.getElementById(`seat-wind-${slot}`);
+      const nameEl = document.getElementById(`seat-name-${slot}`);
+      const scoreEl = document.getElementById(`seat-score-${slot}`);
+      const riichiEl = document.getElementById(`seat-riichi-${slot}`);
 
       if (windEl) {
         windEl.textContent = WIND_LABELS[p.seatWind];
@@ -413,8 +418,8 @@ class MahjongApp {
       if (scoreEl) scoreEl.textContent = p.score.toLocaleString();
       if (riichiEl) riichiEl.classList.toggle('hidden', !p.isRiichi);
 
-      if (seatCardIds[i]) {
-        const card = document.getElementById(seatCardIds[i]);
+      if (seatCardIds[slot]) {
+        const card = document.getElementById(seatCardIds[slot]);
         if (card) card.classList.toggle('active-turn', snapshot.turnPlayer === i && snapshot.phase !== PHASE.ROUND_END);
       }
     }
@@ -755,7 +760,7 @@ class MahjongApp {
     // 点数移動
     const deltasGrid = document.createElement('div');
     deltasGrid.className = 'res-deltas';
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < snapshot.players.length; i++) {
       const p = snapshot.players[i];
       const d = res.deltas[i];
       const dStr = d > 0 ? `+${d.toLocaleString()}` : d < 0 ? d.toLocaleString() : '±0';
