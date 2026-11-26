@@ -364,6 +364,10 @@ export class Mahjong3DScene {
   bindEvents() {
     this.onResize = () => this.resize();
     window.addEventListener('resize', this.onResize);
+    if (typeof ResizeObserver !== 'undefined') {
+      this.resizeObserver = new ResizeObserver(() => this.resize());
+      this.resizeObserver.observe(this.canvas);
+    }
 
     let pointerDown = false;
     let startX = 0;
@@ -428,6 +432,9 @@ export class Mahjong3DScene {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const w = this.canvas.clientWidth || window.innerWidth;
     const h = this.canvas.clientHeight || window.innerHeight;
+    if (w === this._lastClientW && h === this._lastClientH) return;
+    this._lastClientW = w;
+    this._lastClientH = h;
     this.canvas.width = Math.max(1, Math.floor(w * dpr));
     this.canvas.height = Math.max(1, Math.floor(h * dpr));
     this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
@@ -437,26 +444,44 @@ export class Mahjong3DScene {
 
   getCameraMatrices() {
     const aspect = this.aspect || 1;
-    const isPortrait = aspect < 1.0;
+    const isPortrait = aspect < 0.85;
 
-    let fovDeg = isPortrait ? 46 : 38;
-    let eyeY = isPortrait ? 11.4 : 8.2;
-    let eyeZ = isPortrait ? 13.0 : 8.9;
-    let targetZ = isPortrait ? 1.45 : 1.05;
-
-    if (this.viewMode === 'wide') {
-      eyeY += 2.2;
-      eyeZ += 1.6;
-      targetZ -= 0.4;
-    } else if (this.viewMode === 'hand') {
-      eyeY -= 1.1;
-      eyeZ -= 1.0;
-      targetZ += 0.6;
-    }
+    let fovDeg = isPortrait ? 52 : 38;
+    let eyeY = isPortrait ? 17.0 : 8.2;
+    let eyeZ = isPortrait ? 15.6 : 8.9;
+    let targetZ = isPortrait ? 2.65 : 1.05;
 
     const fovRad = (fovDeg * Math.PI) / 180;
-    // 横向き・正方形付近では手牌位置で余裕を確保
-    if (!isPortrait) {
+
+    if (isPortrait) {
+      // 縦画面スマホでも麻雀卓全体（左右の相手牌含む幅約10.0）が画面幅95%以内に収まるよう自動調整
+      const tanHalf = Math.tan(fovRad * 0.5);
+      const neededDist = 5.05 / Math.max(0.16, 0.95 * tanHalf * aspect);
+      const baseDist = Math.hypot(eyeY, eyeZ);
+      if (neededDist > baseDist) {
+        const s = neededDist / baseDist;
+        eyeY *= s;
+        eyeZ *= s;
+      }
+      if (this.viewMode === 'wide') {
+        eyeY *= 1.12;
+        eyeZ *= 1.12;
+        targetZ -= 0.4;
+      } else if (this.viewMode === 'hand') {
+        eyeY *= 0.92;
+        eyeZ *= 0.92;
+        targetZ += 0.4;
+      }
+    } else {
+      if (this.viewMode === 'wide') {
+        eyeY += 2.2;
+        eyeZ += 1.6;
+        targetZ -= 0.4;
+      } else if (this.viewMode === 'hand') {
+        eyeY -= 1.1;
+        eyeZ -= 1.0;
+        targetZ += 0.6;
+      }
       const hFovHalf = Math.atan(Math.tan(fovRad * 0.5) * aspect);
       const minDist = 5.1 / Math.max(0.35, Math.tan(hFovHalf));
       const curDist = Math.hypot(eyeY, eyeZ - targetZ);
@@ -468,16 +493,30 @@ export class Mahjong3DScene {
     }
 
     const eye = [
-      Math.sin(this.cameraTiltX) * 2.8,
+      Math.sin(this.cameraTiltX) * (isPortrait ? 3.5 : 2.8),
       eyeY + this.cameraTiltY * 2.2,
       eyeZ,
     ];
     const target = [0, 0.0, targetZ];
 
-    const proj = mat4Perspective(fovRad, aspect, 0.5, 60.0);
+    // カメラ基底ベクトル（2段手牌の正対配置にも利用）
+    let fx = target[0] - eye[0], fy = target[1] - eye[1], fz = target[2] - eye[2];
+    const fLen = Math.hypot(fx, fy, fz) || 1;
+    fx /= fLen; fy /= fLen; fz /= fLen;
+    let rx = -fz, ry = 0, rz = fx; // cross(fwd, [0,1,0]) = (-fz, 0, fx)
+    const rLen = Math.hypot(rx, ry, rz) || 1;
+    rx /= rLen; rz /= rLen;
+    const ux = ry * fz - rz * fy;
+    const uy = rz * fx - rx * fz;
+    const uz = rx * fy - ry * fx;
+
+    const proj = mat4Perspective(fovRad, aspect, 0.5, 80.0);
     const view = mat4LookAt(eye, target, [0, 1, 0]);
     const viewProj = mat4Multiply(proj, view);
-    return { eye, viewProj, fovRad, targetZ };
+    return {
+      eye, target, viewProj, fovRad, targetZ, isPortrait,
+      fwd: [fx, fy, fz], right: [rx, ry, rz], camUp: [ux, uy, uz],
+    };
   }
 
   getPlayerHandScale(camInfo, baseY, baseZ) {
@@ -576,13 +615,14 @@ export class Mahjong3DScene {
     }
 
     const snap = this.snapshot;
-    const isPortrait = (this.aspect || 1) < 1.0;
+    const camInfo = this.getCameraMatrices();
+    const isPortrait = camInfo.isPortrait;
 
-    // 1) 中央ドラ表示牌（最大4枚）＋小さな山飾り（中央コンソール上辺へコンパクト配置）
+    // 1) 中央ドラ表示牌（最大4枚）＋小さな山飾り
     const doraInds = snap.doraIndicators || [];
-    const doraScale = 0.68;
+    const doraScale = isPortrait ? 0.54 : 0.68;
     for (let i = 0; i < 4; i++) {
-      const x = -0.68 + i * (TILE_W * 1.02 * doraScale);
+      const x = -(1.5 * TILE_W * 1.02 * doraScale) + i * (TILE_W * 1.02 * doraScale);
       if (i < doraInds.length) {
         const t = doraInds[i];
         this.upsertTileTarget(`dora_${t.id}`, t, {
@@ -608,9 +648,9 @@ export class Mahjong3DScene {
     // 2) 各プレイヤーの河（捨て牌）・手牌・副露
     const nPlayers = snap.players.length;
     const seatAngles = nPlayers === 2 ? [0, Math.PI] : [0, Math.PI * 0.5, Math.PI, -Math.PI * 0.5];
-    const riverScale = 0.78;
-    const meldScale = 0.72;
-    const aiHandScale = 0.62;
+    const riverScale = isPortrait ? 0.58 : 0.78;
+    const meldScale = isPortrait ? 0.56 : 0.72;
+    const aiHandScale = isPortrait ? 0.68 : 0.62;
 
     for (let pIdx = 0; pIdx < nPlayers; pIdx++) {
       const p = snap.players[pIdx];
@@ -680,21 +720,9 @@ export class Mahjong3DScene {
 
       // 手牌
       if (pIdx === 0) {
-        // あなたの手牌：カメラに対して正面を向くようにし、アスペクト比に応じて自動スケール
         const hand = p.hand;
         const count = hand.length;
         const hasDrawnGap = snap.turnPlayer === 0 && p.drawnTileId !== -1 && hand.some((t) => t.id === p.drawnTileId);
-        const baseZ = isPortrait ? 4.65 : 4.45;
-        const camInfo = this.getCameraMatrices();
-        const baseY = 0.58 * TILE_H * this.getPlayerHandScale(camInfo, 0.55, baseZ) + 0.18;
-        const handScale = this.getPlayerHandScale(camInfo, baseY, baseZ);
-        const pitch = TILE_W * 1.03 * handScale;
-        const gap = 0.24 * handScale;
-        const totalWidth = (count - 1) * pitch + (hasDrawnGap ? gap : 0);
-        const startX = -totalWidth * 0.5;
-        // カメラ視線角に正対させて正面からくっきり見えるようにする
-        const camPitch = Math.atan2(camInfo.eye[1] - baseY, camInfo.eye[2] - baseZ);
-        const tilt = -camPitch;
 
         const ordered = [];
         let drawnEntry = null;
@@ -707,47 +735,136 @@ export class Mahjong3DScene {
         const bestType = this.assist?.isMyTurn ? this.assist.bestDiscardType : null;
         const isRiichiLocked = p.isRiichi;
 
-        for (let i = 0; i < ordered.length; i++) {
-          const t = ordered[i];
-          const isDrawn = hasDrawnGap && t.id === p.drawnTileId;
-          const x = startX + i * pitch + (isDrawn ? gap : 0);
-          const isSel = t.id === this.selectedTileId;
-          const isHov = t.id === this.hoveredTileId;
-          const isBest = bestType !== null && t.type === bestType;
+        if (isPortrait) {
+          // 縦向きスマホ：手牌を2段（上段最大7枚＋下段残り＆ツモ牌）で特大表示しタップしやすくする
+          const dHand = 8.2;
+          const halfH = dHand * Math.tan(camInfo.fovRad * 0.5);
+          const visibleW = 2.0 * halfH * (this.aspect || 0.5);
+          const maxRowRawWidth = 6 * (TILE_W * 1.05) + 0.22 + TILE_W;
+          const handScale = Math.max(0.50, Math.min(1.05, (visibleW * 0.90) / maxRowRawWidth));
+          const pitch = TILE_W * 1.05 * handScale;
+          const gap = 0.22 * handScale;
 
-          let liftY = 0;
-          let liftZ = 0;
-          if (isSel) {
-            liftY = 0.34 * handScale;
-            liftZ = -0.14 * handScale;
-          } else if (isHov) {
-            liftY = 0.16 * handScale;
-            liftZ = -0.06 * handScale;
+          // 13-14枚なら上7・下6(+1)、それ以下でもバランスよく上下分割
+          const splitIdx = ordered.length <= 7 ? ordered.length : (ordered.length >= 12 ? 7 : Math.ceil(ordered.length / 2));
+          const rows = splitIdx < ordered.length
+            ? [ordered.slice(0, splitIdx), ordered.slice(splitIdx)]
+            : [ordered];
+
+          const camPitch = Math.atan2(-camInfo.fwd[1], -camInfo.fwd[2]);
+          const tilt = -camPitch;
+          const yaw = -Math.atan2(camInfo.fwd[0], -camInfo.fwd[2]);
+
+          const rowNdcY = rows.length === 2 ? [-0.21, -0.45] : [-0.34];
+
+          for (let r = 0; r < rows.length; r++) {
+            const rowTiles = rows[r];
+            const rowHasGap = (r === rows.length - 1) && hasDrawnGap;
+            const rowWidth = (rowTiles.length - 1) * pitch + (rowHasGap ? gap : 0);
+            const startX = -rowWidth * 0.5;
+            const yOffset = rowNdcY[r] * halfH;
+
+            for (let c = 0; c < rowTiles.length; c++) {
+              const t = rowTiles[c];
+              const isDrawn = hasDrawnGap && t.id === p.drawnTileId;
+              const xLocal = startX + c * pitch + (isDrawn ? gap : 0);
+              const isSel = t.id === this.selectedTileId;
+              const isHov = t.id === this.hoveredTileId;
+              const isBest = bestType !== null && t.type === bestType;
+
+              let liftFwd = 0;
+              let liftUp = 0;
+              if (isSel) {
+                liftUp = 0.16 * handScale;
+                liftFwd = -0.35 * handScale;
+              } else if (isHov) {
+                liftUp = 0.08 * handScale;
+                liftFwd = -0.15 * handScale;
+              }
+
+              const dist = dHand + liftFwd;
+              const px = camInfo.eye[0] + camInfo.fwd[0] * dist + camInfo.right[0] * xLocal + camInfo.camUp[0] * (yOffset + liftUp);
+              const py = camInfo.eye[1] + camInfo.fwd[1] * dist + camInfo.right[1] * xLocal + camInfo.camUp[1] * (yOffset + liftUp);
+              const pz = camInfo.eye[2] + camInfo.fwd[2] * dist + camInfo.right[2] * xLocal + camInfo.camUp[2] * (yOffset + liftUp);
+
+              let highlight = [0, 0, 0];
+              let hStr = 0;
+              if (isSel) {
+                highlight = [1.0, 0.85, 0.25];
+                hStr = 0.34;
+              } else if (isBest && this.callbacks.shouldHighlightBest?.()) {
+                highlight = [0.28, 0.95, 0.62];
+                hStr = 0.18;
+              }
+              const dim = (isRiichiLocked && !isDrawn && snap.turnPlayer === 0) ? 0.72 : 1.0;
+
+              this.upsertTileTarget(`tile_${t.id}`, t, {
+                pos: [px, py, pz],
+                rot: [tilt, yaw, 0],
+                highlight,
+                highlightStrength: hStr,
+                dim,
+                scale: handScale,
+                shadowScale: [0, 0],
+                shadowAlpha: 0.0,
+                isPlayerHand: true,
+              });
+            }
           }
+        } else {
+          // 横向き・タブレット：手前に1列正面向き配置
+          const baseZ = 4.45;
+          const baseY = 0.58 * TILE_H * this.getPlayerHandScale(camInfo, 0.55, baseZ) + 0.18;
+          const handScale = this.getPlayerHandScale(camInfo, baseY, baseZ);
+          const pitch = TILE_W * 1.03 * handScale;
+          const gap = 0.24 * handScale;
+          const totalWidth = (count - 1) * pitch + (hasDrawnGap ? gap : 0);
+          const startX = -totalWidth * 0.5;
+          const camPitch = Math.atan2(camInfo.eye[1] - baseY, camInfo.eye[2] - baseZ);
+          const tilt = -camPitch;
 
-          let highlight = [0, 0, 0];
-          let hStr = 0;
-          if (isSel) {
-            highlight = [1.0, 0.85, 0.25];
-            hStr = 0.34;
-          } else if (isBest && this.callbacks.shouldHighlightBest?.()) {
-            highlight = [0.28, 0.95, 0.62];
-            hStr = 0.18;
+          for (let i = 0; i < ordered.length; i++) {
+            const t = ordered[i];
+            const isDrawn = hasDrawnGap && t.id === p.drawnTileId;
+            const x = startX + i * pitch + (isDrawn ? gap : 0);
+            const isSel = t.id === this.selectedTileId;
+            const isHov = t.id === this.hoveredTileId;
+            const isBest = bestType !== null && t.type === bestType;
+
+            let liftY = 0;
+            let liftZ = 0;
+            if (isSel) {
+              liftY = 0.34 * handScale;
+              liftZ = -0.14 * handScale;
+            } else if (isHov) {
+              liftY = 0.16 * handScale;
+              liftZ = -0.06 * handScale;
+            }
+
+            let highlight = [0, 0, 0];
+            let hStr = 0;
+            if (isSel) {
+              highlight = [1.0, 0.85, 0.25];
+              hStr = 0.34;
+            } else if (isBest && this.callbacks.shouldHighlightBest?.()) {
+              highlight = [0.28, 0.95, 0.62];
+              hStr = 0.18;
+            }
+
+            const dim = (isRiichiLocked && !isDrawn && snap.turnPlayer === 0) ? 0.72 : 1.0;
+
+            this.upsertTileTarget(`tile_${t.id}`, t, {
+              pos: [x, baseY + liftY, baseZ + liftZ],
+              rot: [tilt, 0, 0],
+              highlight,
+              highlightStrength: hStr,
+              dim,
+              scale: handScale,
+              shadowScale: [1.05 * handScale, 0.85 * handScale],
+              shadowAlpha: isSel ? 0.22 : 0.42,
+              isPlayerHand: true,
+            });
           }
-
-          const dim = (isRiichiLocked && !isDrawn && snap.turnPlayer === 0) ? 0.72 : 1.0;
-
-          this.upsertTileTarget(`tile_${t.id}`, t, {
-            pos: [x, baseY + liftY, baseZ + liftZ],
-            rot: [tilt, 0, 0],
-            highlight,
-            highlightStrength: hStr,
-            dim,
-            scale: handScale,
-            shadowScale: [1.05 * handScale, 0.85 * handScale],
-            shadowAlpha: isSel ? 0.22 : 0.42,
-            isPlayerHand: true,
-          });
         }
       } else {
         // AIの手牌：通常時は小ぶりサイズで自分の側（外側）を向き、プレイヤーからは背面オレンジ＋天面の白だけが見える！
@@ -809,6 +926,11 @@ export class Mahjong3DScene {
   }
 
   render() {
+    const curW = this.canvas.clientWidth || window.innerWidth;
+    const curH = this.canvas.clientHeight || window.innerHeight;
+    if (curW !== this._lastClientW || curH !== this._lastClientH) {
+      this.resize();
+    }
     const gl = this.gl;
     gl.clearColor(0.035, 0.095, 0.072, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -873,6 +995,7 @@ export class Mahjong3DScene {
     gl.bindVertexArray(this.shadowMesh.vao);
 
     for (const entry of this.animTiles.values()) {
+      if (entry.shadowAlpha <= 0.01) continue;
       const sModel = mat4Compose(
         [entry.curPos[0] + 0.04, 0.008, entry.curPos[2] + 0.05],
         0, entry.curRot[1], 0,
@@ -930,5 +1053,6 @@ export class Mahjong3DScene {
   destroy() {
     cancelAnimationFrame(this.rafId);
     window.removeEventListener('resize', this.onResize);
+    if (this.resizeObserver) this.resizeObserver.disconnect();
   }
 }

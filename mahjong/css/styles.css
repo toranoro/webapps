@@ -741,14 +741,16 @@ html, body {
     transform: translateX(-50%);
   }
   .seat-left {
-    top: 28%;
-    left: calc(6px + var(--safe-left));
-    padding: 4px 7px;
+    top: calc(132px + var(--safe-top));
+    left: calc(8px + var(--safe-left));
+    transform: none;
+    padding: 4px 8px;
   }
   .seat-right {
-    top: 28%;
-    right: calc(6px + var(--safe-right));
-    padding: 4px 7px;
+    top: calc(132px + var(--safe-top));
+    right: calc(8px + var(--safe-right));
+    transform: none;
+    padding: 4px 8px;
   }
   .seat-name {
     font-size: 0.68rem;
