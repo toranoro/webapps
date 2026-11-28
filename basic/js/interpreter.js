@@ -1973,10 +1973,8 @@
       var body = (mLine[2] || '').trim();
       var had = Object.prototype.hasOwnProperty.call(this.program, ln);
       this.setLine(ln, body);
-      if (body === '') {
-        if (had) io.emitOk('削除: ' + ln);
-      } else {
-        io.emitOk('登録: ' + ln + ' ' + body);
+      if (body === '' && had) {
+        io.emitOk('削除: ' + ln);
       }
       return;
     }

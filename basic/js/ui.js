@@ -4,7 +4,7 @@
 
   var WB = global.WebBasic = global.WebBasic || {};
 
-  var APP_VERSION = '2.0.1';
+  var APP_VERSION = '2.0.2';
   var term = document.getElementById('term');
   var canvas = document.getElementById('gfx');
   var sysbar = document.getElementById('sysbar');
@@ -34,6 +34,8 @@
   var keyQueue = [];
   var deferredPrompt = null;
   var snapshotDuringRun = '';
+  var lastEnterHandledAt = 0;
+  var lastKeydownHandledAt = 0;
 
   // ====== 端末出力ユーティリティ ======
   function setCaret(pos) {
@@ -349,6 +351,7 @@
         var mapped = mapSpecialKey(ev.key);
         if (mapped) {
           ev.preventDefault();
+          lastKeydownHandledAt = performance.now();
           pushKey(mapped.toUpperCase());
           return;
         }
@@ -361,13 +364,19 @@
     if (composing || ev.isComposing) return;
 
     ev.preventDefault();
+    lastEnterHandledAt = performance.now();
     await submitCurrentLine();
   });
 
   // Android Chrome / Gboard 等のIMEフォールバック (key==="Unidentified"対策)
   term.addEventListener('beforeinput', function (ev) {
     audio.unlock();
+    var now = performance.now();
     if (rt.running && !inputWaiter) {
+      if (now - lastKeydownHandledAt < 50) {
+        if (ev.cancelable) ev.preventDefault();
+        return;
+      }
       if (ev.inputType === 'insertLineBreak') {
         if (ev.cancelable) ev.preventDefault();
         pushKey('\r');
@@ -381,6 +390,8 @@
     }
     if (ev.inputType === 'insertLineBreak' && !composing) {
       if (ev.cancelable) ev.preventDefault();
+      if (now - lastEnterHandledAt < 50) return;
+      lastEnterHandledAt = now;
       submitCurrentLine();
     }
   });
