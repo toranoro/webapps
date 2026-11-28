@@ -779,7 +779,7 @@
 
     gfx.resize(640, 400);
     clsText();
-    term.value = 'WEB BASIC ' + APP_VERSION + ' (N88-STYLE) 起動\nHELP で命令一覧 / SAMPLE でサンプル表示\nREADY.\n';
+    term.value = 'WEB BASIC ' + APP_VERSION + ' 起動\nHELP で命令一覧 / SAMPLE でサンプル表示\nREADY.\n';
     insertPos = term.value.length;
     setCaret(insertPos);
     updateVisualViewport();

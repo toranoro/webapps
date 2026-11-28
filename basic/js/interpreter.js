@@ -2195,7 +2195,7 @@
 
     // HELP
     if (lower === 'help') {
-      io.emitSys('Web BASIC 2.0 (N88-Style) Help:');
+      io.emitSys('Web BASIC 2.0 Help:');
       io.emitSys('  RUN [ln], CONT, LIST [a-b], NEW, CLEAR, DEL a[-b], EDIT ln, AUTO, RENUM');
       io.emitSys('  SAVE "name", LOAD, TSAVE/TLOAD/TFILES/TKILL, SAMPLE, MANUAL');
       io.emitSys('  FONT pc98|mono|retro|dot, SIZE n, THEME pc98|amber|white, UPPER on|off');

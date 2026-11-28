@@ -1,5 +1,5 @@
 {
-  "name": "Web BASIC 2.0 (N88-Style)",
+  "name": "Web BASIC 2.0",
   "short_name": "Web BASIC",
   "description": "PC-98 / N88-BASIC inspired high-speed fullscreen BASIC IDE and Graphics Canvas",
   "start_url": "./index.html",
