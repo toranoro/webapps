@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ja" data-font="mono" data-upper="on" data-theme="pc98" data-layout="overlay">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+
+<meta name="theme-color" content="#000000" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Web BASIC" />
+<meta name="format-detection" content="telephone=no" />
+
+<title>Web BASIC 2.0 (N88-Style Fullscreen BASIC)</title>
+
+<link rel="manifest" href="manifest.webmanifest?v=2.0.1" />
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png?v=2.0.1" />
+<link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png?v=2.0.1" />
+<link rel="stylesheet" href="css/style.css?v=2.0.1" />
+</head>
+<body>
+
+<div id="app" role="application" aria-label="Web BASIC 2.0">
+  <!-- トップシステムバー（折りたたみ可能） -->
+  <header id="sysbar" class="sysbar">
+    <div class="sysbar-group sysbar-left">
+      <button type="button" id="btnToggleBar" class="btn btn-icon" title="ツールバー折りたたみ" aria-label="ツールバー折りたたみ">≡</button>
+      <span class="brand">N88-WEB BASIC</span>
+      <span id="statusBadge" class="badge badge-ready">READY</span>
+    </div>
+
+    <div class="sysbar-group sysbar-fkeys" id="fkeysGroup">
+      <button type="button" class="btn btn-fk" data-fk="1" title="F1: ファイル読込">F1 LOAD</button>
+      <button type="button" class="btn btn-fk" data-fk="2" title="F2: ファイル保存">F2 SAVE</button>
+      <button type="button" class="btn btn-fk" data-fk="3" title="F3: リスト表示">F3 LIST</button>
+      <button type="button" class="btn btn-fk btn-run" data-fk="4" title="F4: 実行">F4 RUN</button>
+      <button type="button" class="btn btn-fk" data-fk="5" title="F5: 画面消去">F5 CLS</button>
+      <button type="button" id="btnStop" class="btn btn-stop" title="実行中断 (Esc / Ctrl+C)">STOP</button>
+    </div>
+
+    <div class="sysbar-group sysbar-right" id="sysRightGroup">
+      <button type="button" id="btnKbd" class="btn" title="OSキーボード / 補助キー表示">⌨ KEY</button>
+      <button type="button" id="btnLayout" class="btn" title="表示切替 (重ね / 分割)">SPLIT</button>
+      <button type="button" id="btnSamples" class="btn" title="サンプルプログラム">SAMPLE</button>
+      <a href="manual/index.html" target="_blank" rel="noopener" id="btnManual" class="btn btn-link" title="オンラインマニュアル">MANUAL</a>
+      <button type="button" id="btnFull" class="btn" title="全画面表示切替">⛶ FULL</button>
+      <button type="button" id="btnInstall" class="btn btn-accent hidden" title="アプリをインストール / ホーム画面に追加">📲 APP</button>
+    </div>
+  </header>
+
+  <!-- メインステージ (Canvas + Terminal) -->
+  <main id="stage" class="stage">
+    <div id="gfxPane" class="gfx-pane">
+      <canvas id="gfx" width="640" height="400"></canvas>
+    </div>
+    <div id="termPane" class="term-pane">
+      <textarea
+        id="term"
+        spellcheck="false"
+        autocapitalize="off"
+        autocomplete="off"
+        autocorrect="off"
+        enterkeyhint="enter"
+        inputmode="text"
+        aria-label="Web BASIC エディタ"></textarea>
+    </div>
+  </main>
+
+  <!-- モバイル・タブレット向け補助キーバー (OSキーボードと併用) -->
+  <footer id="vkeybar" class="vkeybar hidden" aria-label="補助キー入力バー">
+    <div class="vkey-scroll">
+      <button type="button" class="vkey vkey-act" data-act="focuskbd">⌨ OS入力</button>
+      <button type="button" class="vkey vkey-act" data-act="esc">ESC</button>
+      <button type="button" class="vkey vkey-act" data-act="enter">RET ↵</button>
+      <button type="button" class="vkey" data-ch=":">:</button>
+      <button type="button" class="vkey" data-ch=";">;</button>
+      <button type="button" class="vkey" data-ch='"'>"</button>
+      <button type="button" class="vkey" data-ch="'">'</button>
+      <button type="button" class="vkey" data-ch="(">(</button>
+      <button type="button" class="vkey" data-ch=")">)</button>
+      <button type="button" class="vkey" data-ch=",">,</button>
+      <button type="button" class="vkey" data-ch="=">=</button>
+      <button type="button" class="vkey" data-ch="+">+</button>
+      <button type="button" class="vkey" data-ch="-">-</button>
+      <button type="button" class="vkey" data-ch="*">*</button>
+      <button type="button" class="vkey" data-ch="/">/</button>
+      <button type="button" class="vkey" data-ch="$">$</button>
+      <button type="button" class="vkey" data-ch="&lt;">&lt;</button>
+      <button type="button" class="vkey" data-ch="&gt;">&gt;</button>
+      <button type="button" class="vkey vkey-nav" data-nav="ArrowLeft">←</button>
+      <button type="button" class="vkey vkey-nav" data-nav="ArrowUp">↑</button>
+      <button type="button" class="vkey vkey-nav" data-nav="ArrowDown">↓</button>
+      <button type="button" class="vkey vkey-nav" data-nav="ArrowRight">→</button>
+    </div>
+  </footer>
+
+  <input type="file" id="fileLoader" class="hidden" accept=".bas,.txt" />
+
+  <!-- サンプル選択モーダル -->
+  <div id="sampleModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="sampleModalTitle">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2 id="sampleModalTitle">SAMPLE PROGRAMS</h2>
+        <button type="button" class="btn modal-close" data-close="sampleModal">✕</button>
+      </div>
+      <div id="sampleList" class="sample-list"></div>
+    </div>
+  </div>
+
+  <!-- インストール / 全画面案内モーダル (iOS Safari / Chrome) -->
+  <div id="installModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="installModalTitle">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2 id="installModalTitle">FULLSCREEN / INSTALL GUIDE</h2>
+        <button type="button" class="btn modal-close" data-close="installModal">✕</button>
+      </div>
+      <div id="installModalBody" class="modal-body"></div>
+    </div>
+  </div>
+</div>
+
+<script defer src="js/expr.js?v=2.0.1"></script>
+<script defer src="js/graphics.js?v=2.0.1"></script>
+<script defer src="js/samples.js?v=2.0.1"></script>
+<script defer src="js/interpreter.js?v=2.0.1"></script>
+<script defer src="js/ui.js?v=2.0.1"></script>
+</body>
+</html>

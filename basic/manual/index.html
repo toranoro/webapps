@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<title>Web BASIC 2.0 オンラインマニュアル</title>
+<style>
+  :root {
+    --bg: #050d08;
+    --card: #0b1810;
+    --border: #1d6b3d;
+    --fg: #d9ffe8;
+    --green: #00ff66;
+    --cyan: #00e5ff;
+    --amber: #ffcc44;
+    --muted: #82b898;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+    line-height: 1.65;
+  }
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(5, 13, 8, 0.95);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 18px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  header h1 {
+    margin: 0;
+    font-size: 18px;
+    color: var(--green);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  .search-box {
+    flex: 1 1 240px;
+    max-width: 420px;
+  }
+  .search-box input {
+    width: 100%;
+    padding: 7px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--fg);
+    font-size: 14px;
+    outline: none;
+  }
+  .search-box input:focus { border-color: var(--green); }
+  .back-btn {
+    display: inline-block;
+    padding: 6px 12px;
+    border: 1px solid var(--green);
+    border-radius: 5px;
+    color: var(--green);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .container {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 18px;
+    display: grid;
+    grid-template-columns: 230px 1fr;
+    gap: 20px;
+  }
+  nav {
+    position: sticky;
+    top: 72px;
+    align-self: start;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+  }
+  nav h2 {
+    margin: 0 0 8px;
+    font-size: 13px;
+    color: var(--cyan);
+    letter-spacing: 0.06em;
+  }
+  nav a {
+    display: block;
+    padding: 5px 8px;
+    color: var(--fg);
+    text-decoration: none;
+    font-size: 13px;
+    border-radius: 4px;
+  }
+  nav a:hover { background: rgba(0, 255, 102, 0.12); color: var(--green); }
+  main section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin-bottom: 18px;
+  }
+  h2.sec-title {
+    margin-top: 0;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+    color: var(--green);
+    font-size: 18px;
+  }
+  h3 { color: var(--cyan); font-size: 15px; margin-top: 18px; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: rgba(0, 255, 102, 0.1);
+    color: var(--amber);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 0.92em;
+  }
+  pre {
+    background: #020604;
+    border: 1px solid #164f2d;
+    border-radius: 6px;
+    padding: 12px;
+    overflow-x: auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 13px;
+    color: var(--green);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+    font-size: 13.5px;
+  }
+  th, td {
+    border: 1px solid #184e2e;
+    padding: 8px 10px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: rgba(0, 255, 102, 0.08);
+    color: var(--cyan);
+    white-space: nowrap;
+  }
+  .cmd-card { transition: opacity 0.15s; }
+  .hidden-row { display: none; }
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
+    margin-left: 6px;
+  }
+  .badge-new { border-color: var(--amber); color: var(--amber); }
+  @media (max-width: 780px) {
+    .container { grid-template-columns: 1fr; padding: 12px; }
+    nav { position: static; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>WEB BASIC 2.0 オンラインマニュアル</h1>
+  <div class="search-box">
+    <input type="search" id="searchInput" placeholder="命令・関数を検索 (例: PAINT, FOR, PLAY, INKEY$)..." aria-label="マニュアル検索" />
+  </div>
+  <a href="../index.html" class="back-btn">▶ BASICに戻る</a>
+</header>
+
+<div class="container">
+  <nav>
+    <h2>目次</h2>
+    <a href="#quickstart">1. はじめに・対応環境</a>
+    <a href="#mobile">2. 全画面・スマホ/iPad操作</a>
+    <a href="#editor">3. エディタ・管理コマンド</a>
+    <a href="#control">4. 基本文・制御構文</a>
+    <a href="#io">5. テキスト入出力・配列</a>
+    <a href="#graphics">6. グラフィックス命令</a>
+    <a href="#sound">7. サウンド・MML (PLAY)</a>
+    <a href="#functions">8. 組み込み関数一覧</a>
+    <a href="#palette">9. カラーパレット・キー</a>
+    <a href="#samples">10. サンプル集</a>
+  </nav>
+
+  <main>
+    <section id="quickstart">
+      <h2 class="sec-title">1. はじめに・動作環境と高速化</h2>
+      <p><strong>Web BASIC 2.0</strong> は、NEC PC-9801 の N88-BASIC を思わせる操作感に、現代の Web 技術（Canvas 2D / Web Audio / PWA）を組み合わせたフルスクリーン BASIC 環境です。</p>
+      <ul>
+        <li><strong>対応ブラウザ</strong>：PC版 Google Chrome、iPad Safari、Android Chrome</li>
+        <li><strong>外部ツール依存なし</strong>：100% Vanilla JS で動作し、キャッシュ無効化（常に最新版読み込み）に対応しています。</li>
+        <li><strong>事前コンパイル型高速VM</strong>：プログラム行を事前トークン化＆クロージャコンパイルし、タイムスライス制御で実行するため、<code>MANDEL</code>（マンデルブロ集合）やゲームループが高速に動作します。</li>
+      </ul>
+      <h3>基本の操作方法</h3>
+      <p>任意の行に <code>10 PRINT "HELLO"</code> と入力して <strong>Enter</strong> を押すとプログラム行として登録されます。行番号なしで <code>RUN</code> と打って Enter を押すと実行されます。上部のファンクションキーボタン（<code>F1 LOAD</code> 〜 <code>F5 CLS</code>、<code>STOP</code>）もタップ・クリックで利用できます。</p>
+    </section>
+
+    <section id="mobile">
+      <h2 class="sec-title">2. 全画面表示・スマホ / iPad での使い方</h2>
+      <h3>PC Chrome / Android Chrome</h3>
+      <ul>
+        <li>右上の <code>⛶ FULL</code> ボタンでワンタッチ全画面表示になります。</li>
+        <li><code>📲 APP</code> ボタン（または Chrome メニューの「アプリをインストール」）からスタンドアロンアプリとしてインストールできます。</li>
+      </ul>
+      <h3>iPad / iPhone Safari</h3>
+      <ul>
+        <li>Safari の <strong>共有ボタン（□に↑）→「ホーム画面に追加」</strong> から起動すると、アドレスバーのないフルスクリーンアプリとして使えます。</li>
+      </ul>
+      <h3>縦向き・横向き・OS標準キーボード</h3>
+      <ul>
+        <li>縦画面・横画面どちらに回転しても、表示領域（<code>VisualViewport</code>）に合わせて自動調整されます。</li>
+        <li><strong>SPLIT</strong> ボタンで「グラフィック＋端末の重ね表示」と「画面分割表示（縦時は上下／横時は左右）」を切り替えられます。</li>
+        <li>エディタ領域をタップすると <strong>OS標準キーボード</strong> が開きます。<code>⌨ KEY</code> ボタンで <code>:</code> <code>;</code> <code>"</code> <code>(</code> <code>)</code> <code>ESC</code> や矢印キーが並んだ <strong>補助キーバー</strong> を画面下部に表示できます。</li>
+        <li>実行中の <code>INKEY$</code> も、OSキーボードまたは補助キーバーからの入力を受け取ります。</li>
+        <li>誤操作による画面全体のスクロールやピンチイン・ピンチアウトによるレイアウト崩れは自動的に抑止されます。</li>
+      </ul>
+    </section>
+
+    <section id="editor">
+      <h2 class="sec-title">3. エディタ・プログラム管理コマンド</h2>
+      <table>
+        <thead><tr><th>コマンド</th><th>説明</th></tr></thead>
+        <tbody>
+          <tr class="cmd-card"><td><code>RUN [行番号]</code></td><td>先頭または指定行からプログラムを実行します。</td></tr>
+          <tr class="cmd-card"><td><code>STOP</code> / <code>CONT</code></td><td>実行を一時中断（<code>STOP</code>ボタン/<code>Esc</code>/<code>Ctrl+C</code>）し、<code>CONT</code> で続きから再開します。</td></tr>
+          <tr class="cmd-card"><td><code>LIST [開始][-終了]</code></td><td>登録されているプログラムを表示します。（例: <code>LIST 10-50</code>）</td></tr>
+          <tr class="cmd-card"><td><code>NEW</code> / <code>CLEAR</code></td><td><code>NEW</code> はプログラムと変数を全消去、<code>CLEAR</code> は変数・配列のみ消去します。</td></tr>
+          <tr class="cmd-card"><td><code>DEL 開始[-終了]</code></td><td>指定行または範囲を削除します。（<code>DELETE</code> も可）</td></tr>
+          <tr class="cmd-card"><td><code>EDIT 行番号</code></td><td>指定行の内容を末尾に呼び出して編集できます。</td></tr>
+          <tr class="cmd-card"><td><code>AUTO [開始[,増分]]</code></td><td>自動で次の行番号を提示します。番号のみの行で Enter または <code>STOP</code> で終了。</td></tr>
+          <tr class="cmd-card"><td><code>RENUM [開始[,増分]]</code></td><td>行番号を振り直し、<code>GOTO</code>/<code>GOSUB</code>/<code>THEN</code>/<code>ELSE</code>/<code>RESTORE</code> も自動更新します。</td></tr>
+          <tr class="cmd-card"><td><code>SAVE "名前"</code> / <code>LOAD</code></td><td>ローカルファイル（<code>.bas</code>）としてダウンロード保存 / ファイル選択で読込します。</td></tr>
+          <tr class="cmd-card"><td><code>TSAVE "名前"</code> / <code>TLOAD "名前"</code> / <code>TFILES</code> / <code>TKILL "名前"</code></td><td>ブラウザ内部ストレージ（<code>localStorage</code>）に保存・読込・一覧・削除します。（<code>FILES</code> / <code>KILL</code> も可）</td></tr>
+          <tr class="cmd-card"><td><code>SAMPLE [番号|名前]</code></td><td>内蔵サンプル一覧を表示、または即時ロードします。</td></tr>
+          <tr class="cmd-card"><td><code>FONT mono|retro|dot</code></td><td>表示フォント（OS標準等幅 / レトロ / ドット系）を切り替えます。</td></tr>
+          <tr class="cmd-card"><td><code>SIZE ピクセル数</code></td><td>文字サイズを変更します。（例: <code>SIZE 20</code>）</td></tr>
+          <tr class="cmd-card"><td><code>THEME pc98|green|amber|white</code></td><td>画面配色テーマを切り替えます。</td></tr>
+          <tr class="cmd-card"><td><code>UPPER on|off</code></td><td>表示上の大文字変換を切り替えます。</td></tr>
+          <tr class="cmd-card"><td><code>TRON</code> / <code>TROFF</code></td><td>実行中の行番号トレース表示を切り替えます。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="control">
+      <h2 class="sec-title">4. 基本文・制御構文</h2>
+      <table>
+        <thead><tr><th>命令</th><th>構文・説明</th></tr></thead>
+        <tbody>
+          <tr class="cmd-card"><td><code>REM</code> / <code>'</code></td><td>注釈（コメント）です。行末まで無視されます。</td></tr>
+          <tr class="cmd-card"><td><code>LET</code> / 代入</td><td><code>[LET] A = 10</code>、<code>S$ = "ABC"</code>、<code>I% = 3.8</code>（整数丸め）</td></tr>
+          <tr class="cmd-card"><td><code>IF ... THEN ... [ELSE ...]</code></td><td>条件分岐。行番号ジャンプ、マルチステートメント（<code>:</code>）、ネストに対応。</td></tr>
+          <tr class="cmd-card"><td><code>FOR ... TO ... [STEP ...]</code> / <code>NEXT</code></td><td>繰り返しループ。単一行内の <code>FOR I=1 TO 10 : ... : NEXT I</code> や複数変数 <code>NEXT J,I</code> にも対応。</td></tr>
+          <tr class="cmd-card"><td><code>WHILE 条件</code> / <code>WEND</code> <span class="badge badge-new">NEW</span></td><td>条件が真（0以外）の間繰り返します。</td></tr>
+          <tr class="cmd-card"><td><code>REPEAT</code> / <code>UNTIL 条件</code> <span class="badge badge-new">NEW</span></td><td>後判定ループ。条件が真になるまで繰り返します。</td></tr>
+          <tr class="cmd-card"><td><code>GOTO 行</code> / <code>GOSUB 行</code> / <code>RETURN [行]</code></td><td>無条件ジャンプとサブルーチン呼び出し。</td></tr>
+          <tr class="cmd-card"><td><code>ON 式 GOTO|GOSUB 行1,行2,...</code> <span class="badge badge-new">NEW</span></td><td>式の値（1, 2, 3...）に応じて分岐します。</td></tr>
+          <tr class="cmd-card"><td><code>ON ERROR GOTO 行</code> / <code>RESUME [NEXT|行]</code> <span class="badge badge-new">NEW</span></td><td>実行時エラーの捕捉と復帰（<code>ERR</code>, <code>ERL</code> 参照可）。</td></tr>
+          <tr class="cmd-card"><td><code>WAIT ミリ秒</code> / <code>SLEEP 秒</code> / <code>VSYNC</code></td><td>指定時間待機、または画面リフレッシュ（60fps）同期。</td></tr>
+          <tr class="cmd-card"><td><code>END</code> / <code>STOP</code></td><td>プログラムを終了または一時中断します。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="io">
+      <h2 class="sec-title">5. テキスト入出力・データ・配列</h2>
+      <table>
+        <thead><tr><th>命令</th><th>構文・説明</th></tr></thead>
+        <tbody>
+          <tr class="cmd-card"><td><code>PRINT</code> / <code>?</code></td><td>文字列や式を出力。<code>;</code> で連結・改行抑制、<code>,</code> で14桁タブ区切り、<code>TAB(n)</code> / <code>SPC(n)</code> 対応。</td></tr>
+          <tr class="cmd-card"><td><code>PRINT USING "書式"; 式...</code> <span class="badge badge-new">NEW</span></td><td>数値桁揃え（<code>###.##</code>, <code>###,###</code>, <code>$$###</code>）や文字列整形（<code>&amp;</code>, <code>!</code>, <code>\  \</code>）。</td></tr>
+          <tr class="cmd-card"><td><code>INPUT ["案内";] 変数,...</code></td><td>キーボードからの入力を受け付けます。カンマ区切りで複数変数可。</td></tr>
+          <tr class="cmd-card"><td><code>LINE INPUT ["案内";] 変数$</code> <span class="badge badge-new">NEW</span></td><td>カンマを含めて1行まるごと文字列変数に読み込みます。</td></tr>
+          <tr class="cmd-card"><td><code>DIM 配列名(サイズ[,...])</code> <span class="badge badge-new">NEW</span></td><td>1次元・多次元配列を確保します（例: <code>DIM M(20,20), N$(10)</code>）。</td></tr>
+          <tr class="cmd-card"><td><code>DATA</code> / <code>READ</code> / <code>RESTORE [行]</code> <span class="badge badge-new">NEW</span></td><td>プログラム内の固定データを順次読み込みます。</td></tr>
+          <tr class="cmd-card"><td><code>SWAP a, b</code> <span class="badge badge-new">NEW</span></td><td>2つの変数（または配列要素）の値を入れ替えます。</td></tr>
+          <tr class="cmd-card"><td><code>DEF FN名前(引数) = 式</code> <span class="badge badge-new">NEW</span></td><td>ユーザー定義関数を定義します（例: <code>DEF FNSQ(X)=X*X</code>）。</td></tr>
+          <tr class="cmd-card"><td><code>MID$(変数$, 位置[, 長さ]) = 式</code> <span class="badge badge-new">NEW</span></td><td>文字列変数の一部を書き換えます。</td></tr>
+          <tr class="cmd-card"><td><code>RANDOMIZE [シード]</code> <span class="badge badge-new">NEW</span></td><td>乱数系列を初期化します。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="graphics">
+      <h2 class="sec-title">6. グラフィックス命令</h2>
+      <table>
+        <thead><tr><th>命令</th><th>構文・説明</th></tr></thead>
+        <tbody>
+          <tr class="cmd-card"><td><code>SCREEN w, h</code> / <code>SCREEN モード</code></td><td>解像度変更（例: <code>SCREEN 640,400</code>）。モード番号: 0=非表示, 1=320x200, 2=640x200, 3=640x400, 4=640x480。</td></tr>
+          <tr class="cmd-card"><td><code>GFX ON|OFF</code> / <code>CLS [1|2|3]</code></td><td><code>CLS 1</code>=テキスト消去、<code>CLS 2</code>=グラフィック消去、<code>CLS 3</code>=両方消去。</td></tr>
+          <tr class="cmd-card"><td><code>COLOR 前景[,背景]</code> / <code>BG 色</code></td><td>パレット番号（0〜15）、<code>#RRGGBB</code>、<code>R,G,B</code>、色名（<code>"RED"</code> 等）を指定。</td></tr>
+          <tr class="cmd-card"><td><code>PALETTE 番号, 色</code> / <code>PALETTE 番号,R,G,B</code> <span class="badge badge-new">NEW</span></td><td>パレット0〜15の色を再定義します。</td></tr>
+          <tr class="cmd-card"><td><code>ALPHA 値</code> <span class="badge badge-new">NEW</span></td><td>描画の不透明度（<code>0.0</code>〜<code>1.0</code>）を設定します。</td></tr>
+          <tr class="cmd-card"><td><code>PSET [STEP] (x,y)[,色]</code> / <code>PLOT x,y</code></td><td>1ピクセル点を描画します。<code>PRESET</code> は背景色で消去します。</td></tr>
+          <tr class="cmd-card"><td><code>LINE (x1,y1)-(x2,y2)[,色][,B|BF][,style]</code></td><td>直線または矩形（<code>B</code>=枠, <code>BF</code>=塗りつぶし）を描画。<code>LINE x1,y1,x2,y2</code> や <code>-(x2,y2)</code> も対応。</td></tr>
+          <tr class="cmd-card"><td><code>RECT x1,y1 TO x2,y2 [FILL]</code> / <code>BOX</code></td><td>矩形を描画します。</td></tr>
+          <tr class="cmd-card"><td><code>CIRCLE (cx,cy),r[,色[,開始角,終了角[,縦横比[,F]]]]</code></td><td>円・楕円・円弧・扇形を描画します。従来形式 <code>CIRCLE cx,cy,r [FILL]</code> も可。</td></tr>
+          <tr class="cmd-card"><td><code>PAINT (x,y)[,塗色[,境界色]]</code> <span class="badge badge-new">NEW</span></td><td>指定座標から閉じた領域を高速スキャンライン塗りつぶしします。</td></tr>
+          <tr class="cmd-card"><td><code>TRIANGLE x1,y1,x2,y2,x3,y3[,色][,FILL]</code> <span class="badge badge-new">NEW</span></td><td>三角形を描画・塗りつぶしします。</td></tr>
+          <tr class="cmd-card"><td><code>LOCATE x, y</code> / <code>SYMBOL (x,y),文[,sx[,sy[,色[,角度]]]]</code></td><td><code>LOCATE</code> 直後の <code>PRINT</code>、または <code>SYMBOL</code> で任意座標・拡大・回転文字を描画します。</td></tr>
+          <tr class="cmd-card"><td><code>WINDOW (x1,y1)-(x2,y2)</code> / <code>VIEW (x1,y1)-(x2,y2)</code> <span class="badge badge-new">NEW</span></td><td>論理座標系（<code>WINDOW</code>）とクリッピング領域（<code>VIEW</code>）を設定。引数なしで解除。</td></tr>
+          <tr class="cmd-card"><td><code>ROLL dx, dy</code> <span class="badge badge-new">NEW</span></td><td>グラフィック画面全体を dx, dy ピクセルスクロールします。</td></tr>
+          <tr class="cmd-card"><td><code>GSAVE id,x1,y1,x2,y2</code> / <code>GPUT id,x,y[,mode]</code> <span class="badge badge-new">NEW</span></td><td>矩形画像をスプライト登録し、<code>PSET / TRANS / XOR / OR / AND</code> で高速描画します。（<code>GET</code> / <code>PUT</code> 構文も可）</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="sound">
+      <h2 class="sec-title">7. サウンド・MML (PLAY)</h2>
+      <table>
+        <thead><tr><th>命令</th><th>説明</th></tr></thead>
+        <tbody>
+          <tr class="cmd-card"><td><code>BEEP [周波数, ミリ秒]</code></td><td>ビープ音を鳴らします（省略時 880Hz, 120ms）。</td></tr>
+          <tr class="cmd-card"><td><code>SOUND 周波数, ミリ秒</code> <span class="badge badge-new">NEW</span></td><td>指定周波数・長さのPSG矩形波を鳴らします。</td></tr>
+          <tr class="cmd-card"><td><code>PLAY "MML文字列"</code> <span class="badge badge-new">NEW</span></td><td>音楽マクロ言語（MML）をバックグラウンド再生します。</td></tr>
+        </tbody>
+      </table>
+      <h3>MML コマンド一覧</h3>
+      <p><code>C D E F G A B</code>（音名、<code>#/+</code> で半音上、<code>-</code> で半音下）、<code>R</code>（休符）、<code>O1〜O8</code>（オクターブ）、<code>&lt;</code> <code>&gt;</code>（オクターブ上下）、<code>L1〜L64</code>（標準音長）、<code>.</code>（付点）、<code>T32〜T255</code>（テンポ）、<code>V0〜V15</code>（音量）、<code>M0〜M3</code>（波形: 0矩形 / 1三角 / 2ノコギリ / 3正弦）、<code>&amp;</code>（タイ）。</p>
+      <pre>PLAY "T140 O4 L8 V10 C D E F G A B > C4"</pre>
+    </section>
+
+    <section id="functions">
+      <h2 class="sec-title">8. 組み込み関数一覧</h2>
+      <table>
+        <thead><tr><th>分類</th><th>関数</th></tr></thead>
+        <tbody>
+          <tr class="cmd-card"><th>数学</th><td><code>ABS(x)</code> <code>INT(x)</code> <code>FIX(x)</code> <code>SGN(x)</code> <code>SQR(x)</code> <code>SIN(x)</code> <code>COS(x)</code> <code>TAN(x)</code> <code>ATN(x)</code> <code>EXP(x)</code> <code>LOG(x)</code> <code>RND([n])</code> <code>PI</code> <code>RAD(deg)</code> <code>DEG(rad)</code> <code>MIN(a,b,...)</code> <code>MAX(a,b,...)</code> <code>CINT(x)</code></td></tr>
+          <tr class="cmd-card"><th>文字列</th><td><code>LEN(s$)</code> <code>LEFT$(s$,n)</code> <code>RIGHT$(s$,n)</code> <code>MID$(s$,p[,n])</code> <code>INSTR([p,]s$,sub$)</code> <code>CHR$(n)</code> <code>ASC(s$)</code> <code>STR$(n)</code> <code>VAL(s$)</code> <code>STRING$(n,c)</code> <code>SPACE$(n)</code> <code>HEX$(n)</code> <code>OCT$(n)</code> <code>BIN$(n)</code> <code>UCASE$(s$)</code> <code>LCASE$(s$)</code> <code>TRIM$(s$)</code></td></tr>
+          <tr class="cmd-card"><th>入力・システム</th><td><code>INKEY$</code> <code>INPUT$(n)</code> <code>TIMER</code> <code>TIME$</code> <code>DATE$</code> <code>POINT(x,y)</code> <code>POS(0)</code> <code>CSRLIN</code> <code>ERR</code> <code>ERL</code> <code>TAB(n)</code> <code>SPC(n)</code></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="palette">
+      <h2 class="sec-title">9. デフォルトカラーパレット &amp; ショートカット</h2>
+      <table>
+        <thead><tr><th>番号</th><th>色</th><th>番号</th><th>色</th></tr></thead>
+        <tbody>
+          <tr><td><code>0</code></td><td>黒 (#000000)</td><td><code>8</code></td><td>暗灰 (#333333)</td></tr>
+          <tr><td><code>1</code></td><td>青 (#0000ff)</td><td><code>9</code></td><td>明青 (#5555ff)</td></tr>
+          <tr><td><code>2</code></td><td>赤 (#ff0000)</td><td><code>10</code></td><td>明赤 (#ff5555)</td></tr>
+          <tr><td><code>3</code></td><td>マゼンタ (#ff00ff)</td><td><code>11</code></td><td>明マゼンタ (#ff55ff)</td></tr>
+          <tr><td><code>4</code></td><td>緑 (#00ff00)</td><td><code>12</code></td><td>明緑 (#55ff55)</td></tr>
+          <tr><td><code>5</code></td><td>シアン (#00ffff)</td><td><code>13</code></td><td>明シアン (#55ffff)</td></tr>
+          <tr><td><code>6</code></td><td>黄 (#ffff00)</td><td><code>14</code></td><td>明黄 (#ffff55)</td></tr>
+          <tr><td><code>7</code></td><td>白 (#ffffff)</td><td><code>15</code></td><td>明灰 (#aaaaaa)</td></tr>
+        </tbody>
+      </table>
+      <ul>
+        <li><code>Enter</code>：カーソル行を実行またはプログラム登録 / <code>Shift + Enter</code>：改行のみ</li>
+        <li><code>Esc</code> または <code>Ctrl + C</code>：実行中のプログラムを強制停止（BREAK）</li>
+        <li><code>F1〜F5</code>：LOAD / SAVE / LIST / RUN / CLS</li>
+      </ul>
+    </section>
+
+    <section id="samples">
+      <h2 class="sec-title">10. サンプルプログラム</h2>
+      <p>アプリ内の <strong>SAMPLE</strong> ボタン（または <code>SAMPLE "MANDEL"</code> コマンド）ですぐに実行できます。エディタへ直接コピー＆ペーストすると自動的に行番号付きプログラムとして一括登録されます。</p>
+      <pre>10 SCREEN 640,400 : CLS 3
+20 WINDOW (-2,-1.5)-(2,1.5)
+30 COLOR 5 : LINE (-2,0)-(2,0) : LINE (0,-1.5)-(0,1.5)
+40 COLOR 6
+50 FOR X=-2 TO 2 STEP 0.02
+60 Y=SIN(X*3)*COS(X)
+70 IF X=-2 THEN PSET (X,Y) ELSE LINE -(X,Y)
+80 NEXT X
+90 END</pre>
+    </section>
+  </main>
+</div>
+
+<script>
+  (function () {
+    var input = document.getElementById('searchInput');
+    var rows = document.querySelectorAll('.cmd-card');
+    input.addEventListener('input', function () {
+      var q = input.value.trim().toLowerCase();
+      for (var i = 0; i < rows.length; i++) {
+        var text = rows[i].textContent.toLowerCase();
+        rows[i].classList.toggle('hidden-row', q !== '' && text.indexOf(q) === -1);
+      }
+    });
+  })();
+</script>
+</body>
+</html>
